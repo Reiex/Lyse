@@ -13,8 +13,8 @@ namespace scp
 {
 	namespace _scp
 	{
-		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow>
-		constexpr Mat<TValue, Row, Col, TRow>::Mat(TValue diagValue)
+		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow, typename TCol>
+		constexpr Mat<TValue, Row, Col, TRow, TCol>::Mat(TValue diagValue)
 		{
 			constexpr uint8_t size = Row * Col;
 			std::memset(_rows, 0, size * sizeof(TValue));
@@ -27,8 +27,8 @@ namespace scp
 			}
 		}
 
-		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow>
-		constexpr Mat<TValue, Row, Col, TRow>::Mat(const std::initializer_list<TValue>& tab)
+		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow, typename TCol>
+		constexpr Mat<TValue, Row, Col, TRow, TCol>::Mat(const std::initializer_list<TValue>& tab)
 		{
 			constexpr uint8_t size = Row * Col;
 			assert(size == tab.size());
@@ -36,22 +36,22 @@ namespace scp
 			std::memcpy(_rows, tab.begin(), size * sizeof(TValue));
 		}
 
-		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow>
-		constexpr TRow& Mat<TValue, Row, Col, TRow>::operator[](uint8_t i)
+		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow, typename TCol>
+		constexpr TRow& Mat<TValue, Row, Col, TRow, TCol>::operator[](uint8_t i)
 		{
 			assert(i < Row);
 			return _rows[i];
 		}
 
-		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow>
-		constexpr const TRow& Mat<TValue, Row, Col, TRow>::operator[](uint8_t i) const
+		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow, typename TCol>
+		constexpr const TRow& Mat<TValue, Row, Col, TRow, TCol>::operator[](uint8_t i) const
 		{
 			assert(i < Row);
 			return _rows[i];
 		}
 
-		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow>
-		constexpr Mat<TValue, Row, Col, TRow>& Mat<TValue, Row, Col, TRow>::operator+=(const Mat<TValue, Row, Col, TRow>& mat)
+		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow, typename TCol>
+		constexpr Mat<TValue, Row, Col, TRow, TCol>& Mat<TValue, Row, Col, TRow, TCol>::operator+=(const Mat<TValue, Row, Col, TRow, TCol>& mat)
 		{
 			for (uint8_t i = 0; i < Row; ++i)
 			{
@@ -61,8 +61,8 @@ namespace scp
 			return *this;
 		}
 
-		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow>
-		constexpr Mat<TValue, Row, Col, TRow>& Mat<TValue, Row, Col, TRow>::operator-=(const Mat<TValue, Row, Col, TRow>& mat)
+		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow, typename TCol>
+		constexpr Mat<TValue, Row, Col, TRow, TCol>& Mat<TValue, Row, Col, TRow, TCol>::operator-=(const Mat<TValue, Row, Col, TRow, TCol>& mat)
 		{
 			for (uint8_t i = 0; i < Row; ++i)
 			{
@@ -73,24 +73,24 @@ namespace scp
 		}
 
 
-		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow>
-		constexpr Mat<TValue, Row, Col, TRow> operator+(const Mat<TValue, Row, Col, TRow>& a, const Mat<TValue, Row, Col, TRow>& b)
+		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow, typename TCol>
+		constexpr Mat<TValue, Row, Col, TRow, TCol> operator+(const Mat<TValue, Row, Col, TRow, TCol>& a, const Mat<TValue, Row, Col, TRow, TCol>& b)
 		{
-			Mat<TValue, Row, Col, TRow> c(a);
+			Mat<TValue, Row, Col, TRow, TCol> c(a);
 			return c += b;
 		}
 
-		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow>
-		constexpr Mat<TValue, Row, Col, TRow> operator-(const Mat<TValue, Row, Col, TRow>& a, const Mat<TValue, Row, Col, TRow>& b)
+		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow, typename TCol>
+		constexpr Mat<TValue, Row, Col, TRow, TCol> operator-(const Mat<TValue, Row, Col, TRow, TCol>& a, const Mat<TValue, Row, Col, TRow, TCol>& b)
 		{
-			Mat<TValue, Row, Col, TRow> c(a);
+			Mat<TValue, Row, Col, TRow, TCol> c(a);
 			return c -= b;
 		}
 
-		template<typename TValue, uint8_t RowA, uint8_t ColARowB, uint8_t ColB, typename TRowA, typename TRowB>
-		constexpr Mat<TValue, RowA, ColB, TRowB> operator*(const Mat<TValue, RowA, ColARowB, TRowA>& a, const Mat<TValue, ColARowB, ColB, TRowB>& b)
+		template<typename TValue, uint8_t RowA, uint8_t ColARowB, uint8_t ColB, typename TRowA, typename TColARowB, typename TColB>
+		constexpr Mat<TValue, RowA, ColB, TRowA, TColB> operator*(const Mat<TValue, RowA, ColARowB, TRowA, TColARowB>& a, const Mat<TValue, ColARowB, ColB, TColARowB, TColB>& b)
 		{
-			Mat<TValue, RowA, ColB, TRowB> c(0);
+			Mat<TValue, RowA, ColB, TRowA, TColB> c(0);
 
 			for (uint8_t i = 0; i < RowA; ++i)
 			{
@@ -105,10 +105,58 @@ namespace scp
 
 			return c;
 		}
+	
+		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow, typename TCol>
+		constexpr TRow operator*(const TRow& vec, const Mat<TValue, Row, Col, TRow, TCol>& mat)
+		{
+			TRow result(0);
+
+			for (uint8_t i = 0; i < Row; ++i)
+			{
+				for (uint8_t j = 0; j < Col; ++j)
+				{
+					result[j] += vec[i] * mat[i][j];
+				}
+			}
+
+			return result;
+		}
+
+		template<typename TValue, uint8_t Row, uint8_t Col, typename TRow, typename TCol>
+		constexpr TCol operator*(const Mat<TValue, Row, Col, TRow, TCol>& mat, const TCol& vec)
+		{
+			TCol result(0);
+
+			for (uint8_t i = 0; i < Row; ++i)
+			{
+				for (uint8_t j = 0; j < Col; ++j)
+				{
+					result[i] += vec[j] * mat[i][j];
+				}
+			}
+
+			return result;
+		}
+	}
+
+	template<typename TValue, uint8_t Row, uint8_t Col, typename TRow, typename TCol>
+	constexpr _scp::Mat<TValue, Col, Row, TCol, TRow> transpose(const _scp::Mat<TValue, Row, Col, TRow, TCol>& m)
+	{
+		_scp::Mat<TValue, Col, Row, TCol, TRow> r;
+
+		for (uint8_t i = 0; i < Row; ++i)
+		{
+			for (uint8_t j = 0; j < Col; ++j)
+			{
+				r[j][i] = m[i][j];
+			}
+		}
+
+		return r;
 	}
 
 	template<typename TValue, uint8_t Size, typename TRow>
-	constexpr TValue determinant(const _scp::Mat<TValue, Size, Size, TRow>& m)
+	constexpr TValue determinant(const _scp::Mat<TValue, Size, Size, TRow, TRow>& m)
 	{
 		if constexpr (Size == 2)
 		{
@@ -139,7 +187,7 @@ namespace scp
 	}
 
 	template<typename TValue, uint8_t Size, typename TRow>
-	constexpr _scp::Mat<TValue, Size, Size, TRow> inverse(const _scp::Mat<TValue, Size, Size, TRow>& m)
+	constexpr _scp::Mat<TValue, Size, Size, TRow, TRow> inverse(const _scp::Mat<TValue, Size, Size, TRow, TRow>& m)
 	{
 		assert(determinant(m) != 0);
 

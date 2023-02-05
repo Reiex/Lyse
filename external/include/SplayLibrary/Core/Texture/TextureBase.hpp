@@ -30,7 +30,7 @@ namespace spl
 			RawTexture& getRawTexture();
 			bool isValid() const;
 
-			~TextureBase() = default;
+			virtual ~TextureBase() = default;
 
 		protected:
 

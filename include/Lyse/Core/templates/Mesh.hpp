@@ -27,57 +27,18 @@ namespace lys
 		_vao.setBindingDivisor(0, 0);
 	}
 
-	
 	template<CVertex TVertex>
-	template<uint32_t IndexPos, uint32_t IndexNormal, uint32_t IndexTexCoords>
-	Mesh<TVertex>::Mesh(const std::filesystem::path& path, spl::BufferUsage vertexUsage, spl::BufferUsage indexUsage) : Mesh()
+	template<CBufferStorageSpecifier TVertexStorage, CBufferStorageSpecifier TIndexStorage>
+	Mesh<TVertex>::Mesh(const TVertex* vertices, uint32_t vertexCount, TVertexStorage vertexStorage, const uint32_t* indices, uint32_t indexCount, TIndexStorage indexStorage) : Mesh()
 	{
-		createNew<IndexPos, IndexNormal, IndexTexCoords>(path, vertexUsage, indexUsage);
+		createNew(vertices, vertexCount, vertexStorage, indices, indexCount, indexStorage);
 	}
 	
 	template<CVertex TVertex>
-	template<uint32_t IndexPos, uint32_t IndexNormal, uint32_t IndexTexCoords>
-	Mesh<TVertex>::Mesh(const std::filesystem::path& path, spl::BufferUsage vertexUsage, spl::BufferStorageFlags::Flags indexFlags) : Mesh()
+	template<uint32_t IndexPos, uint32_t IndexNormal, uint32_t IndexTexCoords, CBufferStorageSpecifier TVertexStorage, CBufferStorageSpecifier TIndexStorage>
+	Mesh<TVertex>::Mesh(const std::filesystem::path& path, TVertexStorage vertexStorage, TIndexStorage indexStorage) : Mesh()
 	{
-		createNew<IndexPos, IndexNormal, IndexTexCoords>(path, vertexUsage, indexFlags);
-	}
-	
-	template<CVertex TVertex>
-	template<uint32_t IndexPos, uint32_t IndexNormal, uint32_t IndexTexCoords>
-	Mesh<TVertex>::Mesh(const std::filesystem::path& path, spl::BufferStorageFlags::Flags vertexFlags, spl::BufferUsage indexUsage) : Mesh()
-	{
-		createNew<IndexPos, IndexNormal, IndexTexCoords>(path, vertexFlags, indexUsage);
-	}
-	
-	template<CVertex TVertex>
-	template<uint32_t IndexPos, uint32_t IndexNormal, uint32_t IndexTexCoords>
-	Mesh<TVertex>::Mesh(const std::filesystem::path& path, spl::BufferStorageFlags::Flags vertexFlags, spl::BufferStorageFlags::Flags indexFlags) : Mesh()
-	{
-		createNew<IndexPos, IndexNormal, IndexTexCoords>(path, vertexFlags, indexFlags);
-	}
-
-	template<CVertex TVertex>
-	Mesh<TVertex>::Mesh(const TVertex* vertices, uint32_t vertexCount, spl::BufferUsage vertexUsage, const uint32_t* indices, uint32_t indexCount, spl::BufferUsage indexUsage) : Mesh()
-	{
-		createNew(vertices, vertexCount, vertexUsage, indices, indexCount, indexUsage);
-	}
-
-	template<CVertex TVertex>
-	Mesh<TVertex>::Mesh(const TVertex* vertices, uint32_t vertexCount, spl::BufferUsage vertexUsage, const uint32_t* indices, uint32_t indexCount, spl::BufferStorageFlags::Flags indexFlags) : Mesh()
-	{
-		createNew(vertices, vertexCount, vertexUsage, indices, indexCount, indexFlags);
-	}
-
-	template<CVertex TVertex>
-	Mesh<TVertex>::Mesh(const TVertex* vertices, uint32_t vertexCount, spl::BufferStorageFlags::Flags vertexFlags, const uint32_t* indices, uint32_t indexCount, spl::BufferUsage indexUsage) : Mesh()
-	{
-		createNew(vertices, vertexCount, vertexFlags, indices, indexCount, indexUsage);
-	}
-
-	template<CVertex TVertex>
-	Mesh<TVertex>::Mesh(const TVertex* vertices, uint32_t vertexCount, spl::BufferStorageFlags::Flags vertexFlags, const uint32_t* indices, uint32_t indexCount, spl::BufferStorageFlags::Flags indexFlags) : Mesh()
-	{
-		createNew(vertices, vertexCount, vertexFlags, indices, indexCount, indexFlags);
+		createNew<IndexPos, IndexNormal, IndexTexCoords>(path, vertexStorage, indexStorage);
 	}
 
 	template<CVertex TVertex>
@@ -117,8 +78,19 @@ namespace lys
 	}
 
 	template<CVertex TVertex>
-	template<uint32_t IndexPos, uint32_t IndexNormal, uint32_t IndexTexCoords>
-	void Mesh<TVertex>::createNew(const std::filesystem::path& path, spl::BufferUsage vertexUsage, spl::BufferUsage indexUsage)
+	template<CBufferStorageSpecifier TVertexStorage, CBufferStorageSpecifier TIndexStorage>
+	void Mesh<TVertex>::createNew(const TVertex* vertices, uint32_t vertexCount, TVertexStorage vertexStorage, const uint32_t* indices, uint32_t indexCount, TIndexStorage indexStorage)
+	{
+		_vbo.createNew(sizeof(TVertex) * vertexCount, vertexStorage, vertices);
+		_ebo.createNew(sizeof(uint32_t) * indexCount, indexStorage, indices);
+
+		_vao.bindArrayBuffer(_vbo, 0, 0, sizeof(TVertex));
+		_vao.bindElementBuffer(_ebo);
+	}
+
+	template<CVertex TVertex>
+	template<uint32_t IndexPos, uint32_t IndexNormal, uint32_t IndexTexCoords, CBufferStorageSpecifier TVertexStorage, CBufferStorageSpecifier TIndexStorage>
+	void Mesh<TVertex>::createNew(const std::filesystem::path& path, TVertexStorage vertexStorage, TIndexStorage indexStorage)
 	{
 		std::vector<TVertex> vertices;
 		std::vector<uint32_t> indices;
@@ -127,93 +99,8 @@ namespace lys
 
 		if (!vertices.empty() && !indices.empty())
 		{
-			createNew(vertices.data(), vertices.size(), vertexUsage, indices.data(), indices.size(), indexUsage);
+			createNew(vertices.data(), vertices.size(), vertexStorage, indices.data(), indices.size(), indexStorage);
 		}
-	}
-
-	template<CVertex TVertex>
-	template<uint32_t IndexPos, uint32_t IndexNormal, uint32_t IndexTexCoords>
-	void Mesh<TVertex>::createNew(const std::filesystem::path& path, spl::BufferUsage vertexUsage, spl::BufferStorageFlags::Flags indexFlags)
-	{
-		std::vector<TVertex> vertices;
-		std::vector<uint32_t> indices;
-
-		_loadFromFile<IndexPos, IndexNormal, IndexTexCoords>(path, vertices, indices);
-
-		if (!vertices.empty() && !indices.empty())
-		{
-			createNew(vertices.data(), vertices.size(), vertexUsage, indices.data(), indices.size(), indexFlags);
-		}
-	}
-
-	template<CVertex TVertex>
-	template<uint32_t IndexPos, uint32_t IndexNormal, uint32_t IndexTexCoords>
-	void Mesh<TVertex>::createNew(const std::filesystem::path& path, spl::BufferStorageFlags::Flags vertexFlags, spl::BufferUsage indexUsage)
-	{
-		std::vector<TVertex> vertices;
-		std::vector<uint32_t> indices;
-
-		_loadFromFile<IndexPos, IndexNormal, IndexTexCoords>(path, vertices, indices);
-
-		if (!vertices.empty() && !indices.empty())
-		{
-			createNew(vertices.data(), vertices.size(), vertexFlags, indices.data(), indices.size(), indexUsage);
-		}
-	}
-
-	template<CVertex TVertex>
-	template<uint32_t IndexPos, uint32_t IndexNormal, uint32_t IndexTexCoords>
-	void Mesh<TVertex>::createNew(const std::filesystem::path& path, spl::BufferStorageFlags::Flags vertexFlags, spl::BufferStorageFlags::Flags indexFlags)
-	{
-		std::vector<TVertex> vertices;
-		std::vector<uint32_t> indices;
-
-		_loadFromFile<IndexPos, IndexNormal, IndexTexCoords>(path, vertices, indices);
-
-		if (!vertices.empty() && !indices.empty())
-		{
-			createNew(vertices.data(), vertices.size(), vertexFlags, indices.data(), indices.size(), indexFlags);
-		}
-	}
-
-	template<CVertex TVertex>
-	void Mesh<TVertex>::createNew(const TVertex* vertices, uint32_t vertexCount, spl::BufferUsage vertexUsage, const uint32_t* indices, uint32_t indexCount, spl::BufferUsage indexUsage)
-	{
-		_vbo.createNew(sizeof(TVertex) * vertexCount, vertexUsage, vertices);
-		_ebo.createNew(sizeof(uint32_t) * indexCount, indexUsage, indices);
-
-		_vao.bindArrayBuffer(_vbo, 0, 0, sizeof(TVertex));
-		_vao.bindElementBuffer(_ebo);
-	}
-
-	template<CVertex TVertex>
-	void Mesh<TVertex>::createNew(const TVertex* vertices, uint32_t vertexCount, spl::BufferUsage vertexUsage, const uint32_t* indices, uint32_t indexCount, spl::BufferStorageFlags::Flags indexFlags)
-	{
-		_vbo.createNew(sizeof(TVertex) * vertexCount, vertexUsage, vertices);
-		_ebo.createNew(sizeof(uint32_t) * indexCount, indexFlags, indices);
-
-		_vao.bindArrayBuffer(_vbo, 0, 0, sizeof(TVertex));
-		_vao.bindElementBuffer(_ebo);
-	}
-
-	template<CVertex TVertex>
-	void Mesh<TVertex>::createNew(const TVertex* vertices, uint32_t vertexCount, spl::BufferStorageFlags::Flags vertexFlags, const uint32_t* indices, uint32_t indexCount, spl::BufferUsage indexUsage)
-	{
-		_vbo.createNew(sizeof(TVertex) * vertexCount, vertexFlags, vertices);
-		_ebo.createNew(sizeof(uint32_t) * indexCount, indexUsage, indices);
-
-		_vao.bindArrayBuffer(_vbo, 0, 0, sizeof(TVertex));
-		_vao.bindElementBuffer(_ebo);
-	}
-
-	template<CVertex TVertex>
-	void Mesh<TVertex>::createNew(const TVertex* vertices, uint32_t vertexCount, spl::BufferStorageFlags::Flags vertexFlags, const uint32_t* indices, uint32_t indexCount, spl::BufferStorageFlags::Flags indexFlags)
-	{
-		_vbo.createNew(sizeof(TVertex) * vertexCount, vertexFlags, vertices);
-		_ebo.createNew(sizeof(uint32_t) * indexCount, indexFlags, indices);
-
-		_vao.bindArrayBuffer(_vbo, 0, 0, sizeof(TVertex));
-		_vao.bindElementBuffer(_ebo);
 	}
 
 	template<CVertex TVertex>
@@ -248,8 +135,15 @@ namespace lys
 	template<uint32_t IndexPos, uint32_t IndexNormal, uint32_t IndexTexCoords>
 	void Mesh<TVertex>::_loadFromFile(const std::filesystem::path& path, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices)
 	{
-		// TODO: Check file exists...
-		_loadObj<IndexPos, IndexNormal, IndexTexCoords>(path, vertices, indices);
+		if (!std::filesystem::exists(path))
+		{
+			return;
+		}
+
+		if (path.extension() == ".obj")
+		{
+			_loadObj<IndexPos, IndexNormal, IndexTexCoords>(path, vertices, indices);
+		}
 	}
 
 	template<CVertex TVertex>

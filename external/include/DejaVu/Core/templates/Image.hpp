@@ -67,69 +67,95 @@ namespace djv
 	template<CPixel TPixel>
 	constexpr Image<TPixel>::Image(uint64_t width, uint64_t height) : Image<TPixel>()
 	{
-		_create(width, height);
+		createNew(width, height);
 	}
 
 	template<CPixel TPixel>
-	constexpr Image<TPixel>::Image(uint64_t width, uint64_t height, const TPixel& value) : Image<TPixel>(width, height)
+	constexpr Image<TPixel>::Image(uint64_t width, uint64_t height, const TPixel& value) : Image<TPixel>()
 	{
-		std::fill_n(_pixels, _width * _height, value);
+		createNew(width, height, value);
 	}
 
 	template<CPixel TPixel>
-	constexpr Image<TPixel>::Image(uint64_t width, uint64_t height, const TPixel* values) : Image<TPixel>(width, height)
+	constexpr Image<TPixel>::Image(uint64_t width, uint64_t height, const TPixel* values) : Image<TPixel>()
 	{
-		std::copy_n(values, _width * _height, _pixels);
+		createNew(width, height, values);
 	}
 
 	template<CPixel TPixel>
 	constexpr Image<TPixel>::Image(const std::filesystem::path& path) : Image<TPixel>()
 	{
-		loadFromFile(path);
+		createFromFile(path);
 	}
 
 	template<CPixel TPixel>
 	constexpr Image<TPixel>::Image(const std::filesystem::path& path, const uint8_t* swizzling) : Image<TPixel>()
 	{
-		loadFromFile(path, swizzling);
+		createFromFile(path, swizzling);
 	}
 
 	template<CPixel TPixel>
 	constexpr Image<TPixel>::Image(const std::filesystem::path& path, const std::initializer_list<uint8_t>& swizzling) : Image<TPixel>()
 	{
-		loadFromFile(path, swizzling);
+		createFromFile(path, swizzling);
 	}
 
 	template<CPixel TPixel>
 	constexpr Image<TPixel>::Image(const std::istream& stream, ImageFormat format) : Image<TPixel>()
 	{
-		loadFromStream(stream, format);
+		createFromStream(stream, format);
 	}
 
 	template<CPixel TPixel>
 	constexpr Image<TPixel>::Image(const std::istream& stream, ImageFormat format, const uint8_t* swizzling) : Image<TPixel>()
 	{
-		loadFromStream(stream, format, swizzling);
+		createFromStream(stream, format, swizzling);
 	}
 
 	template<CPixel TPixel>
 	constexpr Image<TPixel>::Image(const std::istream& stream, ImageFormat format, const std::initializer_list<uint8_t>& swizzling) : Image<TPixel>()
 	{
-		loadFromStream(stream, format, swizzling);
+		createFromStream(stream, format, swizzling);
 	}
 
 	template<CPixel TPixel>
 	template<CImage TImage>
 	constexpr Image<TPixel>::Image(const TImage& image) : Image<TPixel>()
 	{
-		convertFrom(image);
+		createFromConversion(image);
 	}
 
 	template<CPixel TPixel>
 	template<CImage TImage>
 	constexpr Image<TPixel>::Image(const TImage& image, const PixelConversionFunction<typename TImage::PixelType, TPixel>& conversionFunc) : Image<TPixel>()
 	{
-		convertFrom(image, conversionFunc);
+		createFromConversion(image, conversionFunc);
+	}
+
+	template<CPixel TPixel>
+	constexpr Image<TPixel>::Image(const Image<TPixel>& image, uint64_t width, uint64_t height, scp::InterpolationMethod method) : Image<TPixel>()
+	{
+		switch (method)
+		{
+			case scp::InterpolationMethod::Nearest:
+				createFromResize<scp::InterpolationMethod::Nearest>(image, width, height);
+				break;
+			case scp::InterpolationMethod::Linear:
+				createFromResize<scp::InterpolationMethod::Linear>(image, width, height);
+				break;
+			case scp::InterpolationMethod::Cubic:
+				createFromResize<scp::InterpolationMethod::Cubic>(image, width, height);
+				break;
+			default:
+				assert(false);
+				break;
+		}
+	}
+
+	template<CPixel TPixel>
+	constexpr Image<TPixel>::Image(const Image<TPixel>& image, uint64_t x, uint64_t y, uint64_t width, uint64_t height) : Image<TPixel>()
+	{
+		createFromCrop(image, x, y, width, height);
 	}
 
 	template<CPixel TPixel>
@@ -174,106 +200,86 @@ namespace djv
 		return *this;
 	}
 
-	template<CPixel TPixel>
-	constexpr void Image<TPixel>::loadFromFile(const std::filesystem::path& path)
-	{
-		uint8_t swizzling[componentCount];
-		_djv::defaultLoadSwizzling<componentCount>(swizzling);
-		_loadFromFile(path, swizzling);
-	}
 
 	template<CPixel TPixel>
-	constexpr void Image<TPixel>::loadFromFile(const std::filesystem::path& path, const uint8_t* swizzling)
+	constexpr void Image<TPixel>::createNew(uint64_t width, uint64_t height)
 	{
-		_loadFromFile(path, swizzling);
-	}
+		assert(width != 0);
+		assert(height != 0);
 
-	template<CPixel TPixel>
-	constexpr void Image<TPixel>::loadFromFile(const std::filesystem::path& path, const std::initializer_list<uint8_t>& swizzling)
-	{
-		assert(swizzling.size() == componentCount);
-		_loadFromFile(path, swizzling.begin());
-	}
-
-	template<CPixel TPixel>
-	constexpr void Image<TPixel>::loadFromStream(const std::istream& stream, ImageFormat format)
-	{
-		uint8_t swizzling[componentCount];
-		_djv::defaultLoadSwizzling<componentCount>(swizzling);
-		_loadFromStream(stream, format, swizzling);
-	}
-
-	template<CPixel TPixel>
-	constexpr void Image<TPixel>::loadFromStream(const std::istream& stream, ImageFormat format, const uint8_t* swizzling)
-	{
-		_loadFromStream(stream, format, swizzling);
-	}
-
-	template<CPixel TPixel>
-	constexpr void Image<TPixel>::loadFromStream(const std::istream& stream, ImageFormat format, const std::initializer_list<uint8_t>& swizzling)
-	{
-		assert(swizzling.size() == componentCount);
-		_loadFromStream(stream, format, swizzling.begin());
-	}
-
-	template<CPixel TPixel>
-	constexpr void Image<TPixel>::saveToFile(const std::filesystem::path& path) const
-	{
-		uint8_t swizzling[4];
-		_djv::defaultSaveSwizzling<componentCount>(swizzling);
-		_saveToFile(path, swizzling);
-	}
-
-	template<CPixel TPixel>
-	constexpr void Image<TPixel>::saveToFile(const std::filesystem::path& path, const uint8_t* swizzling) const
-	{
-		_saveToFile(path, swizzling);
-	}
-
-	template<CPixel TPixel>
-	constexpr void Image<TPixel>::saveToFile(const std::filesystem::path& path, const std::initializer_list<uint8_t>& swizzling) const
-	{
-		assert(swizzling.size() == 4);
-		_saveToFile(path, swizzling.begin());
-	}
-
-	template<CPixel TPixel>
-	constexpr void Image<TPixel>::saveToStream(const std::istream& stream, ImageFormat format)
-	{
-		uint8_t swizzling[4];
-		_djv::defaultSaveSwizzling<componentCount>(swizzling);
-		_saveToStream(stream, format, swizzling);
-	}
-
-	template<CPixel TPixel>
-	constexpr void Image<TPixel>::saveToStream(const std::istream& stream, ImageFormat format, const uint8_t* swizzling)
-	{
-		_saveToStream(stream, format, swizzling);
-	}
-
-	template<CPixel TPixel>
-	constexpr void Image<TPixel>::saveToStream(const std::istream& stream, ImageFormat format, const std::initializer_list<uint8_t>& swizzling)
-	{
-		assert(swizzling.size() == 4);
-		_saveToStream(stream, format, swizzling);
-	}
-
-	template<CPixel TPixel>
-	template<CImage TImage>
-	constexpr void Image<TPixel>::convertFrom(const TImage& image)
-	{
-		convertFrom(image, _djv::defaultConversionFunction<typename TImage::PixelType, TPixel>);
-	}
-
-	template<CPixel TPixel>
-	template<CImage TImage>
-	constexpr void Image<TPixel>::convertFrom(const TImage& image, const PixelConversionFunction<typename TImage::PixelType, TPixel>& conversionFunc)
-	{
-		if (_width != image._width || _height != image._height)
+		if (width != _width || height != _height)
 		{
 			_destroy();
-			_create(image._width, image._height);
+			_create(width, height);
 		}
+	}
+
+	template<CPixel TPixel>
+	constexpr void Image<TPixel>::createNew(uint64_t width, uint64_t height, const TPixel& value)
+	{
+		createNew(width, height);
+		std::fill_n(_pixels, _width * _height, value);
+	}
+
+	template<CPixel TPixel>
+	constexpr void Image<TPixel>::createNew(uint64_t width, uint64_t height, const TPixel* values)
+	{
+		createNew(width, height);
+		std::copy_n(_pixels, _width * _height, values);
+	}
+
+	template<CPixel TPixel>
+	constexpr void Image<TPixel>::createFromFile(const std::filesystem::path& path)
+	{
+		uint8_t swizzling[componentCount];
+		_djv::defaultLoadSwizzling<componentCount>(swizzling);
+		_createFromFile(path, swizzling);
+	}
+
+	template<CPixel TPixel>
+	constexpr void Image<TPixel>::createFromFile(const std::filesystem::path& path, const uint8_t* swizzling)
+	{
+		_createFromFile(path, swizzling);
+	}
+
+	template<CPixel TPixel>
+	constexpr void Image<TPixel>::createFromFile(const std::filesystem::path& path, const std::initializer_list<uint8_t>& swizzling)
+	{
+		assert(swizzling.size() == componentCount);
+		_createFromFile(path, swizzling.begin());
+	}
+
+	template<CPixel TPixel>
+	constexpr void Image<TPixel>::createFromStream(const std::istream& stream, ImageFormat format)
+	{
+		uint8_t swizzling[componentCount];
+		_djv::defaultLoadSwizzling<componentCount>(swizzling);
+		_createFromStream(stream, format, swizzling);
+	}
+
+	template<CPixel TPixel>
+	constexpr void Image<TPixel>::createFromStream(const std::istream& stream, ImageFormat format, const uint8_t* swizzling)
+	{
+		_createFromStream(stream, format, swizzling);
+	}
+
+	template<CPixel TPixel>
+	constexpr void Image<TPixel>::createFromStream(const std::istream& stream, ImageFormat format, const std::initializer_list<uint8_t>& swizzling)
+	{
+		assert(swizzling.size() == componentCount);
+		_createFromStream(stream, format, swizzling.begin());
+	}
+
+	template<CPixel TPixel>
+	template<CImage TImage> constexpr void Image<TPixel>::createFromConversion(const TImage& image)
+	{
+		createFromConversion(image, _djv::defaultConversionFunction<typename TImage::PixelType, TPixel>);
+	}
+
+	template<CPixel TPixel>
+	template<CImage TImage> constexpr void Image<TPixel>::createFromConversion(const TImage& image, const PixelConversionFunction<typename TImage::PixelType, TPixel>& conversionFunc)
+	{
+		createNew(image._width, image._height);
 
 		TPixel* it = _pixels;
 		const TPixel* const itEnd = it + _width * _height;
@@ -286,14 +292,15 @@ namespace djv
 	}
 
 	template<CPixel TPixel>
-	template<scp::InterpolationMethod IMethod>
-	constexpr void Image<TPixel>::resizeFrom(const Image<TPixel>& image)
+	template<scp::InterpolationMethod IMethod> constexpr void Image<TPixel>::createFromResize(const Image<TPixel>& image, uint64_t width, uint64_t height)
 	{
+		createNew(width, height);
+
 		// Simple copy
 
 		if (image._width == _width && image._height == _height)
 		{
-			*this = image;
+			_copyFrom(image);
 		}
 
 		// Downsample
@@ -410,10 +417,12 @@ namespace djv
 	}
 
 	template<CPixel TPixel>
-	constexpr void Image<TPixel>::cropFrom(const Image<TPixel>& image, uint64_t x, uint64_t y)
+	constexpr void Image<TPixel>::createFromCrop(const Image<TPixel>& image, uint64_t x, uint64_t y, uint64_t width, uint64_t height)
 	{
-		assert(x + _width <= image._width);
-		assert(y + _height <= image._height);
+		assert(x + width <= image._width);
+		assert(y + height <= image._height);
+
+		createNew(width, height);
 
 		const TPixel* itImage = image._pixels + y * image._width + x;
 		TPixel* it = _pixels;
@@ -422,6 +431,48 @@ namespace djv
 		{
 			std::copy_n(itImage, _width, it);
 		}
+	}
+
+	template<CPixel TPixel>
+	constexpr void Image<TPixel>::saveToFile(const std::filesystem::path& path) const
+	{
+		uint8_t swizzling[4];
+		_djv::defaultSaveSwizzling<componentCount>(swizzling);
+		_saveToFile(path, swizzling);
+	}
+
+	template<CPixel TPixel>
+	constexpr void Image<TPixel>::saveToFile(const std::filesystem::path& path, const uint8_t* swizzling) const
+	{
+		_saveToFile(path, swizzling);
+	}
+
+	template<CPixel TPixel>
+	constexpr void Image<TPixel>::saveToFile(const std::filesystem::path& path, const std::initializer_list<uint8_t>& swizzling) const
+	{
+		assert(swizzling.size() == 4);
+		_saveToFile(path, swizzling.begin());
+	}
+
+	template<CPixel TPixel>
+	constexpr void Image<TPixel>::saveToStream(const std::istream& stream, ImageFormat format)
+	{
+		uint8_t swizzling[4];
+		_djv::defaultSaveSwizzling<componentCount>(swizzling);
+		_saveToStream(stream, format, swizzling);
+	}
+
+	template<CPixel TPixel>
+	constexpr void Image<TPixel>::saveToStream(const std::istream& stream, ImageFormat format, const uint8_t* swizzling)
+	{
+		_saveToStream(stream, format, swizzling);
+	}
+
+	template<CPixel TPixel>
+	constexpr void Image<TPixel>::saveToStream(const std::istream& stream, ImageFormat format, const std::initializer_list<uint8_t>& swizzling)
+	{
+		assert(swizzling.size() == 4);
+		_saveToStream(stream, format, swizzling);
 	}
 
 	template<CPixel TPixel>
@@ -991,7 +1042,7 @@ namespace djv
 
 	template<CPixel TPixel>
 	template<scp::BorderBehaviour BBehaviour>
-	constexpr void Image<TPixel>::blurGaussianBilateral(float sigmaSpace, float sigmaColor)
+	constexpr void Image<TPixel>::filterGaussianBilateral(float sigmaSpace, float sigmaColor)
 	{
 		const int64_t r = sigmaSpace * 2.57;
 		const uint64_t d = 2 * r + 1;
@@ -1051,6 +1102,20 @@ namespace djv
 		itResult -= _width * _height;
 		std::copy_n(itResult, _width * _height, _pixels);
 		delete[] itResult;
+	}
+
+	template<CPixel TPixel>
+	template<scp::BorderBehaviour BBehaviour>
+	constexpr void Image<TPixel>::filterKuwahara(uint64_t radius)
+	{
+		filterKuwahara<BBehaviour>(radius, radius);
+	}
+
+	template<CPixel TPixel>
+	template<scp::BorderBehaviour BBehaviour>
+	constexpr void Image<TPixel>::filterKuwahara(uint64_t radiusX, uint64_t radiusY)
+	{
+		// TODO: implement it.
 	}
 
 	template<CPixel TPixel>
@@ -1213,9 +1278,6 @@ namespace djv
 	template<CPixel TPixel>
 	constexpr void Image<TPixel>::_create(uint64_t width, uint64_t height)
 	{
-		assert(width != 0);
-		assert(height != 0);
-
 		_width = width;
 		_height = height;
 		_pixels = new TPixel[_width * _height];
@@ -1289,7 +1351,7 @@ namespace djv
 	}
 
 	template<CPixel TPixel>
-	constexpr void Image<TPixel>::_loadFromFile(const std::filesystem::path& path, const uint8_t* swizzling)
+	constexpr void Image<TPixel>::_createFromFile(const std::filesystem::path& path, const uint8_t* swizzling)
 	{
 		if (!std::filesystem::exists(path))
 		{
@@ -1305,12 +1367,12 @@ namespace djv
 		ImageFormat imageFormat;
 		if (_extensionToImageFormat(path.extension(), imageFormat))
 		{
-			_loadFromStream(stream, imageFormat, swizzling);
+			_createFromStream(stream, imageFormat, swizzling);
 		}
 	}
 
 	template<CPixel TPixel>
-	constexpr void Image<TPixel>::_loadFromStream(std::istream& stream, ImageFormat format, const uint8_t* swizzling)
+	constexpr void Image<TPixel>::_createFromStream(std::istream& stream, ImageFormat format, const uint8_t* swizzling)
 	{
 		assert(stream);
 
@@ -1323,7 +1385,7 @@ namespace djv
 	}
 
 	template<CPixel TPixel>
-	constexpr void Image<TPixel>::_loadFromPng(std::istream& stream, const uint8_t* swizzling)
+	constexpr void Image<TPixel>::_createFromPng(std::istream& stream, const uint8_t* swizzling)
 	{
 		stream.seekg(0, std::ios_base::end);
 		uint64_t length = stream.tellg();
@@ -1334,11 +1396,7 @@ namespace djv
 		int w, h, channels;
 		uint8_t* img = stbi_load_from_memory(buffer, length, &w, &h, &channels, 4);
 
-		if (_width != w || _height != h)
-		{
-			_destroy();
-			_create(w, h);
-		}
+		createNew(w, h);
 
 		const uint64_t n = _width * _height;
 		for (uint64_t i = 0; i < n; ++i)
@@ -1362,7 +1420,7 @@ namespace djv
 
 	template<CPixel TPixel>
 	template<ImageFormat Format>
-	constexpr void Image<TPixel>::_loadFromPnm(std::istream& stream, const uint8_t* swizzling)
+	constexpr void Image<TPixel>::_createFromPnm(std::istream& stream, const uint8_t* swizzling)
 	{
 		dsk::fmt::PnmIStream pnmIStream;
 		pnmIStream.setSource(stream);
@@ -1401,11 +1459,7 @@ namespace djv
 			}
 		}
 
-		if (_width != pnmHeader.width || _height != pnmHeader.height)
-		{
-			_destroy();
-			_create(pnmHeader.width, pnmHeader.height);
-		}
+		createNew(pnmHeader.width, pnmHeader.height);
 
 		const float ratio = 2.f / pnmHeader.maxSampleVal.value();
 		const uint64_t n = _width * _height;

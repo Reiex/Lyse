@@ -10,18 +10,28 @@ int main()
 	context->setIsDepthTestEnabled(true);
 	context->setClearColor({ 0.2f, 0.3f, 0.3f, 1.f });
 
-	spl::ShaderProgram shader("P:/SplayLibrary/examples/basicPhong/resources/shaders/main.vert", "P:/SplayLibrary/examples/basicPhong/resources/shaders/main.frag");
-	spl::ShaderProgram::bind(shader);
-
 	lys::CameraPerspective camera(1000, 600, 0.1f, 100.f, 1.f);
 	camera.setTranslation({ 0.f, 0.f, 2.f });
 
 	lys::Mesh<> mesh("P:/SplayLibrary/examples/basicPhong/resources/meshes/suzanne.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
+	mesh.scale(0.5);
 
-	lys::Transformable meshTransform;
-	meshTransform.scale(0.5);
+	lys::Scene scene(1000, 600);
+	scene.addDrawable(&mesh);
+	scene.setCamera(&camera);
 
-	scp::f32vec3 lightDir = -scp::normalize(scp::f32vec3{ 1.0, 1.0, 1.0 });
+
+	lys::DefaultVertex screenVertices[] = {
+		{ {-1.f,  1.f, 0.f}, {0.f, 0.f, 1.f}, {0.f, 1.f} },
+		{ {-1.f, -1.f, 0.f}, {0.f, 0.f, 1.f}, {0.f, 0.f} },
+		{ { 1.f, -1.f, 0.f}, {0.f, 0.f, 1.f}, {1.f, 0.f} },
+		{ { 1.f,  1.f, 0.f}, {0.f, 0.f, 1.f}, {1.f, 1.f} }
+	};
+	uint32_t screenIndices[] = { 0, 1, 3, 1, 2, 3 };
+	lys::Mesh<> screenMesh(screenVertices, 4, spl::BufferUsage::StaticDraw, screenIndices, 6, spl::BufferUsage::StaticDraw);
+
+	spl::ShaderProgram screenShader("examples/screen.vert", "examples/screen.frag");
+
 
 	while (!window.shouldClose())
 	{
@@ -57,14 +67,12 @@ int main()
 
 		camera.lookAt({ 0.f, 0.f, 0.f });
 
-		shader.setUniform("cameraPos", camera.getTranslation());
-		shader.setUniform("lightDir", lightDir);
+		scene.render();
 
-		shader.setUniform("projection", camera.getProjectionMatrix());
-		shader.setUniform("view", camera.getViewMatrix());
-		shader.setUniform("model", meshTransform.getTransformMatrix());
-
-		mesh.draw();
+		spl::Framebuffer::bind(window.getFramebuffer(), spl::FramebufferTarget::DrawFramebuffer);
+		spl::ShaderProgram::bind(screenShader);
+		screenShader.setUniform("scene", 0, *scene.getTexture());
+		screenMesh.draw();
 
 		window.display();
 		spl::Framebuffer::clear();

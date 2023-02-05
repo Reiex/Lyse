@@ -46,6 +46,8 @@ namespace djv
 			constexpr Image(const std::istream& stream, ImageFormat format, const std::initializer_list<uint8_t>& swizzling);
 			template<CImage TImage> constexpr Image(const TImage& image);
 			template<CImage TImage> constexpr Image(const TImage& image, const PixelConversionFunction<typename TImage::PixelType, TPixel>& conversionFunc);
+			constexpr Image(const Image<TPixel>& image, uint64_t width, uint64_t height, scp::InterpolationMethod method);
+			constexpr Image(const Image<TPixel>& image, uint64_t x, uint64_t y, uint64_t width, uint64_t height);
 			constexpr Image(const Image<TPixel>& image);
 			constexpr Image(Image<TPixel>&& image);
 
@@ -54,14 +56,23 @@ namespace djv
 			constexpr Image<TPixel>& operator=(const Image<TPixel>& image);
 			constexpr Image<TPixel>& operator=(Image<TPixel>&& image);
 
-			// Load from / Save to format
+			// Image creation
 
-			constexpr void loadFromFile(const std::filesystem::path& path);
-			constexpr void loadFromFile(const std::filesystem::path& path, const uint8_t* swizzling); // {0, 3, -1} means first component is red, second is alpha and third is set to 0
-			constexpr void loadFromFile(const std::filesystem::path& path, const std::initializer_list<uint8_t>& swizzling);
-			constexpr void loadFromStream(const std::istream& stream, ImageFormat format);
-			constexpr void loadFromStream(const std::istream& stream, ImageFormat format, const uint8_t* swizzling);
-			constexpr void loadFromStream(const std::istream& stream, ImageFormat format, const std::initializer_list<uint8_t>& swizzling);
+			constexpr void createNew(uint64_t width, uint64_t height);
+			constexpr void createNew(uint64_t width, uint64_t height, const TPixel& value);
+			constexpr void createNew(uint64_t width, uint64_t height, const TPixel* values);
+			constexpr void createFromFile(const std::filesystem::path& path);
+			constexpr void createFromFile(const std::filesystem::path& path, const uint8_t* swizzling);
+			constexpr void createFromFile(const std::filesystem::path& path, const std::initializer_list<uint8_t>& swizzling);
+			constexpr void createFromStream(const std::istream& stream, ImageFormat format);
+			constexpr void createFromStream(const std::istream& stream, ImageFormat format, const uint8_t* swizzling);
+			constexpr void createFromStream(const std::istream& stream, ImageFormat format, const std::initializer_list<uint8_t>& swizzling);
+			template<CImage TImage> constexpr void createFromConversion(const TImage& image);
+			template<CImage TImage> constexpr void createFromConversion(const TImage& image, const PixelConversionFunction<typename TImage::PixelType, TPixel>& conversionFunc);
+			template<scp::InterpolationMethod IMethod> constexpr void createFromResize(const Image<TPixel>& image, uint64_t width, uint64_t height);
+			constexpr void createFromCrop(const Image<TPixel>& image, uint64_t x, uint64_t y, uint64_t width, uint64_t height);
+
+			// Image save to format
 
 			constexpr void saveToFile(const std::filesystem::path& path) const;
 			constexpr void saveToFile(const std::filesystem::path& path, const uint8_t* swizzling) const;	// {0, 3, -1, -1} means red is first component, green is fourth component, blue is set to 0 and alpha is 255
@@ -69,14 +80,6 @@ namespace djv
 			constexpr void saveToStream(const std::istream& stream, ImageFormat format);
 			constexpr void saveToStream(const std::istream& stream, ImageFormat format, const uint8_t* swizzling);
 			constexpr void saveToStream(const std::istream& stream, ImageFormat format, const std::initializer_list<uint8_t>& swizzling);
-
-			// Create from another image
-
-			template<CImage TImage> constexpr void convertFrom(const TImage& image);
-			template<CImage TImage> constexpr void convertFrom(const TImage& image, const PixelConversionFunction<typename TImage::PixelType, TPixel>& conversionFunc);
-
-			template<scp::InterpolationMethod IMethod> constexpr void resizeFrom(const Image<TPixel>& image);
-			constexpr void cropFrom(const Image<TPixel>& image, uint64_t x, uint64_t y);
 
 			// Simple image manipulation
 
@@ -98,9 +101,13 @@ namespace djv
 			template<scp::BorderBehaviour BBehaviour> constexpr void blurMedian(uint64_t radius);
 			template<scp::BorderBehaviour BBehaviour> constexpr void blurMedian(uint64_t radiusX, uint64_t radiusY);
 
-			template<scp::BorderBehaviour BBehaviour> constexpr void blurGaussianBilateral(float sigmaSpace, float sigmaColor);
-
 			// TODO: other blurs - defocus aberration, directional blur, etc...
+
+			// Denoising filters
+
+			template<scp::BorderBehaviour BBehaviour> constexpr void filterGaussianBilateral(float sigmaSpace, float sigmaColor);
+			template<scp::BorderBehaviour BBehaviour> constexpr void filterKuwahara(uint64_t radius);
+			template<scp::BorderBehaviour BBehaviour> constexpr void filterKuwahara(uint64_t radiusX, uint64_t radiusY);
 
 			// Accessors
 
@@ -140,11 +147,11 @@ namespace djv
 			constexpr void _moveFrom(Image<TPixel>&& image);
 			constexpr void _destroy();
 
-			constexpr void _loadFromFile(const std::filesystem::path& path, const uint8_t* swizzling);
-			constexpr void _loadFromStream(std::istream& stream, ImageFormat format, const uint8_t* swizzling);
+			constexpr void _createFromFile(const std::filesystem::path& path, const uint8_t* swizzling);
+			constexpr void _createFromStream(std::istream& stream, ImageFormat format, const uint8_t* swizzling);
 			
-			constexpr void _loadFromPng(std::istream& stream, const uint8_t* swizzling);
-			template<ImageFormat Format> constexpr void _loadFromPnm(std::istream& stream, const uint8_t* swizzling);
+			constexpr void _createFromPng(std::istream& stream, const uint8_t* swizzling);
+			template<ImageFormat Format> constexpr void _createFromPnm(std::istream& stream, const uint8_t* swizzling);
 
 			constexpr void _saveToFile(const std::filesystem::path& path, const uint8_t* swizzling) const;
 			constexpr void _saveToStream(std::ostream& stream, ImageFormat format, const uint8_t* swizzling) const;
@@ -153,11 +160,11 @@ namespace djv
 			template<ImageFormat Format> constexpr void _saveToPnm(std::ostream& stream, const uint8_t* swizzling) const;
 
 			static constexpr void (Image<TPixel>::* _imageFormatToLoadFunc[])(std::istream&, const uint8_t*) = {
-				&Image<TPixel>::_loadFromPng,
-				&Image<TPixel>::_loadFromPnm<ImageFormat::Pbm>,
-				&Image<TPixel>::_loadFromPnm<ImageFormat::Pgm>,
-				&Image<TPixel>::_loadFromPnm<ImageFormat::Ppm>,
-				&Image<TPixel>::_loadFromPnm<ImageFormat::Pnm>,
+				&Image<TPixel>::_createFromPng,
+				&Image<TPixel>::_createFromPnm<ImageFormat::Pbm>,
+				&Image<TPixel>::_createFromPnm<ImageFormat::Pgm>,
+				&Image<TPixel>::_createFromPnm<ImageFormat::Ppm>,
+				&Image<TPixel>::_createFromPnm<ImageFormat::Pnm>,
 			};
 			static constexpr void (Image<TPixel>::* _imageFormatToSaveFunc[])(std::ostream&, const uint8_t*) const = {
 				&Image<TPixel>::_saveToPng,

@@ -305,23 +305,23 @@ SCP_VEC_REAL_FUNC(vecName, vecSize, eltType)
 #define SCP_u64vec_SPECIAL_FUNC(vecName, vecSize, eltType)
 #define SCP_bvec_SPECIAL_FUNC(vecName, vecSize, eltType)
 
-#define SCP_VEC_REAL_FUNC(vecName, vecSize, eltType)																													\
-constexpr vecName##vecSize radians(const vecName##vecSize& u) { return u * std::numbers::pi / 180.0; }																	\
-constexpr vecName##vecSize degrees(const vecName##vecSize& u) { return u * 180.0 / std::numbers::pi; }																	\
-inline vecName##vecSize inversesqrt(const vecName##vecSize& u) { return 1.0 / sqrt(u); }																				\
-inline vecName##vecSize fract(const vecName##vecSize& u) { return u - floor(u); }																						\
-inline vecName##vecSize mod(const vecName##vecSize& u, const vecName##vecSize& v) { return u - v * floor(u / v); }														\
-inline vecName##vecSize mod(const vecName##vecSize& u, eltType x) { return u - x * floor(u / x); }																		\
-inline eltType length(const vecName##vecSize##& u) { return std::sqrt(dot(u, u)); }																						\
-inline eltType distance(const vecName##vecSize##& u, const vecName##vecSize##& v) { return length(v - u); }																\
-inline vecName##vecSize normalize(const vecName##vecSize##& u) { return u / length(u); }																				\
-constexpr vecName##vecSize faceforward(const vecName##vecSize##& n, const vecName##vecSize##& i, const vecName##vecSize##& nRef) { return dot(nRef, i) < 0 ? n : -n; }	\
-constexpr vecName##vecSize reflect(const vecName##vecSize##& i, const vecName##vecSize##& n) { return i - 2 * dot(n, i) * n; }											\
-inline vecName##vecSize refract(const vecName##vecSize##& i, const vecName##vecSize##& n, eltType eta)																	\
-{																																										\
-	const eltType d = dot(n, i);																																		\
-	const eltType k = 1 - eta * eta * (1 - d * d);																														\
-	return k < 0 ? 0 : eta * i - (eta * d + std::sqrt(k)) * n;																											\
+#define SCP_VEC_REAL_FUNC(vecName, vecSize, eltType)																															\
+constexpr vecName##vecSize radians(const vecName##vecSize& u) { return u * std::numbers::pi / eltType(180); }																	\
+constexpr vecName##vecSize degrees(const vecName##vecSize& u) { return u * eltType(180) / std::numbers::pi; }																	\
+inline vecName##vecSize inversesqrt(const vecName##vecSize& u) { return eltType(1) / sqrt(u); }																					\
+inline vecName##vecSize fract(const vecName##vecSize& u) { return u - floor(u); }																								\
+inline vecName##vecSize mod(const vecName##vecSize& u, const vecName##vecSize& v) { return u - v * floor(u / v); }																\
+inline vecName##vecSize mod(const vecName##vecSize& u, eltType x) { return u - x * floor(u / x); }																				\
+inline eltType length(const vecName##vecSize##& u) { return std::sqrt(dot(u, u)); }																								\
+inline eltType distance(const vecName##vecSize##& u, const vecName##vecSize##& v) { return length(v - u); }																		\
+inline vecName##vecSize normalize(const vecName##vecSize##& u) { return u / length(u); }																						\
+constexpr vecName##vecSize faceforward(const vecName##vecSize##& n, const vecName##vecSize##& i, const vecName##vecSize##& nRef) { return dot(nRef, i) < eltType(0) ? n : -n; }	\
+constexpr vecName##vecSize reflect(const vecName##vecSize##& i, const vecName##vecSize##& n) { return i - eltType(2) * dot(n, i) * n; }											\
+inline vecName##vecSize refract(const vecName##vecSize##& i, const vecName##vecSize##& n, eltType eta)																			\
+{																																												\
+	const eltType d = dot(n, i);																																				\
+	const eltType k = eltType(1) - eta * eta * (eltType(1) - d * d);																											\
+	return k < eltType(0) ? eltType(0) : eta * i - (eta * d + std::sqrt(k)) * n;																								\
 }
 
 /* abs, sign, roundEven, modf, min, max, 145+ */

@@ -263,6 +263,8 @@ namespace scp
 		while (*(--it) == 0);
 
 		_values.erase(it + 1, _values.end());
+
+		return *this;
 	}
 
 	template<typename TBase, typename TBuffer>

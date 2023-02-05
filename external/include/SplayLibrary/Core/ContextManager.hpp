@@ -62,23 +62,32 @@ namespace spl
 			Context& operator=(const Context& context) = delete;
 			Context& operator=(Context&& context) = delete;
 
+
 			void setClearColor(const scp::f32vec4& clearColor);
 			void setClearDepth(double clearDepth);
 			void setClearStencil(int32_t clearStencil);
 			void setViewport(const scp::i32vec2& offset, const scp::u32vec2& size);
 			void setIsDepthTestEnabled(bool isEnabled);
 
+
 			bool pollDebugMessage(DebugMessage*& message);
+
 
 			Window* getWindow();
 			bool getIsDebugContext() const;
-			Framebuffer* getCurrentFramebuffer();
+
+			const Buffer* getBufferBinding(BufferTarget target, uint32_t index = -1) const;
+			const RawTexture* getTextureBinding(TextureTarget target, uint32_t textureUnit) const;
+			const Framebuffer* getFramebufferBinding(FramebufferTarget target) const;
+			const ShaderProgram* getShaderBinding() const;
+
 			const scp::f32vec4& getClearColor() const;
 			double getClearDepth() const;
 			int32_t getClearStencil() const;
 			const scp::i32vec2& getViewportOffset() const;
 			const scp::u32vec2& getViewportSize() const;
 			bool getIsDepthTestEnabled() const;
+
 
 			~Context();
 
@@ -93,9 +102,11 @@ namespace spl
 			bool _debugContext;
 			bool _hasBeenActivated;
 
-			// TODO ? (costly, maybe in debug) : Check buffers binding
-			Framebuffer* _currentFramebuffer;
-			// TODO ? ShaderProgram* _currentShader;
+			std::array<const Buffer*, 11> _bufferBindings;
+			std::array<std::vector<const Buffer*>, 4> _indexedBufferBindings;
+			std::vector<std::array<const RawTexture*, 11>> _textureBindings;
+			std::array<const Framebuffer*, 2> _framebufferBindings;
+			const ShaderProgram* _shaderBinding;
 
 			scp::f32vec4 _clearColor;
 			double _clearDepth;
@@ -110,6 +121,10 @@ namespace spl
 		friend class ContextManager;
 		friend class Window;
 		friend void stackDebugMessage(DebugMessage* message, Context* context);
+		friend class Buffer;
+		friend class RawTexture;
+		friend class Framebuffer;
+		friend class ShaderProgram;
 	};
 
 	class ContextManager

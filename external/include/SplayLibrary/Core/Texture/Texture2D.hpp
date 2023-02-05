@@ -47,7 +47,7 @@ namespace spl
 
 			const scp::u32vec2& getSize() const;
 
-			~Texture2D();
+			virtual ~Texture2D() override final;
 
 		private:
 

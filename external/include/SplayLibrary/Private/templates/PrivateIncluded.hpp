@@ -40,6 +40,46 @@ namespace spl
 			}
 		}
 
+		constexpr uint32_t bufferTargetContextIndex(BufferTarget target)
+		{
+			switch (target)
+			{
+				case BufferTarget::Array:
+					return 0;
+				case BufferTarget::CopyRead:
+					return 1;
+				case BufferTarget::CopyWrite:
+					return 2;
+				case BufferTarget::DispatchIndirect:
+					return 3;
+				case BufferTarget::DrawIndirect:
+					return 4;
+				case BufferTarget::ElementArray:
+					return 5;
+				case BufferTarget::Parameter:
+					return 6;
+				case BufferTarget::PixelPack:
+					return 7;
+				case BufferTarget::PixelUnpack:
+					return 8;
+				case BufferTarget::Query:
+					return 9;
+				case BufferTarget::Texture:
+					return 10;
+				case BufferTarget::AtomicCounter:
+					return 0;
+				case BufferTarget::ShaderStorage:
+					return 1;
+				case BufferTarget::TransformFeedback:
+					return 2;
+				case BufferTarget::Uniform:
+					return 3;
+				default:
+					assert(false);
+					return -1;
+			}
+		}
+
 
 		template<CGlslScalarType TScalar>
 		consteval GlslType glslScalarTypeToGlslType()
@@ -426,40 +466,6 @@ namespace spl
 				default:
 					assert(false);
 					return 0;
-			}
-		}
-
-
-		constexpr BufferUsage drawableStorageToBufferUsage(DrawableStorage storage)
-		{
-			switch (storage)
-			{
-				case DrawableStorage::Immutable:
-					return BufferUsage::Undefined;
-				case DrawableStorage::Static:
-					return BufferUsage::StaticDraw;
-				case DrawableStorage::Dynamic:
-					return BufferUsage::DynamicDraw;
-				case DrawableStorage::Stream:
-					return BufferUsage::StreamDraw;
-				default:
-					assert(false);
-					return BufferUsage::Undefined;
-			}
-		}
-
-		constexpr BufferStorageFlags::Flags drawableStorageToBufferStorageFlags(DrawableStorage storage)
-		{
-			switch (storage)
-			{
-				case DrawableStorage::Immutable:
-				case DrawableStorage::Static:
-				case DrawableStorage::Dynamic:
-				case DrawableStorage::Stream:
-					return BufferStorageFlags::None;
-				default:
-					assert(false);
-					return BufferStorageFlags::None;
 			}
 		}
 	}

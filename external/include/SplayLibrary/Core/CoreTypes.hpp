@@ -98,10 +98,6 @@ namespace spl
 	enum class IndexType;
 	class VertexArray;
 
-	struct VertexAttribute;
-	enum class DrawableStorage;
-	class Drawable;
-
 
 	enum class FramebufferTarget;
 	enum class FramebufferAttachment;

@@ -14,6 +14,7 @@ namespace spl
 	namespace _spl
 	{
 		constexpr bool isIndexedBufferTarget(BufferTarget target);
+		constexpr uint32_t bufferTargetContextIndex(BufferTarget target);
 
 		template<CGlslScalarType TScalar> consteval GlslType glslScalarTypeToGlslType();
 		template<CGlslVecType TVec> consteval GlslType glslVecTypeToGlslType();
@@ -23,9 +24,6 @@ namespace spl
 		constexpr TextureFormat textureInternalFormatToTextureFormat(TextureInternalFormat internalFormat);
 		constexpr TextureDataType textureInternalFormatToTextureDataType(TextureInternalFormat internalFormat);
 		constexpr uint8_t textureInternalFormatToComponentCount(TextureInternalFormat internalFormat);
-
-		constexpr BufferUsage drawableStorageToBufferUsage(DrawableStorage storage);
-		constexpr BufferStorageFlags::Flags drawableStorageToBufferStorageFlags(DrawableStorage storage);
 	}
 }
 
