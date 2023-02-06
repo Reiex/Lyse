@@ -29,8 +29,8 @@ namespace spl
 			
 			using Framebuffer::createNewTextureAttachment;
 			using Framebuffer::getTextureAttachment;
-			using Framebuffer::createNewRenderBufferAttachment;
-			using Framebuffer::getRenderBufferAttachment;
+			using Framebuffer::createNewRenderbufferAttachment;
+			using Framebuffer::getRenderbufferAttachment;
 			using Framebuffer::removeAttachment;
 			
 			~DefaultFramebuffer() = default;

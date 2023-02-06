@@ -127,6 +127,7 @@ namespace lys
 	template<CVertex TVertex>
 	void Mesh<TVertex>::draw(const spl::ShaderProgram& program, const scp::f32mat4x4& transform) const
 	{
+		// TODO: assert on TVertex !
 		program.setUniform("model", transform * getTransformMatrix());
 		draw();
 	}

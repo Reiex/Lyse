@@ -4,11 +4,11 @@ int main()
 {
 	lys::Vertex<int, float, scp::f32vec4, bool> x;
 
-	spl::Window window({ 1000, 600 }, "SPL Example", true);
+	spl::Window window(1000, 600, "SPL Example", true);
 	spl::Context* context = window.getContext();
 	spl::ContextManager::setCurrentContext(context);
 	context->setIsDepthTestEnabled(true);
-	context->setClearColor({ 0.2f, 0.3f, 0.3f, 1.f });
+	context->setClearColor(0.2f, 0.3f, 0.3f, 1.f);
 
 	lys::CameraPerspective camera(1000, 600, 0.1f, 100.f, 1.f);
 	camera.setTranslation({ 0.f, 0.f, 2.f });
@@ -31,6 +31,7 @@ int main()
 	lys::Mesh<> screenMesh(screenVertices, 4, spl::BufferUsage::StaticDraw, screenIndices, 6, spl::BufferUsage::StaticDraw);
 
 	spl::ShaderProgram screenShader("examples/screen.vert", "examples/screen.frag");
+	spl::ShaderProgram::bind(screenShader);
 
 
 	while (!window.shouldClose())
@@ -43,8 +44,9 @@ int main()
 				case spl::EventType::ResizeEvent:
 				{
 					spl::ResizeEvent event = rawEvent->specialize<spl::EventType::ResizeEvent>();
-					context->setViewport({ 0, 0 }, event.size);
+					context->setViewport(0, 0, event.size.x, event.size.y);
 					camera.setAspect(event.size.x, event.size.y);
+					scene.resize(event.size.x, event.size.y);
 					break;
 				}
 			}
@@ -53,9 +55,7 @@ int main()
 		spl::DebugMessage* message = nullptr;
 		while (context->pollDebugMessage(message))
 		{
-			std::cout << "#======== START OF DEBUG MESSAGE ==========================#" << std::endl;
-			std::cout << message->descr << std::endl;
-			std::cout << "#======== END OF DEBUG MESSAGE ============================#" << std::endl;
+			std::cout << "#\n" << message->descr << std::endl;
 		}
 
 		if (window.isKeyPressed(spl::KeyboardKey::W)) camera.move(camera.getUpVector() * 0.01f);
@@ -69,9 +69,7 @@ int main()
 
 		scene.render();
 
-		spl::Framebuffer::bind(window.getFramebuffer(), spl::FramebufferTarget::DrawFramebuffer);
-		spl::ShaderProgram::bind(screenShader);
-		screenShader.setUniform("scene", 0, *scene.getTexture());
+		screenShader.setUniform("scene", 0, scene.getTexture());
 		screenMesh.draw();
 
 		window.display();

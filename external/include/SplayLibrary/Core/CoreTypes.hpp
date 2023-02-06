@@ -77,7 +77,7 @@ namespace spl
 	enum class TextureDataType;
 	enum class TextureInternalFormat : uint64_t;
 	class RawTexture;
-	class RenderBuffer;
+	class Renderbuffer;
 
 	class TextureBase;
 	class Texture2D;

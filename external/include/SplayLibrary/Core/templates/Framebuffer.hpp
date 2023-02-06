@@ -18,16 +18,16 @@ namespace spl
 		assert(_framebuffer != 0);
 
 		auto textureIt = _textureAttachments.find(attachment);
-		auto renderBufferIt = _renderBufferAttachments.find(attachment);
+		auto renderbufferIt = _renderbufferAttachments.find(attachment);
 
 		if (textureIt != _textureAttachments.end())
 		{
 			delete textureIt->second;
 		}
-		else if (renderBufferIt != _renderBufferAttachments.end())
+		else if (renderbufferIt != _renderbufferAttachments.end())
 		{
-			delete renderBufferIt->second;
-			_renderBufferAttachments.erase(renderBufferIt);
+			delete renderbufferIt->second;
+			_renderbufferAttachments.erase(renderbufferIt);
 		}
 
 		_textureAttachments[attachment] = new TextureType(args...);

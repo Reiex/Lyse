@@ -63,10 +63,10 @@ namespace spl
 			Context& operator=(Context&& context) = delete;
 
 
-			void setClearColor(const scp::f32vec4& clearColor);
+			void setClearColor(float r, float g, float b, float a);
 			void setClearDepth(double clearDepth);
 			void setClearStencil(int32_t clearStencil);
-			void setViewport(const scp::i32vec2& offset, const scp::u32vec2& size);
+			void setViewport(int32_t xOffset, int32_t yOffset, uint32_t width, uint32_t height);
 			void setIsDepthTestEnabled(bool isEnabled);
 
 

@@ -23,6 +23,8 @@ namespace lys
 			Scene& operator=(const Scene& scene) = delete;
 			Scene& operator=(Scene&& scene) = delete;
 	
+			
+			void resize(uint32_t width, uint32_t height);
 
 			void setCamera(const CameraBase* camera);
 
@@ -31,7 +33,7 @@ namespace lys
 	
 
 			void render() const;
-			const spl::Texture2D* getTexture() const;
+			const spl::Texture2D& getTexture() const;
 
 
 			bool isValid() const;

@@ -11,43 +11,20 @@
 
 namespace spl
 {
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// \ingroup Core
-	/// \defgroup Events
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// \relates Event
-	/// \enum EventType
-	/// \brief Enum used for event specialization. Represents each type of event.
-	/// 
-	/// For more information about each type of event, see the corresponding structs.
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	enum class EventType
 	{
-		Unknown,				///< Used for invalid events and error checking.
-		KeyboardEvent,			///< General purpose keyboard related events.
-		TextEvent,				///< Keyboard event specialized in retrieving the text generated.
-		MouseMoveEvent,			///< Event generated when the mouse is moved.
-		MouseEnterWindowEvent,	///< Event generated when the mouse enters the window.
-		MouseLeaveWindowEvent,	///< Event generated when the mouse leaves the window.
-		MouseButtonEvent,		///< General purpose mouse button related events.
-		ScrollEvent,			///< Event generated when the user "scrolls" (using the wheel of the mouse for instance).
-		ResizeEvent				///< Event generated when the user resizes the window.
+		Unknown,
+		KeyboardEvent,
+		TextEvent,
+		MouseMoveEvent,
+		MouseEnterWindowEvent,
+		MouseLeaveWindowEvent,
+		MouseButtonEvent,
+		ScrollEvent,
+		ResizeEvent
 	};
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// \ingroup Events
-	/// \struct Event
-	/// \brief Struct representing a window event.
-	/// 
-	/// To learn more about how event are generated, see class Window.
-	/// 
-	/// Events, in SplayLibrary, are simply structs inheriting from `Event`. When polling an event, you retrieve the
-	/// memory address of the event. The only thing you know about this event is its type: `Event::type`.
-	/// With a switch statement on it, you can then apply the good cast on the event to retrieve the corresponding
-	/// structure.
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	struct Event
 	{
 		template<EventType T> struct EventTypeEncapsulator { using Type = Event; };
@@ -60,9 +37,6 @@ namespace spl
 		template<> struct EventTypeEncapsulator<EventType::ScrollEvent> { using Type = ScrollEvent; };
 		template<> struct EventTypeEncapsulator<EventType::ResizeEvent> { using Type = ResizeEvent; };
 
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		/// \brief Returns the event casted to the struct corresponding to the `EventType` given in template parameter.
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		template<EventType T> const typename EventTypeEncapsulator<T>::Type& specialize()
 		{
 			assert(T == type);
@@ -72,11 +46,7 @@ namespace spl
 		EventType type = EventType::Unknown;	///< Type of event.
 	};
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// \relates KeyboardEvent
-	/// \enum KeyboardKey
-	/// \brief Enum used to represent each key of the keyboard.
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	enum class KeyboardKey
 	{
 		Unknown,
@@ -202,11 +172,7 @@ namespace spl
 		Menu
 	};
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// \relates KeyboardEvent MouseButtonEvent
-	/// \enum ButtonAction
-	/// \brief Enum used to represent each possible action done with a button.
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	enum class ButtonAction
 	{
 		Unknown,
@@ -215,13 +181,9 @@ namespace spl
 		Released
 	};
 
+
 	namespace KeyboardModifier
 	{
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		/// \relates KeyboardEvent MouseButtonEvent
-		/// \enum ModifierFlags
-		/// \brief Enum used to represent each possible modifier applicable to an action.
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		enum ModifierFlags
 		{
 			None		= 0,
@@ -234,68 +196,34 @@ namespace spl
 		};
 	}
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// \ingroup Events
-	/// \struct KeyboardEvent
-	/// \brief Struct representing a general keyboard event.
-	/// 
-	/// *WARNING* : The key here corresponds to the key of the standard US keyboard layout. If your intent is to
-	/// retrieve a text input, do not use this event ! Instead, use `TextEvent`.
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	struct KeyboardEvent : public Event
 	{
-		int scancode;								///< Corresponding scancode (hardware specific).
-		KeyboardKey key;							///< Key involved (on the standard US keyboard layout).
-		ButtonAction action;						///< Action associated.
-		KeyboardModifier::ModifierFlags modifiers;	///< Contextual modifiers.
+		int scancode;
+		KeyboardKey key;
+		ButtonAction action;
+		KeyboardModifier::ModifierFlags modifiers;
 	};
 
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// \ingroup Events
-	/// \struct TextEvent
-	/// \brief Struct representing text input event.
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct TextEvent : public Event
 	{
-		char32_t unicode;	///< UTF-32 character entered.
+		char32_t unicode;
 	};
 
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// \ingroup Events
-	/// \struct MouseMoveEvent
-	/// \brief Event sent when the use moves the mouse.
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct MouseMoveEvent : public Event
 	{
-		scp::f64vec2 pos;	///< New position of the mouse.
+		scp::f64vec2 pos;
 	};
 
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// \ingroup Events
-	/// \struct MouseEnterWindowEvent
-	/// \brief Event sent when the mouse enters the window.
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct MouseEnterWindowEvent : public Event {};
 
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// \ingroup Events
-	/// \struct MouseLeaveWindowEvent
-	/// \brief Event sent when the mouse leaves the window.
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct MouseLeaveWindowEvent : public Event {};
 
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// \relates MouseButtonEvent
-	/// \enum MouseButton
-	/// \brief Enum used to represent each button of a mouse.
-	/// 
-	/// For mouses that have more than 11 buttons: ¯\_(o_o)_/¯
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	enum class MouseButton
 	{
 		Unknown,
@@ -309,37 +237,23 @@ namespace spl
 		Button8
 	};
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// \ingroup Events
-	/// \struct MouseButtonEvent
-	/// \brief Struct representing a general mouse button related event.
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	struct MouseButtonEvent : public Event
 	{
-		MouseButton button;							///< Button involved.
-		ButtonAction action;						///< Action associated.
-		KeyboardModifier::ModifierFlags modifiers;	///< Contextual modifiers.
+		MouseButton button;
+		ButtonAction action;
+		KeyboardModifier::ModifierFlags modifiers;
 	};
 
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// \ingroup Events
-	/// \struct ScrollEvent
-	/// \brief Event sent when the user scrolls.
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct ScrollEvent : public Event
 	{
-		scp::f64vec2 offset;	///< Scroll delta.
+		scp::f64vec2 offset;
 	};
 
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// \ingroup Events
-	/// \struct ResizeEvent
-	/// \brief Event sent when the user resizes the window.
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct ResizeEvent : public Event
 	{
-		scp::u32vec2 size;	///< New window size.
+		scp::u32vec2 size;
 	};
 }

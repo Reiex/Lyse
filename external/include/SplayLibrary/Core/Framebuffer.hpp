@@ -69,8 +69,8 @@ namespace spl
 
 			template<typename TextureType, typename... Args> void createNewTextureAttachment(FramebufferAttachment attachment, Args&&... args);
 			virtual const TextureBase* getTextureAttachment(FramebufferAttachment attachment) const;
-			virtual void createNewRenderBufferAttachment(FramebufferAttachment attachment, TextureInternalFormat internalFormat, const scp::u32vec2& size, uint32_t samples = 0);
-			const RenderBuffer* getRenderBufferAttachment(FramebufferAttachment attachment) const;
+			virtual void createNewRenderbufferAttachment(FramebufferAttachment attachment, TextureInternalFormat internalFormat, uint32_t width, uint32_t height, uint32_t samples = 0);
+			const Renderbuffer* getRenderbufferAttachment(FramebufferAttachment attachment) const;
 			void removeAttachment(FramebufferAttachment attachment);
 
 			uint32_t getHandle() const;
@@ -90,6 +90,6 @@ namespace spl
 
 			uint32_t _framebuffer;
 			std::unordered_map<FramebufferAttachment, TextureBase*> _textureAttachments;
-			std::unordered_map<FramebufferAttachment, RenderBuffer*> _renderBufferAttachments;
+			std::unordered_map<FramebufferAttachment, Renderbuffer*> _renderbufferAttachments;
 	};
 }

@@ -16,7 +16,13 @@ namespace lys
 		_drawables()
 	{
 		_framebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, scp::u32vec2{ width, height });
-		_framebuffer.createNewRenderBufferAttachment(spl::FramebufferAttachment::DepthStencilAttachment, spl::TextureInternalFormat::Depth_nu24_Stencil_u8, { width, height });
+		_framebuffer.createNewRenderbufferAttachment(spl::FramebufferAttachment::DepthStencilAttachment, spl::TextureInternalFormat::Depth_nu24_Stencil_u8, width, height);
+	}
+
+	void Scene::resize(uint32_t width, uint32_t height)
+	{
+		_framebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, scp::u32vec2{ width, height });
+		_framebuffer.createNewRenderbufferAttachment(spl::FramebufferAttachment::DepthStencilAttachment, spl::TextureInternalFormat::Depth_nu24_Stencil_u8, width, height);
 	}
 
 	void Scene::setCamera(const CameraBase* camera)
@@ -36,8 +42,9 @@ namespace lys
 
 	void Scene::render() const
 	{
-		// TODO: Save the current context and restore it at the end of the func
-		// TODO: Do the same in SplayLibrary (search for bindings...)
+		spl::Context* context = spl::ContextManager::getCurrentContext();
+		const spl::Framebuffer* contextFramebuffer = context->getFramebufferBinding(spl::FramebufferTarget::DrawFramebuffer);
+		const spl::ShaderProgram* contextShader = context->getShaderBinding();
 
 		spl::Framebuffer::bind(_framebuffer, spl::FramebufferTarget::DrawFramebuffer);
 		spl::Framebuffer::clear();
@@ -51,11 +58,14 @@ namespace lys
 		{
 			drawable->draw(_shader, 1.f);
 		}
+
+		spl::Framebuffer::bind(*contextFramebuffer, spl::FramebufferTarget::DrawFramebuffer);
+		spl::ShaderProgram::bind(*contextShader);
 	}
 
-	const spl::Texture2D* Scene::getTexture() const
+	const spl::Texture2D& Scene::getTexture() const
 	{
-		return dynamic_cast<const spl::Texture2D*>(_framebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
+		return dynamic_cast<const spl::Texture2D&>(*_framebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
 	}
 
 	bool Scene::isValid() const

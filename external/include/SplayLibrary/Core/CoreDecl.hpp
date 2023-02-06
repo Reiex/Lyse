@@ -18,6 +18,7 @@
 #include <SplayLibrary/Core/Buffer.hpp>
 
 #include <SplayLibrary/Core/RawTexture.hpp>
+#include <SplayLibrary/Core/Renderbuffer.hpp>
 #include <SplayLibrary/Core/Texture/TextureBase.hpp>
 #include <SplayLibrary/Core/Texture/Texture2D.hpp>
 
