@@ -921,5 +921,55 @@ namespace spl
 					return DebugMessageSeverity::High;
 			}
 		}
+		
+		constexpr ContextReleaseBehaviour glToContextReleaseBehaviour(GLenum behaviour)
+		{
+			switch (behaviour)
+			{
+				case GL_NONE:
+					return ContextReleaseBehaviour::None;
+				case GL_CONTEXT_RELEASE_BEHAVIOR_FLUSH:
+					return ContextReleaseBehaviour::Flush;
+				default:
+					assert(false);
+					return ContextReleaseBehaviour::Flush;
+			}
+		}
+
+		constexpr ProvokingVertexConvention glToProvokingVertexConvention(GLenum convention)
+		{
+			switch (convention)
+			{
+				case GL_PROVOKING_VERTEX:
+					return ProvokingVertexConvention::ProvokingVertex;
+				case GL_FIRST_VERTEX_CONVENTION:
+					return ProvokingVertexConvention::FirstVertex;
+				case GL_LAST_VERTEX_CONVENTION:
+					return ProvokingVertexConvention::LastVertex;
+				case GL_UNDEFINED_VERTEX:
+					return ProvokingVertexConvention::UndefinedVertex;
+				default:
+					assert(false);
+					return ProvokingVertexConvention::UndefinedVertex;
+			}
+		}
+
+		constexpr ContextFlags::Flags glToContextFlags(GLbitfield flags)
+		{
+			return static_cast<ContextFlags::Flags>(
+					(((flags & GL_CONTEXT_FLAG_FORWARD_COMPATIBLE_BIT) != 0)	<< 0)
+					| (((flags & GL_CONTEXT_FLAG_DEBUG_BIT) != 0)				<< 1)
+					| (((flags & GL_CONTEXT_FLAG_ROBUST_ACCESS_BIT) != 0)		<< 2)
+					| (((flags & GL_CONTEXT_FLAG_NO_ERROR_BIT) != 0)			<< 3)
+				);
+		}
+
+		constexpr ContextProfileMask::Flags glToContextProfileMask(GLbitfield flags)
+		{
+			return static_cast<ContextProfileMask::Flags>(
+					(((flags & GL_CONTEXT_CORE_PROFILE_BIT) != 0)				<< 0)
+					| (((flags & GL_CONTEXT_COMPATIBILITY_PROFILE_BIT) != 0)	<< 1)
+				);
+		}
 	}
 }

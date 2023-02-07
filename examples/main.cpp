@@ -2,24 +2,21 @@
 
 int main()
 {
-	lys::Vertex<int, float, scp::f32vec4, bool> x;
-
-	spl::Window window(1000, 600, "SPL Example", true);
+	spl::Window window(1000, 600, "Lyse Example", true);
 	spl::Context* context = window.getContext();
-	spl::ContextManager::setCurrentContext(context);
+	spl::Context::setCurrentContext(context);
 	context->setIsDepthTestEnabled(true);
 	context->setClearColor(0.2f, 0.3f, 0.3f, 1.f);
 
-	lys::CameraPerspective camera(1000, 600, 0.1f, 100.f, 1.f);
+	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 0.1f, 100.f, 1.f);
 	camera.setTranslation({ 0.f, 0.f, 2.f });
 
-	lys::Mesh<> mesh("P:/SplayLibrary/examples/basicPhong/resources/meshes/suzanne.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
+	lys::Mesh<> mesh("examples/suzanne.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
 	mesh.scale(0.5);
 
-	lys::Scene scene(1000, 600);
+	lys::Scene scene(window.getSize().x, window.getSize().y);
 	scene.addDrawable(&mesh);
 	scene.setCamera(&camera);
-
 
 	lys::DefaultVertex screenVertices[] = {
 		{ {-1.f,  1.f, 0.f}, {0.f, 0.f, 1.f}, {0.f, 1.f} },
@@ -28,7 +25,7 @@ int main()
 		{ { 1.f,  1.f, 0.f}, {0.f, 0.f, 1.f}, {1.f, 1.f} }
 	};
 	uint32_t screenIndices[] = { 0, 1, 3, 1, 2, 3 };
-	lys::Mesh<> screenMesh(screenVertices, 4, spl::BufferUsage::StaticDraw, screenIndices, 6, spl::BufferUsage::StaticDraw);
+	lys::Mesh<> screenMesh(screenVertices, 4, spl::BufferStorageFlags::None, screenIndices, 6, spl::BufferStorageFlags::None);
 
 	spl::ShaderProgram screenShader("examples/screen.vert", "examples/screen.frag");
 	spl::ShaderProgram::bind(screenShader);

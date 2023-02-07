@@ -18,7 +18,7 @@ namespace lys
 
 			Mesh();
 			template<CBufferStorageSpecifier TVertexStorage, CBufferStorageSpecifier TIndexStorage> Mesh(const TVertex* vertices, uint32_t vertexCount, TVertexStorage vertexStorage, const uint32_t* indices, uint32_t indexCount, TIndexStorage indexStorage);
-			template<uint32_t IndexPos = 0, uint32_t IndexNormal = 1, uint32_t IndexTexCoords = 2, CBufferStorageSpecifier TVertexStorage, CBufferStorageSpecifier TIndexStorage> Mesh(const std::filesystem::path& path, TVertexStorage vertexStorage, TIndexStorage indexStorage);
+			template<CBufferStorageSpecifier TVertexStorage, CBufferStorageSpecifier TIndexStorage> Mesh(const std::filesystem::path& path, TVertexStorage vertexStorage, TIndexStorage indexStorage);
 			Mesh(const Mesh<TVertex>& mesh);
 			Mesh(Mesh<TVertex>&& mesh);
 
@@ -27,7 +27,7 @@ namespace lys
 
 
 			template<CBufferStorageSpecifier TVertexStorage, CBufferStorageSpecifier TIndexStorage> void createNew(const TVertex* vertices, uint32_t vertexCount, TVertexStorage vertexStorage, const uint32_t* indices, uint32_t indexCount, TIndexStorage indexStorage);
-			template<uint32_t IndexPos = 0, uint32_t IndexNormal = 1, uint32_t IndexTexCoords = 2, CBufferStorageSpecifier TVertexStorage, CBufferStorageSpecifier TIndexStorage> void createNew(const std::filesystem::path& path, TVertexStorage vertexStorage, TIndexStorage indexStorage);
+			template<CBufferStorageSpecifier TVertexStorage, CBufferStorageSpecifier TIndexStorage> void createNew(const std::filesystem::path& path, TVertexStorage vertexStorage, TIndexStorage indexStorage);
 
 			// TODO: Update
 
@@ -48,8 +48,8 @@ namespace lys
 			virtual void draw(const spl::ShaderProgram& program, const scp::f32mat4x4& transform) const override final;
 
 			// TODO: Proper loading from file (same system as for DejaVu::Image)
-			template<uint32_t IndexPos, uint32_t IndexNormal, uint32_t IndexTexCoords> void _loadFromFile(const std::filesystem::path& path, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices);
-			template<uint32_t IndexPos, uint32_t IndexNormal, uint32_t IndexTexCoords> bool _loadObj(const std::filesystem::path& path, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices);
+			void _loadFromFile(const std::filesystem::path& path, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices);
+			bool _loadObj(const std::filesystem::path& path, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices);
 
 			spl::VertexArray _vao;
 			spl::Buffer _vbo;

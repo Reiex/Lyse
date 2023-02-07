@@ -30,6 +30,6 @@
 #include <SplayLibrary/Core/Framebuffer.hpp>
 #include <SplayLibrary/Core/DefaultFramebuffer.hpp>
 
+#include <SplayLibrary/Core/Context.hpp>
 #include <SplayLibrary/Core/Event.hpp>
 #include <SplayLibrary/Core/Window.hpp>
-#include <SplayLibrary/Core/ContextManager.hpp>

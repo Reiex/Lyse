@@ -40,6 +40,10 @@ namespace spl
 		constexpr DebugMessageSource glToDebugMessageSource(GLenum source);
 		constexpr DebugMessageType glToDebugMessageType(GLenum type);
 		constexpr DebugMessageSeverity glToDebugMessageSeverity(GLenum severity);
+		constexpr ContextReleaseBehaviour glToContextReleaseBehaviour(GLenum behaviour);
+		constexpr ProvokingVertexConvention glToProvokingVertexConvention(GLenum convention);
+		constexpr ContextFlags::Flags glToContextFlags(GLbitfield flags);
+		constexpr ContextProfileMask::Flags glToContextProfileMask(GLbitfield flags);
 	}
 }
 

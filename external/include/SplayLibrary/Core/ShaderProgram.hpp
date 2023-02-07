@@ -252,8 +252,8 @@ namespace spl
 			void setUniform(const std::string& name, uint32_t textureUnit, const RawTexture& texture) const;
 			void setUniform(const std::string& name, uint32_t textureUnit, const TextureBase& texture) const;
 
-			// TODO: Uniform blocks
-			// TODO: Shader storage blocks
+			void setUniformBlockBinding(uint32_t shaderBindingIndex, uint32_t bufferBindingIndex) const;
+			void setShaderStorageBlockBinding(uint32_t shaderBindingIndex, uint32_t bufferBindingIndex) const;
 
 
 			uint32_t getHandle() const;

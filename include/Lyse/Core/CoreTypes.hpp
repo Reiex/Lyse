@@ -27,9 +27,9 @@ namespace lys
 	class SceneDrawable;
 	class Drawable;
 
-	template<CVertexAttribute TAttribute, CVertexAttribute... TNextAttributes> class Vertex;
+	template<uint32_t PositionIndex, uint32_t NormalIndex, uint32_t TexCoordsIndex, CVertexAttribute... TAttributes> class VertexBase;
 	template<typename T> concept CVertex = requires { typename T::IsVertex; };
-	using DefaultVertex = Vertex<scp::f32vec3, scp::f32vec3, scp::f32vec2>;
+	struct DefaultVertex;
 	template<CVertex TVertex> class Mesh;
 
 	class Scene;

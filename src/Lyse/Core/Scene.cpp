@@ -42,7 +42,7 @@ namespace lys
 
 	void Scene::render() const
 	{
-		spl::Context* context = spl::ContextManager::getCurrentContext();
+		spl::Context* context = spl::Context::getCurrentContext();
 		const spl::Framebuffer* contextFramebuffer = context->getFramebufferBinding(spl::FramebufferTarget::DrawFramebuffer);
 		const spl::ShaderProgram* contextShader = context->getShaderBinding();
 

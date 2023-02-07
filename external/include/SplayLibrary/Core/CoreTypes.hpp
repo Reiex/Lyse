@@ -105,6 +105,30 @@ namespace spl
 	class DefaultFramebuffer;
 
 
+	enum class DebugMessageSource;
+	enum class DebugMessageType;
+	enum class DebugMessageSeverity;
+	struct DebugMessage;
+	enum class ContextReleaseBehaviour;
+	enum class ProvokingVertexConvention;
+	namespace ContextFlags { enum Flags; }
+	namespace ContextProfileMask { enum Flags; }
+	namespace ImplementationDependent
+	{
+		struct General;
+		struct Version;
+		struct VertexShaderLimits;
+		struct TessellationShaderLimits;
+		struct GeometryShaderLimits;
+		struct FragmentShaderLimits;
+		struct ComputeShaderLimits;
+		struct AggregateShaderLimits;
+		struct Debug;
+		struct TransformFeedbackLimits;
+		struct Values;
+	}
+	class Context;
+
 	enum class EventType;
 	struct Event;
 	enum class KeyboardKey;
@@ -121,11 +145,4 @@ namespace spl
 	
 	enum class CursorMode;
 	class Window;
-
-	enum class DebugMessageSource;
-	enum class DebugMessageType;
-	enum class DebugMessageSeverity;
-	struct DebugMessage;
-	class Context;
-	class ContextManager;
 }

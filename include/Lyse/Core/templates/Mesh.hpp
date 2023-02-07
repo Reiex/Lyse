@@ -35,10 +35,10 @@ namespace lys
 	}
 	
 	template<CVertex TVertex>
-	template<uint32_t IndexPos, uint32_t IndexNormal, uint32_t IndexTexCoords, CBufferStorageSpecifier TVertexStorage, CBufferStorageSpecifier TIndexStorage>
+	template<CBufferStorageSpecifier TVertexStorage, CBufferStorageSpecifier TIndexStorage>
 	Mesh<TVertex>::Mesh(const std::filesystem::path& path, TVertexStorage vertexStorage, TIndexStorage indexStorage) : Mesh()
 	{
-		createNew<IndexPos, IndexNormal, IndexTexCoords>(path, vertexStorage, indexStorage);
+		createNew(path, vertexStorage, indexStorage);
 	}
 
 	template<CVertex TVertex>
@@ -89,13 +89,13 @@ namespace lys
 	}
 
 	template<CVertex TVertex>
-	template<uint32_t IndexPos, uint32_t IndexNormal, uint32_t IndexTexCoords, CBufferStorageSpecifier TVertexStorage, CBufferStorageSpecifier TIndexStorage>
+	template<CBufferStorageSpecifier TVertexStorage, CBufferStorageSpecifier TIndexStorage>
 	void Mesh<TVertex>::createNew(const std::filesystem::path& path, TVertexStorage vertexStorage, TIndexStorage indexStorage)
 	{
 		std::vector<TVertex> vertices;
 		std::vector<uint32_t> indices;
 
-		_loadFromFile<IndexPos, IndexNormal, IndexTexCoords>(path, vertices, indices);
+		_loadFromFile(path, vertices, indices);
 
 		if (!vertices.empty() && !indices.empty())
 		{
@@ -133,7 +133,6 @@ namespace lys
 	}
 
 	template<CVertex TVertex>
-	template<uint32_t IndexPos, uint32_t IndexNormal, uint32_t IndexTexCoords>
 	void Mesh<TVertex>::_loadFromFile(const std::filesystem::path& path, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices)
 	{
 		if (!std::filesystem::exists(path))
@@ -143,12 +142,11 @@ namespace lys
 
 		if (path.extension() == ".obj")
 		{
-			_loadObj<IndexPos, IndexNormal, IndexTexCoords>(path, vertices, indices);
+			_loadObj(path, vertices, indices);
 		}
 	}
 
 	template<CVertex TVertex>
-	template<uint32_t IndexPos, uint32_t IndexNormal, uint32_t IndexTexCoords>
 	bool Mesh<TVertex>::_loadObj(const std::filesystem::path& path, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices)
 	{
 		dsk::fmt::ObjIStream objIStream;
@@ -166,26 +164,21 @@ namespace lys
 
 			for (const dsk::fmt::obj::FaceVertex& vertex : face.vertices)
 			{
-				TVertex outVertex;
+				TVertex outVertex = {};
 
 				if (vertex.position != UINT64_MAX)
 				{
-					outVertex.getAttribute<IndexPos>().x = objFile.positions[vertex.position].x;
-					outVertex.getAttribute<IndexPos>().y = objFile.positions[vertex.position].y;
-					outVertex.getAttribute<IndexPos>().z = objFile.positions[vertex.position].z;
+					outVertex.setPosition(objFile.positions[vertex.position].x, objFile.positions[vertex.position].y, objFile.positions[vertex.position].z, objFile.positions[vertex.position].w);
 				}
 
 				if (vertex.normal != UINT64_MAX)
 				{
-					outVertex.getAttribute<IndexNormal>().x = objFile.normals[vertex.normal].i;
-					outVertex.getAttribute<IndexNormal>().y = objFile.normals[vertex.normal].j;
-					outVertex.getAttribute<IndexNormal>().z = objFile.normals[vertex.normal].k;
+					outVertex.setNormal(objFile.normals[vertex.normal].i, objFile.normals[vertex.normal].j, objFile.normals[vertex.normal].k, 0.f);
 				}
 
 				if (vertex.texCoord != UINT64_MAX)
 				{
-					outVertex.getAttribute<IndexTexCoords>().x = objFile.texCoords[vertex.texCoord].u;
-					outVertex.getAttribute<IndexTexCoords>().y = objFile.texCoords[vertex.texCoord].v;
+					outVertex.setTexCoords(objFile.texCoords[vertex.texCoord].u, objFile.texCoords[vertex.texCoord].v, objFile.texCoords[vertex.texCoord].w, 0.f);
 				}
 
 				vertices.push_back(outVertex);
