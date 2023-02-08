@@ -18,8 +18,8 @@ namespace lys
 		_drawables()
 	{
 		spl::ShaderModule modules[] = {
-			{ spl::ShaderStage::Vertex,		mainVert,	sizeof(mainVert) - 1},
-			{ spl::ShaderStage::Fragment,	mainFrag,	sizeof(mainFrag) - 1}
+			{ spl::ShaderStage::Vertex,		mainVert,	sizeof(mainVert) },
+			{ spl::ShaderStage::Fragment,	mainFrag,	sizeof(mainFrag) }
 		};
 
 		_shader.createFromShaderModules(modules, 2);
