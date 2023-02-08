@@ -7,14 +7,23 @@
 
 #include <Lyse/Core/Core.hpp>
 
+#include "Shaders/shaders.cpp"
+
 namespace lys
 {
 	Scene::Scene(uint32_t width, uint32_t height) :
 		_framebuffer(),
-		_shader("src/Lyse/Core/Shaders/main.vert", "src/Lyse/Core/Shaders/main.frag"),
+		_shader(),
 		_camera(nullptr),
 		_drawables()
 	{
+		spl::ShaderModule modules[] = {
+			{ spl::ShaderStage::Vertex,		mainVert,	sizeof(mainVert) - 1},
+			{ spl::ShaderStage::Fragment,	mainFrag,	sizeof(mainFrag) - 1}
+		};
+
+		_shader.createFromShaderModules(modules, 2);
+
 		_framebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, scp::u32vec2{ width, height });
 		_framebuffer.createNewRenderbufferAttachment(spl::FramebufferAttachment::DepthStencilAttachment, spl::TextureInternalFormat::Depth_nu24_Stencil_u8, width, height);
 	}

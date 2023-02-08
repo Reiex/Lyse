@@ -15,7 +15,6 @@ namespace lys
 	{
 		public:
 	
-			// TODO: Handle resize (resize framebuffer..)
 			Scene(uint32_t width, uint32_t height);
 			Scene(const Scene& scene) = delete;
 			Scene(Scene&& scene) = delete;
@@ -33,9 +32,9 @@ namespace lys
 	
 
 			void render() const;
+
+
 			const spl::Texture2D& getTexture() const;
-
-
 			bool isValid() const;
 
 
