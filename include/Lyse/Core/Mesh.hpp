@@ -38,6 +38,8 @@ namespace lys
 			void destroy();
 
 
+			void setPrimitiveType(spl::PrimitiveType primitiveType);
+
 			virtual void draw() const override final;
 
 
@@ -47,6 +49,7 @@ namespace lys
 			spl::Buffer& getVertexBuffer();
 			const spl::Buffer& getElementBuffer() const;
 			spl::Buffer& getElementBuffer();
+			spl::PrimitiveType getPrimitiveType() const;
 			bool isValid() const;
 
 
@@ -65,5 +68,7 @@ namespace lys
 			spl::VertexArray _vao;
 			spl::Buffer _vbo;
 			spl::Buffer _ebo;
+
+			spl::PrimitiveType _primitiveType;
 	};
 }

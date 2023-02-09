@@ -15,7 +15,8 @@ namespace lys
 	Mesh<TVertex>::Mesh() :
 		_vao(),
 		_vbo(),
-		_ebo()
+		_ebo(),
+		_primitiveType(spl::PrimitiveType::Triangles)
 	{
 		for (uint32_t i = 0; i < TVertex::getAttributeCount(); ++i)
 		{
@@ -157,11 +158,17 @@ namespace lys
 	}
 
 	template<CVertex TVertex>
+	void Mesh<TVertex>::setPrimitiveType(spl::PrimitiveType primitiveType)
+	{
+		_primitiveType = primitiveType;
+	}
+
+	template<CVertex TVertex>
 	void Mesh<TVertex>::draw() const
 	{
 		assert(isValid());
 
-		_vao.drawElements(spl::PrimitiveType::Triangles, spl::IndexType::UnsignedInt, 0, _ebo.getSize() / sizeof(uint32_t));
+		_vao.drawElements(_primitiveType, spl::IndexType::UnsignedInt, 0, _ebo.getSize() / sizeof(uint32_t));
 	}
 
 	template<CVertex TVertex>
@@ -198,6 +205,12 @@ namespace lys
 	spl::Buffer& Mesh<TVertex>::getElementBuffer()
 	{
 		return _ebo;
+	}
+
+	template<CVertex TVertex>
+	spl::PrimitiveType Mesh<TVertex>::getPrimitiveType() const
+	{
+		return _primitiveType;
 	}
 
 	template<CVertex TVertex>
