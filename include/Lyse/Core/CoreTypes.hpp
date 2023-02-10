@@ -30,6 +30,8 @@ namespace lys
 	template<uint32_t PositionIndex, uint32_t NormalIndex, uint32_t TexCoordsIndex, CVertexAttribute... TAttributes> class VertexBase;
 	template<typename T> concept CVertex = requires { typename T::IsVertex; };
 	struct DefaultVertex;
+
+	enum class MeshFormat;
 	template<CVertex TVertex> class Mesh;
 
 	class Scene;

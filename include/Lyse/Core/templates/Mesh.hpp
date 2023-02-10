@@ -129,7 +129,7 @@ namespace lys
 		std::vector<TVertex> vertices;
 		std::vector<uint32_t> indices;
 
-		_loadFromFile(path, vertices, indices);
+		_createFromFile(path, vertices, indices);
 
 		if (!vertices.empty() && !indices.empty())
 		{
@@ -232,24 +232,39 @@ namespace lys
 	}
 
 	template<CVertex TVertex>
-	void Mesh<TVertex>::_loadFromFile(const std::filesystem::path& path, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices)
+	void Mesh<TVertex>::_createFromFile(const std::filesystem::path& path, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices)
 	{
 		if (!std::filesystem::exists(path))
 		{
 			return;
 		}
 
-		if (path.extension() == ".obj")
+		std::ifstream stream(path, std::ios::in | std::ios::binary);
+		if (!stream)
 		{
-			_loadObj(path, vertices, indices);
+			return;
+		}
+
+		MeshFormat format;
+		if (_extensionToMeshFormat(path.extension(), format))
+		{
+			_createFromStream(stream, format, vertices, indices);
 		}
 	}
 
 	template<CVertex TVertex>
-	bool Mesh<TVertex>::_loadObj(const std::filesystem::path& path, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices)
+	void Mesh<TVertex>::_createFromStream(std::istream& stream, MeshFormat format, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices)
+	{
+		assert(stream);
+
+		(this->*(_meshFormatToLoadFunc[static_cast<size_t>(format)]))(stream, vertices, indices);
+	}
+
+	template<CVertex TVertex>
+	void Mesh<TVertex>::_createFromObj(std::istream& stream, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices)
 	{
 		dsk::fmt::ObjIStream objIStream;
-		objIStream.setSource(path);
+		objIStream.setSource(stream);
 
 		dsk::fmt::obj::File objFile;
 		objIStream.readFile(objFile);
@@ -258,7 +273,7 @@ namespace lys
 		{
 			if (face.vertices.size() != 3)
 			{
-				return false;
+				return;
 			}
 
 			for (const dsk::fmt::obj::FaceVertex& vertex : face.vertices)
@@ -284,7 +299,25 @@ namespace lys
 				indices.push_back(indices.size());
 			}
 		}
+	}
 
-		return true;
+	template<CVertex TVertex>
+	bool Mesh<TVertex>::_extensionToMeshFormat(const std::filesystem::path& extension, MeshFormat& format)
+	{
+		static const std::unordered_map<std::filesystem::path, MeshFormat> extensionToMeshFormat = {
+			{ ".obj", MeshFormat::Obj }
+		};
+
+		auto it = extensionToMeshFormat.find(extension);
+
+		if (it == extensionToMeshFormat.end())
+		{
+			return false;
+		}
+		else
+		{
+			format = it->second;
+			return true;
+		}
 	}
 }

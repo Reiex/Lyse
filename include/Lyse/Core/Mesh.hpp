@@ -11,6 +11,11 @@
 
 namespace lys
 {
+	enum class MeshFormat
+	{
+		Obj
+	};
+
 	template<CVertex TVertex = DefaultVertex>
 	class Mesh : public Drawable
 	{
@@ -61,9 +66,15 @@ namespace lys
 
 			virtual void draw(const spl::ShaderProgram& program, const scp::f32mat4x4& transform) const override final;
 
-			// TODO: Proper loading from file (same system as for DejaVu::Image)
-			void _loadFromFile(const std::filesystem::path& path, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices);
-			bool _loadObj(const std::filesystem::path& path, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices);
+			void _createFromFile(const std::filesystem::path& path, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices);
+			void _createFromStream(std::istream& stream, MeshFormat format, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices);
+
+			void _createFromObj(std::istream& stream, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices);
+
+			static constexpr void (Mesh<TVertex>::* _meshFormatToLoadFunc[])(std::istream&, std::vector<TVertex>&, std::vector<uint32_t>&) = {
+				&Mesh<TVertex>::_createFromObj
+			};
+			static bool _extensionToMeshFormat(const std::filesystem::path& extension, MeshFormat& format);
 
 			spl::VertexArray _vao;
 			spl::Buffer _vbo;
