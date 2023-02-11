@@ -15,8 +15,7 @@ namespace lys
 	Mesh<TVertex>::Mesh() :
 		_vao(),
 		_vbo(),
-		_ebo(),
-		_primitiveType(spl::PrimitiveType::Triangles)
+		_ebo()
 	{
 		for (uint32_t i = 0; i < TVertex::getAttributeCount(); ++i)
 		{
@@ -105,7 +104,6 @@ namespace lys
 		return *this;
 	}
 
-
 	template<CVertex TVertex>
 	template<CBufferStorageSpecifier TStorage>
 	void Mesh<TVertex>::createNewVertices(const TVertex* vertices, uint32_t count, TStorage storage)
@@ -158,17 +156,11 @@ namespace lys
 	}
 
 	template<CVertex TVertex>
-	void Mesh<TVertex>::setPrimitiveType(spl::PrimitiveType primitiveType)
-	{
-		_primitiveType = primitiveType;
-	}
-
-	template<CVertex TVertex>
-	void Mesh<TVertex>::draw() const
+	void Mesh<TVertex>::draw(spl::PrimitiveType primitiveType) const
 	{
 		assert(isValid());
 
-		_vao.drawElements(_primitiveType, spl::IndexType::UnsignedInt, 0, _ebo.getSize() / sizeof(uint32_t));
+		_vao.drawElements(primitiveType, spl::IndexType::UnsignedInt, 0, _ebo.getSize() / sizeof(uint32_t));
 	}
 
 	template<CVertex TVertex>
@@ -208,26 +200,26 @@ namespace lys
 	}
 
 	template<CVertex TVertex>
-	spl::PrimitiveType Mesh<TVertex>::getPrimitiveType() const
-	{
-		return _primitiveType;
-	}
-
-	template<CVertex TVertex>
 	bool Mesh<TVertex>::isValid() const
 	{
 		return _vbo.isValid() && _ebo.isValid();
 	}
 
 	template<CVertex TVertex>
-	void Mesh<TVertex>::draw(const spl::ShaderProgram& program, const scp::f32mat4x4& transform) const
+	const DrawableInfo& Mesh<TVertex>::_getInfo() const
+	{
+		return _info;
+	}
+
+	template<CVertex TVertex>
+	void Mesh<TVertex>::_draw(const DrawContext& context) const
 	{
 		if constexpr (!std::same_as<TVertex, DefaultVertex>)
 		{
 			assert(false);
 		}
 
-		program.setUniform("model", transform * getTransformMatrix());
+		context.program->setUniform("model", context.transform * getTransformMatrix());
 		draw();
 	}
 

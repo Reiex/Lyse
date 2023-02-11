@@ -22,10 +22,10 @@
 #include <Lyse/Core/CameraPerspective.hpp>
 
 
-#include <Lyse/Core/SceneDrawable.hpp>
 #include <Lyse/Core/Drawable.hpp>
-
+#include <Lyse/Core/DrawableGroup.hpp>
 #include <Lyse/Core/Vertex.hpp>
+
 #include <Lyse/Core/Mesh.hpp>
 
 #include <Lyse/Core/Scene.hpp>

@@ -219,7 +219,7 @@ namespace spl
 			ShaderProgram(const std::filesystem::path& glslVertex, const std::filesystem::path& glslGeometry, const std::filesystem::path& glslFragment, ShaderProgramFlags::Flags flags = ShaderProgramFlags::None);
 			ShaderProgram(const std::filesystem::path& glslVertex, const std::filesystem::path& glslTessControl, const std::filesystem::path& glslTessEval, const std::filesystem::path& glslFragment, ShaderProgramFlags::Flags flags = ShaderProgramFlags::None);
 			ShaderProgram(const std::filesystem::path& glslVertex, const std::filesystem::path& glslTessControl, const std::filesystem::path& glslTessEval, const std::filesystem::path& glslGeometry, const std::filesystem::path& glslFragment, ShaderProgramFlags::Flags flags = ShaderProgramFlags::None);
-			ShaderProgram(const ShaderModule* shaders, uint8_t count, ShaderProgramFlags::Flags flags = ShaderProgramFlags::None);
+			ShaderProgram(const ShaderModule* const* shaders, uint8_t count, ShaderProgramFlags::Flags flags = ShaderProgramFlags::None);
 			ShaderProgram(const ShaderProgram& program) = delete;
 			ShaderProgram(ShaderProgram&& program) = delete;
 
@@ -232,7 +232,7 @@ namespace spl
 			bool createFromGlsl(const std::filesystem::path& glslVertex, const std::filesystem::path& glslGeometry, const std::filesystem::path& glslFragment, ShaderProgramFlags::Flags flags = ShaderProgramFlags::None);
 			bool createFromGlsl(const std::filesystem::path& glslVertex, const std::filesystem::path& glslTessControl, const std::filesystem::path& glslTessEval, const std::filesystem::path& glslFragment, ShaderProgramFlags::Flags flags = ShaderProgramFlags::None);
 			bool createFromGlsl(const std::filesystem::path& glslVertex, const std::filesystem::path& glslTessControl, const std::filesystem::path& glslTessEval, const std::filesystem::path& glslGeometry, const std::filesystem::path& glslFragment, ShaderProgramFlags::Flags flags = ShaderProgramFlags::None);
-			bool createFromShaderModules(const ShaderModule* shaders, uint16_t count, ShaderProgramFlags::Flags = ShaderProgramFlags::None);
+			bool createFromShaderModules(const ShaderModule* const* shaders, uint16_t count, ShaderProgramFlags::Flags = ShaderProgramFlags::None);
 			// TODO: Handle binary with a new class "ShaderBinary"
 			// TODO: Handle pipelines with a new class "ShaderPipeline"
 

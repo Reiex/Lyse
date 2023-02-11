@@ -27,8 +27,8 @@ namespace lys
 
 			void setCamera(const CameraBase* camera);
 
-			void addDrawable(const SceneDrawable* drawable);
-			void removeDrawable(const SceneDrawable* drawable);
+			void addDrawable(const Drawable* drawable);
+			void removeDrawable(const Drawable* drawable);
 	
 
 			void render() const;
@@ -41,11 +41,19 @@ namespace lys
 			~Scene() = default;
 	
 		private:
+
+			static void _insertInDrawSequence(std::multimap<const spl::ShaderProgram*, const Drawable*>& drawSequence, const Drawable* drawable);
+
+			static void _loadShaders();
+
+			thread_local static uint32_t _sceneCount;
+			thread_local static std::vector<spl::ShaderProgram*> _shaders;
+			thread_local static std::unordered_map<DrawableType, std::unordered_map<uint64_t, spl::ShaderProgram*>> _shaderMap;
 	
+
 			spl::Framebuffer _framebuffer;
-			spl::ShaderProgram _shader;
 
 			const CameraBase* _camera;
-			std::unordered_set<const SceneDrawable*> _drawables;
+			std::unordered_set<const Drawable*> _drawables;
 	};
 }

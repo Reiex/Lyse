@@ -24,8 +24,13 @@ namespace lys
 	class CameraPerspective;
 
 
-	class SceneDrawable;
+	enum class DrawableType : uint8_t;
+	namespace DrawableFlags { enum Flags : uint64_t; }
+	struct DrawableInfo;
+	struct DrawContext;
 	class Drawable;
+
+	class DrawableGroup;
 
 	template<uint32_t PositionIndex, uint32_t NormalIndex, uint32_t TexCoordsIndex, CVertexAttribute... TAttributes> class VertexBase;
 	template<typename T> concept CVertex = requires { typename T::IsVertex; };

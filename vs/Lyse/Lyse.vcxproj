@@ -20,8 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\Lyse\Core\CameraBase.hpp" />
+    <ClInclude Include="..\..\include\Lyse\Core\DrawableGroup.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\Mesh.hpp" />
-    <ClInclude Include="..\..\include\Lyse\Core\SceneDrawable.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\templates\CameraBase.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\templates\CameraPerspective.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\templates\Mesh.hpp" />

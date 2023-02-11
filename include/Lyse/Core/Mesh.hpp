@@ -43,9 +43,7 @@ namespace lys
 			void destroy();
 
 
-			void setPrimitiveType(spl::PrimitiveType primitiveType);
-
-			virtual void draw() const override final;
+			void draw(spl::PrimitiveType primitiveType = spl::PrimitiveType::Triangles) const;
 
 
 			const spl::VertexArray& getVertexArray() const;
@@ -54,7 +52,6 @@ namespace lys
 			spl::Buffer& getVertexBuffer();
 			const spl::Buffer& getElementBuffer() const;
 			spl::Buffer& getElementBuffer();
-			spl::PrimitiveType getPrimitiveType() const;
 			bool isValid() const;
 
 
@@ -62,9 +59,11 @@ namespace lys
 
 		private:
 
-			Mesh();
+			virtual const DrawableInfo& _getInfo() const override final;
 
-			virtual void draw(const spl::ShaderProgram& program, const scp::f32mat4x4& transform) const override final;
+			virtual void _draw(const DrawContext& context) const override final;
+
+			Mesh();
 
 			void _createFromFile(const std::filesystem::path& path, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices);
 			void _createFromStream(std::istream& stream, MeshFormat format, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices);
@@ -76,10 +75,10 @@ namespace lys
 			};
 			static bool _extensionToMeshFormat(const std::filesystem::path& extension, MeshFormat& format);
 
+			static constexpr DrawableInfo _info = { DrawableType::Mesh, DrawableFlags::None, nullptr };
+
 			spl::VertexArray _vao;
 			spl::Buffer _vbo;
 			spl::Buffer _ebo;
-
-			spl::PrimitiveType _primitiveType;
 	};
 }

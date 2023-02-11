@@ -11,7 +11,47 @@
 
 namespace lys
 {
-	class Drawable : public SceneDrawable
+	enum class DrawableType : uint8_t
+	{
+		Particles,
+		Mesh,
+		MeshInstanced,
+		Group
+	};
+
+	namespace DrawableFlags
+	{
+		enum Flags : uint64_t
+		{
+			None
+			/*
+
+			HasNormalMap,
+			HasDisplacementMap,
+
+			Shadows ?
+			MaterialTypes ?
+			etc...
+
+			*/
+		};
+	}
+
+	struct DrawableInfo
+	{
+		DrawableType type;
+		DrawableFlags::Flags flags;
+
+		const spl::ShaderProgram* shader;
+	};
+
+	struct DrawContext
+	{
+		const spl::ShaderProgram* program;
+		scp::f32mat4x4 transform;
+	};
+
+	class Drawable : public Transformable
 	{
 		public:
 
@@ -21,9 +61,6 @@ namespace lys
 			Drawable& operator=(const Drawable& drawable) = delete;
 			Drawable& operator=(Drawable&& drawable) = delete;
 
-			// This draw doesn't suppose anything about context, it's just a draw command
-			virtual void draw() const = 0;
-
 			virtual ~Drawable() override = default;
 
 		protected:
@@ -32,6 +69,10 @@ namespace lys
 
 		private:
 
-			virtual void draw(const spl::ShaderProgram& program, const scp::f32mat4x4& transform) const override = 0;
+			virtual const DrawableInfo& _getInfo() const = 0;
+
+			virtual void _draw(const DrawContext& context) const = 0;
+
+		friend class Scene;
 	};
 }
