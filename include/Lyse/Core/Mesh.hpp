@@ -75,7 +75,7 @@ namespace lys
 			};
 			static bool _extensionToMeshFormat(const std::filesystem::path& extension, MeshFormat& format);
 
-			static constexpr DrawableInfo _info = { DrawableType::Mesh, DrawableFlags::None, nullptr };
+			static constexpr DrawableInfo _info = { DrawableType::Mesh, DrawableFlags::None, { nullptr, nullptr } };
 
 			spl::VertexArray _vao;
 			spl::Buffer _vbo;

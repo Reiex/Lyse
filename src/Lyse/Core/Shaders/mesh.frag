@@ -1,24 +1,19 @@
-#version 330 core
+#version 460 core
 
-in vec3 pos;
-in vec3 normal;
+in VertexOutput
+{
+    vec3 position;
+    vec3 normal;
+    vec2 texCoords;
+} io_vertexOutput;
 
-uniform vec3 cameraPos;
-
-out vec4 FragColor;
+layout (location = 0) out vec3 fo_position;
+layout (location = 1) out vec3 fo_normal;
+layout (location = 2) out vec3 fo_albedo;
 
 void main()
 {
-    vec3 lightDir = -vec3(1.0, 1.0, 1.0);
-    vec3 uLightDir = normalize(lightDir);
-    vec3 uNormal = normalize(normal);
-    vec3 baseColor = vec3(1.0, 1.0, 1.0);
-
-    float ambiant = 0.05;
-    float diffuse = 0.6*clamp(dot(-uLightDir, uNormal), 0.0, 1.0);
-    
-    vec3 reflection = reflect(uLightDir, uNormal);
-    float specular = 0.5*pow(clamp(dot(reflection, normalize(cameraPos - pos)), 0.0, 1.0), 100.0);
-
-    FragColor = vec4(baseColor * (ambiant + diffuse + specular), 1.0);
+    fo_position = io_vertexOutput.position;
+    fo_normal = normalize(io_vertexOutput.normal);
+    fo_albedo = vec3(0.5, 0.5, 0.5);
 } 

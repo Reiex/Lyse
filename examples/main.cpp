@@ -66,7 +66,7 @@ int main()
 
 		scene.render();
 
-		screenShader.setUniform("scene", 0, scene.getTexture());
+		screenShader.setUniform("scene", 0, scene.getNormalTexture());
 		screenMesh.draw();
 
 		window.display();

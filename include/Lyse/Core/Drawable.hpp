@@ -37,12 +37,18 @@ namespace lys
 		};
 	}
 
+	struct DrawableShaderSet
+	{
+		const spl::ShaderProgram* gBufferShader;
+		const spl::ShaderProgram* mergeShader;
+	};
+
 	struct DrawableInfo
 	{
 		DrawableType type;
 		DrawableFlags::Flags flags;
 
-		const spl::ShaderProgram* shader;
+		DrawableShaderSet shaderSet;
 	};
 
 	struct DrawContext

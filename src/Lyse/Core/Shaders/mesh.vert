@@ -1,19 +1,25 @@
-#version 330 core
+#version 460 core
 
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aNormal;
+layout (location = 0) in vec3 va_position;
+layout (location = 1) in vec3 va_normal;
+layout (location = 2) in vec2 va_texCoords;
 
-uniform mat4 projection;
-uniform mat4 view;
-uniform mat4 model;
+uniform mat4 u_projection;
+uniform mat4 u_view;
+uniform mat4 u_model;
 
-out vec3 pos;
-out vec3 normal;
+out VertexOutput
+{
+    vec3 position;
+    vec3 normal;
+    vec2 texCoords;
+} io_vertexOutput;
 
 void main()
 {
-    normal = normalize(model * vec4(aNormal, 0.0)).xyz;
+    gl_Position = u_projection * u_view * u_model * vec4(va_position, 1.0);
 
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
-    pos = gl_Position.xyz / gl_Position.w;
+    io_vertexOutput.position = (u_model * vec4(va_position, 1.0)).xyz;
+    io_vertexOutput.normal = normalize(u_model * vec4(va_normal, 0.0)).xyz;
+    io_vertexOutput.texCoords = va_texCoords;
 }

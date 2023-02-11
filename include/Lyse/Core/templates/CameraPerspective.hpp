@@ -68,6 +68,26 @@ namespace lys
 		_projection.reset();
 	}
 
+	constexpr float CameraPerspective::getAspect() const
+	{
+		return _aspect;
+	}
+
+	constexpr float CameraPerspective::getNearDistance() const
+	{
+		return _near;
+	}
+
+	constexpr float CameraPerspective::getFarDistance() const
+	{
+		return _far;
+	}
+
+	constexpr float CameraPerspective::getFieldOfView() const
+	{
+		return _fov;
+	}
+
 	constexpr const scp::f32mat4x4& CameraPerspective::getProjectionMatrix() const
 	{
 		if (!_projection.has_value())

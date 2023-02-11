@@ -219,7 +219,7 @@ namespace lys
 			assert(false);
 		}
 
-		context.program->setUniform("model", context.transform * getTransformMatrix());
+		context.program->setUniform("u_model", context.transform * getTransformMatrix());
 		draw();
 	}
 
