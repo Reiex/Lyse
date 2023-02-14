@@ -29,7 +29,9 @@ namespace lys
 
 		private:
 
-			virtual const DrawableInfo& _getInfo() const override = 0;
+			virtual DrawableType _getType() const override = 0;
+			virtual const DrawableShaderSet& _getShaderSet() const override = 0;
+			virtual const Material& _getMaterial() const override = 0;
 			virtual uint32_t _getChildCount() const = 0;
 			virtual const Drawable* _getChild(uint32_t index) const = 0;
 

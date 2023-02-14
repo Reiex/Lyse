@@ -5,11 +5,10 @@ int main()
 	spl::Window window(1000, 600, "Lyse Example", true);
 	spl::Context* context = window.getContext();
 	spl::Context::setCurrentContext(context);
-	context->setIsDepthTestEnabled(true);
 	context->setClearColor(0.2f, 0.3f, 0.3f, 1.f);
 
-	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 0.1f, 100.f, 1.f);
-	camera.setTranslation({ 0.f, 0.f, 2.f });
+	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 0.01f, 10.f, 1.f);
+	camera.setTranslation({ 0.f, 0.f, 1.5f });
 
 	lys::Mesh<> mesh("examples/suzanne.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
 	mesh.scale(0.5);
@@ -18,11 +17,11 @@ int main()
 	scene.addDrawable(&mesh);
 	scene.setCamera(&camera);
 
-	lys::DefaultVertex screenVertices[] = {
-		{ {-1.f,  1.f, 0.f}, {0.f, 0.f, 1.f}, {0.f, 1.f} },
-		{ {-1.f, -1.f, 0.f}, {0.f, 0.f, 1.f}, {0.f, 0.f} },
-		{ { 1.f, -1.f, 0.f}, {0.f, 0.f, 1.f}, {1.f, 0.f} },
-		{ { 1.f,  1.f, 0.f}, {0.f, 0.f, 1.f}, {1.f, 1.f} }
+	lys::VertexDefaultMesh screenVertices[] = {
+		{ {-1.f,  1.f, 0.f, 1.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f} },
+		{ {-1.f, -1.f, 0.f, 1.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 0.f}, {0.f, 0.f, 0.f, 0.f} },
+		{ { 1.f, -1.f, 0.f, 1.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 0.f}, {1.f, 0.f, 0.f, 0.f} },
+		{ { 1.f,  1.f, 0.f, 1.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 0.f}, {1.f, 1.f, 0.f, 0.f} }
 	};
 	uint32_t screenIndices[] = { 0, 1, 3, 1, 2, 3 };
 	lys::Mesh<> screenMesh(screenVertices, 4, spl::BufferStorageFlags::None, screenIndices, 6, spl::BufferStorageFlags::None);
@@ -66,7 +65,7 @@ int main()
 
 		scene.render();
 
-		screenShader.setUniform("scene", 0, scene.getNormalTexture());
+		screenShader.setUniform("scene", 0, scene.getRenderTexture());
 		screenMesh.draw();
 
 		window.display();

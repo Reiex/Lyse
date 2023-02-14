@@ -31,13 +31,10 @@ namespace lys
 			constexpr scp::f32vec3 getFrontVector() const;
 			constexpr scp::f32vec3 getLeftVector() const;
 
-			constexpr virtual float getAspect() const = 0;
-			constexpr virtual float getNearDistance() const = 0;
-			constexpr virtual float getFarDistance() const = 0;
 			constexpr const scp::f32mat4x4& getViewMatrix() const;
-			constexpr virtual const scp::f32mat4x4& getProjectionMatrix() const = 0;
+			virtual constexpr const scp::f32mat4x4& getProjectionMatrix() const = 0;
 
 
-			constexpr virtual ~CameraBase() override = default;
+			virtual constexpr ~CameraBase() override = default;
 	};
 }

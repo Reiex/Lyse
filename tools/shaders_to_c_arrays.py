@@ -28,17 +28,17 @@ def main(argv):
 		assert len(filename.split(".")) == 2
 
 		if filename.split(".")[1] == "vert":
-			variable_name = filename.split(".")[0] + "Vert"
+			variable_name = filename.split(".")[0] + "_vert"
 		elif filename.split(".")[1] == "tesc":
-			variable_name = filename.split(".")[0] + "Tesc"
+			variable_name = filename.split(".")[0] + "_tesc"
 		elif filename.split(".")[1] == "tese":
-			variable_name = filename.split(".")[0] + "Tese"
+			variable_name = filename.split(".")[0] + "_tese"
 		elif filename.split(".")[1] == "geom":
-			variable_name = filename.split(".")[0] + "Geom"
+			variable_name = filename.split(".")[0] + "_geom"
 		elif filename.split(".")[1] == "frag":
-			variable_name = filename.split(".")[0] + "Frag"
+			variable_name = filename.split(".")[0] + "_frag"
 		elif filename.split(".")[1] == "comp":
-			variable_name = filename.split(".")[0] + "Comp"
+			variable_name = filename.split(".")[0] + "_comp"
 		else:
 			continue
 

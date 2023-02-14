@@ -12,6 +12,9 @@
 namespace lys
 {
 	template<CVertex TVertex>
+	const Material Mesh<TVertex>::_defaultMaterial(1.f, 0.83f, 0.83f, 0.04f, 0.f, 0.3f);
+
+	template<CVertex TVertex>
 	Mesh<TVertex>::Mesh() :
 		_vao(),
 		_vbo(),
@@ -206,20 +209,32 @@ namespace lys
 	}
 
 	template<CVertex TVertex>
-	const DrawableInfo& Mesh<TVertex>::_getInfo() const
+	DrawableType Mesh<TVertex>::_getType() const
 	{
-		return _info;
+		return DrawableType::Mesh;
+	}
+
+	template<CVertex TVertex>
+	const DrawableShaderSet& Mesh<TVertex>::_getShaderSet() const
+	{
+		return _shaderSet;
+	}
+
+	template<CVertex TVertex>
+	const Material& Mesh<TVertex>::_getMaterial() const
+	{
+		return _defaultMaterial;
 	}
 
 	template<CVertex TVertex>
 	void Mesh<TVertex>::_draw(const DrawContext& context) const
 	{
-		if constexpr (!std::same_as<TVertex, DefaultVertex>)
+		if constexpr (!std::same_as<TVertex, VertexDefaultMesh>)
 		{
 			assert(false);
 		}
 
-		context.program->setUniform("u_model", context.transform * getTransformMatrix());
+		context.shader->setUniform("u_model", context.transform * getTransformMatrix());
 		draw();
 	}
 
@@ -252,6 +267,79 @@ namespace lys
 		(this->*(_meshFormatToLoadFunc[static_cast<size_t>(format)]))(stream, vertices, indices);
 	}
 
+	namespace _lys
+	{
+		template<CVertex TVertex>
+		void fillVertex(TVertex& v0, TVertex& v1, TVertex& v2)
+		{
+			float dummy;
+
+			// Extract "tex coords vectors" and check they're not colinear
+
+			scp::f32vec2 tc0, tc1, tc2, d0, d1;
+			v0.getTexCoords(tc0.x, tc0.y, dummy, dummy);
+			v1.getTexCoords(tc1.x, tc1.y, dummy, dummy);
+			v2.getTexCoords(tc2.x, tc2.y, dummy, dummy);
+			d0 = tc1 - tc0;
+			d1 = tc2 - tc1;
+			const float det = d0.x * d1.y - d1.x * d0.y;
+			if (det == 0.f)
+			{
+				return;
+			}
+
+			// Extract "position vectors" and check they're not colinear
+
+			scp::f32vec3 p0, p1, p2, e0, e1;
+			v0.getPosition(p0.x, p0.y, p0.z, dummy);
+			v1.getPosition(p1.x, p1.y, p1.z, dummy);
+			v2.getPosition(p2.x, p2.y, p2.z, dummy);
+			e0 = p1 - p0;
+			e1 = p2 - p1;
+
+			scp::f32vec3 t;
+			t = (d1.y * e0 - d0.y * e1) / det;
+			if (t.x == 0.f && t.y == 0.f && t.z == 0.f)
+			{
+				return;
+			}
+			t = scp::normalize(t);
+
+			// Compute/Extract normals
+
+			scp::f32vec3 n0, n1, n2;
+
+			v0.getNormal(n0.x, n0.y, n0.z, dummy);
+			if (n0.x == 0.f && n0.y == 0.f && n0.z == 0.f)
+			{
+				n0 = scp::normalize(scp::cross(e0, e1));
+			}
+
+			v1.getNormal(n1.x, n1.y, n1.z, dummy);
+			if (n1.x == 0.f && n1.y == 0.f && n1.z == 0.f)
+			{
+				n1 = scp::normalize(scp::cross(e0, e1));
+			}
+
+			v2.getNormal(n2.x, n2.y, n2.z, dummy);
+			if (n2.x == 0.f && n2.y == 0.f && n2.z == 0.f)
+			{
+				n2 = scp::normalize(scp::cross(e0, e1));
+			}
+
+			// Compute tangents
+
+			scp::f32vec3 tn;
+
+			tn = scp::normalize(t - scp::dot(t, n0) * n0);
+			v0.setTangent(tn.x, tn.y, tn.z, 0.f);
+			tn = scp::normalize(t - scp::dot(t, n1) * n1);
+			v1.setTangent(tn.x, tn.y, tn.z, 0.f);
+			tn = scp::normalize(t - scp::dot(t, n2) * n2);
+			v2.setTangent(tn.x, tn.y, tn.z, 0.f);
+		}
+	}
+
 	template<CVertex TVertex>
 	void Mesh<TVertex>::_createFromObj(std::istream& stream, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices)
 	{
@@ -265,17 +353,15 @@ namespace lys
 		{
 			if (face.vertices.size() != 3)
 			{
-				return;
+				continue;
 			}
 
 			for (const dsk::fmt::obj::FaceVertex& vertex : face.vertices)
 			{
-				TVertex outVertex = {};
+				TVertex outVertex;
 
-				if (vertex.position != UINT64_MAX)
-				{
-					outVertex.setPosition(objFile.positions[vertex.position].x, objFile.positions[vertex.position].y, objFile.positions[vertex.position].z, objFile.positions[vertex.position].w);
-				}
+				assert(vertex.position != UINT64_MAX);
+				outVertex.setPosition(objFile.positions[vertex.position].x, objFile.positions[vertex.position].y, objFile.positions[vertex.position].z, objFile.positions[vertex.position].w);
 
 				if (vertex.normal != UINT64_MAX)
 				{
@@ -290,6 +376,8 @@ namespace lys
 				vertices.push_back(outVertex);
 				indices.push_back(indices.size());
 			}
+
+			_lys::fillVertex(vertices[vertices.size() - 3], vertices[vertices.size() - 2], vertices[vertices.size() - 1]);
 		}
 	}
 

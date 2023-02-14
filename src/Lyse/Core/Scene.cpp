@@ -13,10 +13,11 @@ namespace lys
 {
 	thread_local uint32_t Scene::_sceneCount(0);
 	thread_local std::vector<spl::ShaderProgram*> Scene::_shaders;
-	thread_local std::unordered_map<DrawableType, std::unordered_map<uint64_t, DrawableShaderSet>> Scene::_shaderMap;
+	thread_local std::unordered_map<DrawableType, std::vector<DrawableShaderSet>> Scene::_shaderMap;
 
 	Scene::Scene(uint32_t width, uint32_t height) :
 		_gBufferFramebuffer(),
+		_mergeFramebuffer(),
 		_camera(nullptr),
 		_drawables()
 	{
@@ -25,20 +26,21 @@ namespace lys
 			_loadShaders();
 		}
 
-		/* Depth    */_gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::DepthAttachment, scp::u32vec2{ width, height }, spl::TextureInternalFormat::Depth_nu32);
-		// TODO : /* Stencil  */_gBufferFramebuffer.createNewRenderbufferAttachment(spl::FramebufferAttachment::StencilAttachment, spl::TextureInternalFormat::Stencil_u1, width, height);
-		/* Position */_gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_f32);
-		/* Normal   */_gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment1, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_f32);
-		/* Albedo   */_gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment2, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_nu8);
+		resize(width, height);
 	}
 
 	void Scene::resize(uint32_t width, uint32_t height)
 	{
-		/* Depth    */_gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::DepthAttachment, scp::u32vec2{ width, height }, spl::TextureInternalFormat::Depth_nu32);
-		// TODO : /* Stencil  */_gBufferFramebuffer.createNewRenderbufferAttachment(spl::FramebufferAttachment::StencilAttachment, spl::TextureInternalFormat::Stencil_u1, width, height);
-		/* Position */_gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_f32);
-		/* Normal   */_gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment1, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_f32);
-		/* Albedo   */_gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment2, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_nu8);
+		/* Depth    */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::DepthAttachment, scp::u32vec2{ width, height }, spl::TextureInternalFormat::Depth_nu32);
+		// TODO : Stencil
+		/* Color    */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_nu8);
+		/* Material */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment1, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_nu8);
+		/* Position */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment2, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_f32);
+		/* Normal   */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment3, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_ni16);
+		/* Tangent  */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment4, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_ni16);
+		
+		_mergeFramebuffer.createNewRenderbufferAttachment(spl::FramebufferAttachment::DepthStencilAttachment, spl::TextureInternalFormat::Depth_nu24_Stencil_u8, width, height);
+		_mergeFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_nu8);
 	}
 
 	void Scene::setCamera(const CameraBase* camera)
@@ -101,8 +103,8 @@ namespace lys
 			{
 				static std::hash<const spl::ShaderProgram*> h;
 
-				const size_t x = h(a.gBufferShader) * 3 + h(a.mergeShader);
-				const size_t y = h(b.gBufferShader) * 3 + h(b.mergeShader);
+				const size_t x = h(a.gBufferShader) * 3 + 0;
+				const size_t y = h(b.gBufferShader) * 3 + 0;
 
 				return x < y;
 			}
@@ -125,9 +127,6 @@ namespace lys
 		context->setClearDepth(1.f);
 		context->setClearStencil(0);
 		
-		spl::Framebuffer::bind(_gBufferFramebuffer, spl::FramebufferTarget::DrawFramebuffer);
-		spl::Framebuffer::clear(true, true, false);
-		
 		// Compute draw sequence - The less shader binding, the better
 		
 		std::multimap<DrawableShaderSet, const Drawable*, DrawableShaderSetLess> drawSequence;
@@ -136,26 +135,67 @@ namespace lys
 			_insertInDrawSequence(&drawSequence, drawable);
 		}
 		
-		// Draw elements
+		// Draw gBuffer
+		
+		spl::Framebuffer::bind(_gBufferFramebuffer, spl::FramebufferTarget::DrawFramebuffer);
+		spl::Framebuffer::clear(true, true, false);
 		
 		DrawContext drawContext;
-		drawContext.program = nullptr;
+		drawContext.shader = nullptr;
 		drawContext.transform = 1.f;
 		
 		for (const std::pair<DrawableShaderSet, const Drawable*>& elt : drawSequence)
 		{
-			if (elt.first.gBufferShader != drawContext.program)
+			if (elt.first.gBufferShader != drawContext.shader)
 			{
-				drawContext.program = elt.first.gBufferShader;
+				drawContext.shader = elt.first.gBufferShader;
 		
-				spl::ShaderProgram::bind(*drawContext.program);
+				spl::ShaderProgram::bind(*drawContext.shader);
 
-				drawContext.program->setUniform("u_projection", _camera->getProjectionMatrix());
-				drawContext.program->setUniform("u_view", _camera->getViewMatrix());
+				drawContext.shader->setUniform("u_projection", _camera->getProjectionMatrix());
+				drawContext.shader->setUniform("u_view", _camera->getViewMatrix());
 			}
 		
+			const Material& material = elt.second->_getMaterial();
+
+			drawContext.shader->setUniform("u_color", material._color);
+			drawContext.shader->setUniform("u_material", material._props);
+
 			elt.second->_draw(drawContext);
 		}
+
+		// Merge into final picture
+		
+		spl::Framebuffer::bind(_mergeFramebuffer, spl::FramebufferTarget::DrawFramebuffer);
+		spl::Framebuffer::clear();
+
+		static spl::VertexArray screenVao;
+		static constexpr float screenVboData[] = { -1.f,  -1.f, 1.f, -1.f, -1.f, 1.f, 1.f, 1.f };
+		static spl::Buffer screenVbo;
+
+		if (!screenVbo.isValid())
+		{
+			screenVbo.createNew(sizeof(screenVboData), spl::BufferStorageFlags::None, screenVboData);
+
+			screenVao.setAttributeFormat(0, spl::GlslType::FloatVec2, 0);
+			screenVao.setAttributeEnabled(0, true);
+			screenVao.setAttributeBinding(0, 0);
+			screenVao.setBindingDivisor(0, 0);
+
+			screenVao.bindArrayBuffer(screenVbo, 0, 0, sizeof(float) * 2);
+		}
+
+		spl::ShaderProgram::bind(*_shaders[0]);
+		_shaders[0]->setUniform("u_depth", 0, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::DepthAttachment));
+		_shaders[0]->setUniform("u_color", 1, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
+		_shaders[0]->setUniform("u_material", 2, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment1));
+		_shaders[0]->setUniform("u_position", 3, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment2));
+		_shaders[0]->setUniform("u_normal", 4, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment3));
+		// _shaders[0]->setUniform("u_tangent", 5, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment4));
+
+		_shaders[0]->setUniform("u_cameraPos", _camera->getTranslation());
+
+		screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
 		
 		// Restore OpenGL context
 		
@@ -172,19 +212,34 @@ namespace lys
 		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::StencilAttachment));
 	}
 
-	const spl::Texture2D& Scene::getPositionTexture() const
+	const spl::Texture2D& Scene::getColorTexture() const
 	{
 		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
 	}
 
-	const spl::Texture2D& Scene::getNormalTexture() const
+	const spl::Texture2D& Scene::getMaterialTexture() const
 	{
 		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment1));
 	}
 
-	const spl::Texture2D& Scene::getAlbedoTexture() const
+	const spl::Texture2D& Scene::getPositionTexture() const
 	{
 		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment2));
+	}
+
+	const spl::Texture2D& Scene::getNormalTexture() const
+	{
+		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment3));
+	}
+
+	const spl::Texture2D& Scene::getTangentTexture() const
+	{
+		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment4));
+	}
+
+	const spl::Texture2D& Scene::getRenderTexture() const
+	{
+		return dynamic_cast<const spl::Texture2D&>(*_mergeFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
 	}
 
 	bool Scene::isValid() const
@@ -194,9 +249,9 @@ namespace lys
 
 	void Scene::_insertInDrawSequence(void* pDrawSequence, const Drawable* drawable)
 	{
-		const DrawableInfo& info = drawable->_getInfo();
+		DrawableType drawableType = drawable->_getType();
 
-		if (info.type == DrawableType::Group)
+		if (drawableType == DrawableType::Group)
 		{
 			const DrawableGroup* group = dynamic_cast<const DrawableGroup*>(drawable);
 			assert(group != nullptr);
@@ -211,21 +266,15 @@ namespace lys
 		{
 			std::multimap<DrawableShaderSet, const Drawable*, DrawableShaderSetLess>& drawSequence = *reinterpret_cast<std::multimap<DrawableShaderSet, const Drawable*, DrawableShaderSetLess>*>(pDrawSequence);
 
-			DrawableShaderSet set = info.shaderSet;
+			DrawableShaderSet set = drawable->_getShaderSet();
 
-			if (!set.gBufferShader || !set.mergeShader)
+			if (!set.gBufferShader /*|| !set.mergeShader*/)
 			{
-				// TODO : assert info.flags is valid
-				// TODO : projection of info.flags
-				// TODO : assert info.flags has a corresponding shader
+				// TODO: Compute index from material and drawable
 
 				if (!set.gBufferShader)
 				{
-					set.gBufferShader = _shaderMap[info.type].find(info.flags)->second.gBufferShader;
-				}
-				if (!set.mergeShader)
-				{
-					set.mergeShader = _shaderMap[info.type].find(info.flags)->second.mergeShader;
+					set.gBufferShader = _shaderMap[drawableType][0].gBufferShader;
 				}
 			}
 
@@ -236,15 +285,20 @@ namespace lys
 	void Scene::_loadShaders()
 	{
 		spl::ShaderModule modules[] = {
-			{ spl::ShaderStage::Vertex,		meshVert,	sizeof(meshVert) },
-			{ spl::ShaderStage::Fragment,	meshFrag,	sizeof(meshFrag) }
+			{ spl::ShaderStage::Vertex,		merge_vert,			sizeof(merge_vert) },
+			{ spl::ShaderStage::Fragment,	merge_frag,			sizeof(merge_frag) },
+			{ spl::ShaderStage::Vertex,		mesh_gBuffer_vert,	sizeof(mesh_gBuffer_vert) },
+			{ spl::ShaderStage::Fragment,	mesh_gBuffer_frag,	sizeof(mesh_gBuffer_frag) }
 		};
 
 		std::array<const spl::ShaderModule*, 5> moduleArray;
 
+		// Merge
 		moduleArray = { modules + 0, modules + 1, nullptr, nullptr, nullptr };
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		// etc...
+		// Mesh gBuffer
+		moduleArray = { modules + 2, modules + 3, nullptr, nullptr, nullptr };
+		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
 
 
 		_shaderMap = {
@@ -257,8 +311,7 @@ namespace lys
 			{
 				DrawableType::Mesh,
 				{
-					{ DrawableFlags::None, { _shaders[0], nullptr } }
-					// etc...
+					{ _shaders[1] }
 				}
 			},
 			{

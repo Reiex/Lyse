@@ -81,9 +81,15 @@
     <ClInclude Include="..\..\include\Lyse\Core\DrawableGroup.hpp">
       <Filter>Header Files\Core</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\Lyse\Core\Material.hpp">
+      <Filter>Header Files\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\Lyse\Core\Scene.cpp">
+      <Filter>Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Lyse\Core\Material.cpp">
       <Filter>Source Files\Core</Filter>
     </ClCompile>
   </ItemGroup>

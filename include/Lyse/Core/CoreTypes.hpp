@@ -24,20 +24,31 @@ namespace lys
 	class CameraPerspective;
 
 
-	enum class DrawableType : uint8_t;
-	namespace DrawableFlags { enum Flags : uint64_t; }
-	struct DrawableInfo;
+	class Material;
+
+	enum class DrawableType;
+	struct DrawableShaderSet;
 	struct DrawContext;
 	class Drawable;
 
 	class DrawableGroup;
 
-	template<uint32_t PositionIndex, uint32_t NormalIndex, uint32_t TexCoordsIndex, CVertexAttribute... TAttributes> class VertexBase;
+
+	struct VertexSpecialIndices
+	{
+		const uint32_t position;
+		const uint32_t normal;
+		const uint32_t tangent;
+		const uint32_t texCoords;
+	};
+	template<VertexSpecialIndices SpecialIndices, CVertexAttribute... TAttributes> class VertexBase;
 	template<typename T> concept CVertex = requires { typename T::IsVertex; };
-	struct DefaultVertex;
+	struct VertexDefaultMesh;
+
 
 	enum class MeshFormat;
 	template<CVertex TVertex> class Mesh;
+
 
 	class Scene;
 }

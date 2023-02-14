@@ -125,8 +125,8 @@ namespace spl
 		struct AggregateShaderLimits;
 		struct Debug;
 		struct TransformFeedbackLimits;
-		struct Values;
 	}
+	struct ImplementationDependentValues;
 	class Context;
 
 	enum class EventType;

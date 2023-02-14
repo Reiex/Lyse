@@ -36,9 +36,13 @@ namespace lys
 
 			const spl::Texture2D& getDepthTexture() const;
 			const spl::Texture2D& getStencilTexture() const;
+			const spl::Texture2D& getColorTexture() const;
+			const spl::Texture2D& getMaterialTexture() const;
 			const spl::Texture2D& getPositionTexture() const;
 			const spl::Texture2D& getNormalTexture() const;
-			const spl::Texture2D& getAlbedoTexture() const;
+			const spl::Texture2D& getTangentTexture() const;
+
+			const spl::Texture2D& getRenderTexture() const;
 
 			bool isValid() const;
 
@@ -53,10 +57,11 @@ namespace lys
 
 			thread_local static uint32_t _sceneCount;
 			thread_local static std::vector<spl::ShaderProgram*> _shaders;
-			thread_local static std::unordered_map<DrawableType, std::unordered_map<uint64_t, DrawableShaderSet>> _shaderMap;
+			thread_local static std::unordered_map<DrawableType, std::vector<DrawableShaderSet>> _shaderMap;
 	
 
 			spl::Framebuffer _gBufferFramebuffer;
+			spl::Framebuffer _mergeFramebuffer;
 
 			const CameraBase* _camera;
 			std::unordered_set<const Drawable*> _drawables;

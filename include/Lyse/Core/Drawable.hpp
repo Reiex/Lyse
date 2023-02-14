@@ -11,7 +11,7 @@
 
 namespace lys
 {
-	enum class DrawableType : uint8_t
+	enum class DrawableType
 	{
 		Particles,
 		Mesh,
@@ -19,63 +19,36 @@ namespace lys
 		Group
 	};
 
-	namespace DrawableFlags
-	{
-		enum Flags : uint64_t
-		{
-			None
-			/*
-
-			HasNormalMap,
-			HasDisplacementMap,
-
-			Shadows ?
-			MaterialTypes ?
-			etc...
-
-			*/
-		};
-	}
-
 	struct DrawableShaderSet
 	{
 		const spl::ShaderProgram* gBufferShader;
-		const spl::ShaderProgram* mergeShader;
-	};
-
-	struct DrawableInfo
-	{
-		DrawableType type;
-		DrawableFlags::Flags flags;
-
-		DrawableShaderSet shaderSet;
 	};
 
 	struct DrawContext
 	{
-		const spl::ShaderProgram* program;
+		const spl::ShaderProgram* shader;
 		scp::f32mat4x4 transform;
 	};
 
 	class Drawable : public Transformable
 	{
-		public:
-
-			Drawable(const Drawable& drawable) = delete;
-			Drawable(Drawable&& drawable) = delete;
-
-			Drawable& operator=(const Drawable& drawable) = delete;
-			Drawable& operator=(Drawable&& drawable) = delete;
-
-			virtual ~Drawable() override = default;
-
 		protected:
 
 			Drawable() = default;
 
+			Drawable(const Drawable& drawable) = default;
+			Drawable(Drawable&& drawable) = default;
+
+			Drawable& operator=(const Drawable& drawable) = default;
+			Drawable& operator=(Drawable&& drawable) = default;
+
+			virtual ~Drawable() override = default;
+
 		private:
 
-			virtual const DrawableInfo& _getInfo() const = 0;
+			virtual DrawableType _getType() const = 0;
+			virtual const DrawableShaderSet& _getShaderSet() const = 0;
+			virtual const Material& _getMaterial() const = 0;
 
 			virtual void _draw(const DrawContext& context) const = 0;
 

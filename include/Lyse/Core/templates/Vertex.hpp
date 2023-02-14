@@ -13,18 +13,26 @@ namespace lys
 {
 	namespace _lys
 	{
-		template<CVertexAttribute TAttribute, CVertexAttribute... TNextAttributes> struct NextVertexBase { using Type = VertexBase<-1, -1, -1, TNextAttributes...>; };
-		template<CVertexAttribute TAttribute> struct NextVertexBase<TAttribute> { using Type = VertexBase<-1, -1, -1, TAttribute>; };
+		template<CVertexAttribute TAttribute, CVertexAttribute... TNextAttributes>
+		struct NextVertexBase
+		{
+			using Type = VertexBase<NoIndices, TNextAttributes...>;
+		};
+
+		template<CVertexAttribute TAttribute> struct NextVertexBase<TAttribute>
+		{
+			using Type = VertexBase<NoIndices, TAttribute>;
+		};
 	}
 
-	template<uint32_t PositionIndex, uint32_t NormalIndex, uint32_t TexCoordsIndex, CVertexAttribute... TAttributes>
-	constexpr uint32_t VertexBase<PositionIndex, NormalIndex, TexCoordsIndex, TAttributes...>::getAttributeCount()
+	template<VertexSpecialIndices SpecialIndices, CVertexAttribute... TAttributes>
+	constexpr uint32_t VertexBase<SpecialIndices, TAttributes...>::getAttributeCount()
 	{
 		return sizeof...(TAttributes);
 	}
 
-	template<uint32_t PositionIndex, uint32_t NormalIndex, uint32_t TexCoordsIndex, CVertexAttribute... TAttributes>
-	constexpr spl::GlslType VertexBase<PositionIndex, NormalIndex, TexCoordsIndex, TAttributes...>::getAttributeType(uint32_t i)
+	template<VertexSpecialIndices SpecialIndices, CVertexAttribute... TAttributes>
+	constexpr spl::GlslType VertexBase<SpecialIndices, TAttributes...>::getAttributeType(uint32_t i)
 	{
 		assert(i < sizeof...(TAttributes));
 
@@ -52,8 +60,8 @@ namespace lys
 		}
 	}
 
-	template<uint32_t PositionIndex, uint32_t NormalIndex, uint32_t TexCoordsIndex, CVertexAttribute... TAttributes>
-	constexpr uint32_t VertexBase<PositionIndex, NormalIndex, TexCoordsIndex, TAttributes...>::getAttributeOffsetInStructure(uint32_t i)
+	template<VertexSpecialIndices SpecialIndices, CVertexAttribute... TAttributes>
+	constexpr uint32_t VertexBase<SpecialIndices, TAttributes...>::getAttributeOffsetInStructure(uint32_t i)
 	{
 		assert(i < sizeof...(TAttributes));
 
@@ -68,82 +76,121 @@ namespace lys
 		}
 	}
 
-	template<uint32_t PositionIndex, uint32_t NormalIndex, uint32_t TexCoordsIndex, CVertexAttribute... TAttributes>
-	constexpr const void* VertexBase<PositionIndex, NormalIndex, TexCoordsIndex, TAttributes...>::getAttribute(uint32_t i) const
+	template<VertexSpecialIndices SpecialIndices, CVertexAttribute... TAttributes>
+	constexpr const void* VertexBase<SpecialIndices, TAttributes...>::getAttribute(uint32_t i) const
 	{
 		return reinterpret_cast<const uint8_t*>(this) + getAttributeOffsetInStructure(i);
 	}
 
-	template<uint32_t PositionIndex, uint32_t NormalIndex, uint32_t TexCoordsIndex, CVertexAttribute... TAttributes>
-	constexpr void* VertexBase<PositionIndex, NormalIndex, TexCoordsIndex, TAttributes...>::getAttribute(uint32_t i)
+	template<VertexSpecialIndices SpecialIndices, CVertexAttribute... TAttributes>
+	constexpr void* VertexBase<SpecialIndices, TAttributes...>::getAttribute(uint32_t i)
 	{
 		return reinterpret_cast<uint8_t*>(this) + getAttributeOffsetInStructure(i);
 	}
 
-	template<uint32_t PositionIndex, uint32_t NormalIndex, uint32_t TexCoordsIndex, CVertexAttribute... TAttributes>
-	constexpr void VertexBase<PositionIndex, NormalIndex, TexCoordsIndex, TAttributes...>::setPosition(float x, float y, float z, float w)
+	template<VertexSpecialIndices SpecialIndices, CVertexAttribute... TAttributes>
+	constexpr void VertexBase<SpecialIndices, TAttributes...>::setPosition(float x, float y, float z, float w)
 	{
-		_setVector<PositionIndex>(x, y, z, w);
+		_setVector<SpecialIndices.position>(x, y, z, w);
 	}
 
-	template<uint32_t PositionIndex, uint32_t NormalIndex, uint32_t TexCoordsIndex, CVertexAttribute... TAttributes>
-	constexpr void VertexBase<PositionIndex, NormalIndex, TexCoordsIndex, TAttributes...>::setNormal(float x, float y, float z, float w)
+	template<VertexSpecialIndices SpecialIndices, CVertexAttribute... TAttributes>
+	constexpr void VertexBase<SpecialIndices, TAttributes...>::setNormal(float x, float y, float z, float w)
 	{
-		_setVector<NormalIndex>(x, y, z, w);
+		_setVector<SpecialIndices.normal>(x, y, z, w);
 	}
 
-	template<uint32_t PositionIndex, uint32_t NormalIndex, uint32_t TexCoordsIndex, CVertexAttribute... TAttributes>
-	constexpr void VertexBase<PositionIndex, NormalIndex, TexCoordsIndex, TAttributes...>::setTexCoords(float x, float y, float z, float w)
+	template<VertexSpecialIndices SpecialIndices, CVertexAttribute... TAttributes>
+	constexpr void VertexBase<SpecialIndices, TAttributes...>::setTangent(float x, float y, float z, float w)
 	{
-		_setVector<TexCoordsIndex>(x, y, z, w);
+		_setVector<SpecialIndices.tangent>(x, y, z, w);
 	}
 
-	template<uint32_t PositionIndex, uint32_t NormalIndex, uint32_t TexCoordsIndex, CVertexAttribute... TAttributes>
+	template<VertexSpecialIndices SpecialIndices, CVertexAttribute... TAttributes>
+	constexpr void VertexBase<SpecialIndices, TAttributes...>::setTexCoords(float x, float y, float z, float w)
+	{
+		_setVector<SpecialIndices.texCoords>(x, y, z, w);
+	}
+
+	template<VertexSpecialIndices SpecialIndices, CVertexAttribute... TAttributes>
+	constexpr void VertexBase<SpecialIndices, TAttributes...>::getPosition(float& x, float& y, float& z, float& w) const
+	{
+		_getVector<SpecialIndices.position>(x, y, z, w);
+	}
+
+	template<VertexSpecialIndices SpecialIndices, CVertexAttribute... TAttributes>
+	constexpr void VertexBase<SpecialIndices, TAttributes...>::getNormal(float& x, float& y, float& z, float& w) const
+	{
+		_getVector<SpecialIndices.normal>(x, y, z, w);
+	}
+
+	template<VertexSpecialIndices SpecialIndices, CVertexAttribute... TAttributes>
+	constexpr void VertexBase<SpecialIndices, TAttributes...>::getTangent(float& x, float& y, float& z, float& w) const
+	{
+		_getVector<SpecialIndices.tangent>(x, y, z, w);
+	}
+
+	template<VertexSpecialIndices SpecialIndices, CVertexAttribute... TAttributes>
+	constexpr void VertexBase<SpecialIndices, TAttributes...>::getTexCoords(float& x, float& y, float& z, float& w) const
+	{
+		_getVector<SpecialIndices.texCoords>(x, y, z, w);
+	}
+
+	template<VertexSpecialIndices SpecialIndices, CVertexAttribute... TAttributes>
 	template<uint32_t Index>
-	constexpr void VertexBase<PositionIndex, NormalIndex, TexCoordsIndex, TAttributes...>::_setVector(float x, float y, float z, float w)
+	constexpr void VertexBase<SpecialIndices, TAttributes...>::_setVector(float x, float y, float z, float w)
 	{
-		if constexpr (Index != -1)
+		if constexpr (Index != UINT32_MAX)
 		{
-			void* attr = getAttribute(Index);
+			using TAttr = AttributeType<Index>;
+			static_assert(scp::CVec<TAttr> && TAttr::size == 4);
 
-			if constexpr (std::same_as<AttributeType<Index>, float>)
-			{
-				float& attr = *reinterpret_cast<float*>(getAttribute(Index));
-				attr = x;
-			}
-			else if constexpr (std::same_as<AttributeType<Index>, scp::f32vec2>)
-			{
-				scp::f32vec2& attr = *reinterpret_cast<scp::f32vec2*>(getAttribute(Index));
-				attr.x = x;
-				attr.y = y;
-			}
-			else if constexpr (std::same_as<AttributeType<Index>, scp::f32vec3>)
-			{
-				scp::f32vec3& attr = *reinterpret_cast<scp::f32vec3*>(getAttribute(Index));
-				attr.x = x;
-				attr.y = y;
-				attr.z = z;
-			}
-			else if constexpr (std::same_as<AttributeType<Index>, scp::f32vec4>)
-			{
-				scp::f32vec4& attr = *reinterpret_cast<scp::f32vec4*>(getAttribute(Index));
-				attr.x = x;
-				attr.y = y;
-				attr.z = z;
-				attr.w = w;
-			}
-			else
-			{
-				assert(false);
-			}
+			TAttr& attr = *reinterpret_cast<TAttr*>(getAttribute(Index));
+			attr.x = x;
+			attr.y = y;
+			attr.z = z;
+			attr.w = w;
+		}
+	}
+
+	template<VertexSpecialIndices SpecialIndices, CVertexAttribute... TAttributes>
+	template<uint32_t Index>
+	constexpr void VertexBase<SpecialIndices, TAttributes...>::_getVector(float& x, float& y, float& z, float& w) const
+	{
+		if constexpr (Index != UINT32_MAX)
+		{
+			using TAttr = AttributeType<Index>;
+			static_assert(scp::CVec<TAttr> && TAttr::size == 4);
+
+			const TAttr& attr = *reinterpret_cast<const TAttr*>(getAttribute(Index));
+			x = attr.x;
+			y = attr.y;
+			z = attr.z;
+			w = attr.w;
+		}
+		else
+		{
+			x = 0.f;
+			y = 0.f;
+			z = 0.f;
+			w = 0.f;
 		}
 	}
 
 
-	constexpr DefaultVertex::DefaultVertex(const scp::f32vec3& pos, const scp::f32vec3& n, const scp::f32vec2& tex) :
-		position(pos),
+	constexpr VertexDefaultMesh::VertexDefaultMesh() :
+		position(0.f, 0.f, 0.f, 1.f),
+		normal(0.f, 0.f, 0.f, 0.f),
+		tangent(0.f, 0.f, 0.f, 0.f),
+		texCoords(0.f, 0.f, 0.f, 0.f)
+	{
+	}
+
+	constexpr VertexDefaultMesh::VertexDefaultMesh(const scp::f32vec4& p, const scp::f32vec4& n, const scp::f32vec4& t, const scp::f32vec4& tc) :
+		position(p),
 		normal(n),
-		texCoords(tex)
+		tangent(t),
+		texCoords(tc)
 	{
 	}
 }

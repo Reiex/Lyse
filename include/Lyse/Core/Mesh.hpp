@@ -16,7 +16,7 @@ namespace lys
 		Obj
 	};
 
-	template<CVertex TVertex = DefaultVertex>
+	template<CVertex TVertex = VertexDefaultMesh>
 	class Mesh : public Drawable
 	{
 		public:
@@ -59,7 +59,9 @@ namespace lys
 
 		private:
 
-			virtual const DrawableInfo& _getInfo() const override final;
+			virtual DrawableType _getType() const override final;
+			virtual const DrawableShaderSet& _getShaderSet() const override final;
+			virtual const Material& _getMaterial() const override final;
 
 			virtual void _draw(const DrawContext& context) const override final;
 
@@ -75,7 +77,8 @@ namespace lys
 			};
 			static bool _extensionToMeshFormat(const std::filesystem::path& extension, MeshFormat& format);
 
-			static constexpr DrawableInfo _info = { DrawableType::Mesh, DrawableFlags::None, { nullptr, nullptr } };
+			static constexpr DrawableShaderSet _shaderSet = { nullptr };
+			static const Material _defaultMaterial;
 
 			spl::VertexArray _vao;
 			spl::Buffer _vbo;

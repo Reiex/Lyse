@@ -317,23 +317,34 @@ namespace spl
 			uint32_t maxTransformFeedbackSeparateComponents;
 			uint32_t maxTransformFeedbackBuffers;
 		};
-
-		struct Values
-		{
-			General general;
-			Version version;
-			VertexShaderLimits vertexShader;
-			TessellationShaderLimits tessellationShader;
-			GeometryShaderLimits geometryShader;
-			FragmentShaderLimits fragmentShader;
-			ComputeShaderLimits computeShader;
-			AggregateShaderLimits shader;
-			Debug debug;
-			TransformFeedbackLimits transformFeedback;
-
-			// TODO: internal format dependent values
-		};
 	}
+
+	struct ImplementationDependentValues
+	{
+		ImplementationDependent::General general;
+		ImplementationDependent::Version version;
+		ImplementationDependent::VertexShaderLimits vertexShader;
+		ImplementationDependent::TessellationShaderLimits tessellationShader;
+		ImplementationDependent::GeometryShaderLimits geometryShader;
+		ImplementationDependent::FragmentShaderLimits fragmentShader;
+		ImplementationDependent::ComputeShaderLimits computeShader;
+		ImplementationDependent::AggregateShaderLimits shader;
+		ImplementationDependent::Debug debug;
+		ImplementationDependent::TransformFeedbackLimits transformFeedback;
+
+		// TODO: internal format dependent values
+	};
+
+	enum class FaceCulling
+	{
+		Disabled,
+		BackClockWise,
+		BackCounterClockWise,
+		FrontClockWise,
+		FrontCounterClockWise,
+		FrontAndBackClockWise,
+		FrontAndBackCounterClockWise
+	};
 
 	class Context
 	{
@@ -352,7 +363,7 @@ namespace spl
 
 			// OpenGL implementation dependent parameters
 
-			const ImplementationDependent::Values& getImplementationDependentValues() const;
+			const ImplementationDependentValues& getImplementationDependentValues() const;
 
 			// OpenGL context parameters
 
@@ -360,14 +371,17 @@ namespace spl
 			void setClearDepth(double clearDepth);
 			void setClearStencil(int32_t clearStencil);
 			void setViewport(int32_t xOffset, int32_t yOffset, uint32_t width, uint32_t height);
+			void setIsSeamlessCubeMapFilteringEnabled(bool isEnabled);
 			void setIsDepthTestEnabled(bool isEnabled);
+			void setFaceCulling(FaceCulling faceCulling);
 
 			const scp::f32vec4& getClearColor() const;
 			double getClearDepth() const;
 			int32_t getClearStencil() const;
-			const scp::i32vec2& getViewportOffset() const;
-			const scp::u32vec2& getViewportSize() const;
+			const scp::i32vec4& getViewport() const;
+			bool getIsSeamlessCubeMapFilteringEnabled() const;
 			bool getIsDepthTestEnabled() const;
+			FaceCulling getFaceCulling() const;
 
 			// OpenGL bindings
 
@@ -401,14 +415,15 @@ namespace spl
 			std::queue<DebugMessage*> _debugMessages;
 			DebugMessage* _lastDebugMessageSent;
 
-			ImplementationDependent::Values _implementationDependentValues;
+			ImplementationDependentValues _implementationDependentValues;
 
 			scp::f32vec4 _clearColor;
 			double _clearDepth;
 			int32_t _clearStencil;
-			scp::i32vec2 _viewportOffset;
-			scp::u32vec2 _viewportSize;
+			scp::i32vec4 _viewport;
+			bool _isSeamlessCubeMapFilteringEnabled;
 			bool _isDepthTestEnabled;
+			FaceCulling _faceCulling;
 
 			std::array<const Buffer*, 11> _bufferBindings;
 			std::array<std::vector<const Buffer*>, 4> _indexedBufferBindings;
