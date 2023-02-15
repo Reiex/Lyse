@@ -24,11 +24,13 @@ namespace lys
 	class CameraPerspective;
 
 
+	enum class ShaderType;
+	struct GBufferShaderInterface;
+	class ShaderSet;
+
 	class Material;
 
 	enum class DrawableType;
-	struct DrawableShaderSet;
-	struct DrawContext;
 	class Drawable;
 
 	class DrawableGroup;

@@ -1,11 +1,16 @@
-#version 460 core
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//! \file
+//! \author Reiex
+//! \copyright The MIT License (MIT)
+//! \date 2023
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 in vec2 io_texCoords;
 
 const float c_pi = 3.1415926;
 const vec3 c_dielectricNormalFresnelReflectance = vec3(0.04);
-const vec3 c_light = vec3(-1.0, -1.0, -1.0);
+const vec3 c_light = vec3(-1.0, -0.5, -1.0);
 
 uniform sampler2D u_depth;
 uniform sampler2D u_color;
@@ -51,7 +56,7 @@ void main()
 
     vec3 normalFresnelReflectance = mix(c_dielectricNormalFresnelReflectance, color, metallic);
 
-    vec3 radiance = vec3(3.0) * max(dot(normal, lightDir), 0.0);
+    vec3 radiance = vec3(10.0) * max(dot(normal, lightDir), 0.0);
 
     // Compute final "raw" color
     

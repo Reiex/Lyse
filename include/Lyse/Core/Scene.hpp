@@ -51,14 +51,15 @@ namespace lys
 	
 		private:
 
-			static void _insertInDrawSequence(void* pDrawSequence, const Drawable* drawable);
-
 			static void _loadShaders();
+			static void _insertInDrawSequence(void* pDrawSequence, const Drawable* drawable, ShaderType shaderType);
+			static void _setCameraGBufferUniforms(const std::pair<const spl::ShaderProgram*, const GBufferShaderInterface*>& gBuffer, const CameraBase* camera);
+			static void _setDrawableGBufferUniforms(const std::pair<const spl::ShaderProgram*, const GBufferShaderInterface*>& gBuffer, const Drawable* drawable);
 
 			thread_local static uint32_t _sceneCount;
 			thread_local static std::vector<spl::ShaderProgram*> _shaders;
-			thread_local static std::unordered_map<DrawableType, std::vector<DrawableShaderSet>> _shaderMap;
-	
+			thread_local static std::unordered_map<DrawableType, std::vector<ShaderSet>> _shaderMap;
+
 
 			spl::Framebuffer _gBufferFramebuffer;
 			spl::Framebuffer _mergeFramebuffer;

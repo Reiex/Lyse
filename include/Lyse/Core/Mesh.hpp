@@ -43,6 +43,9 @@ namespace lys
 			void destroy();
 
 
+			void setNormalMap(const spl::Texture2D* texture);
+
+
 			void draw(spl::PrimitiveType primitiveType = spl::PrimitiveType::Triangles) const;
 
 
@@ -52,6 +55,9 @@ namespace lys
 			spl::Buffer& getVertexBuffer();
 			const spl::Buffer& getElementBuffer() const;
 			spl::Buffer& getElementBuffer();
+
+			const spl::Texture2D* getNormalMap() const;
+
 			bool isValid() const;
 
 
@@ -60,10 +66,7 @@ namespace lys
 		private:
 
 			virtual DrawableType _getType() const override final;
-			virtual const DrawableShaderSet& _getShaderSet() const override final;
-			virtual const Material& _getMaterial() const override final;
-
-			virtual void _draw(const DrawContext& context) const override final;
+			virtual void _draw() const override final;
 
 			Mesh();
 
@@ -77,11 +80,10 @@ namespace lys
 			};
 			static bool _extensionToMeshFormat(const std::filesystem::path& extension, MeshFormat& format);
 
-			static constexpr DrawableShaderSet _shaderSet = { nullptr };
-			static const Material _defaultMaterial;
-
 			spl::VertexArray _vao;
 			spl::Buffer _vbo;
 			spl::Buffer _ebo;
+
+			const spl::Texture2D* _normalMap;
 	};
 }

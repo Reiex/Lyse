@@ -19,38 +19,33 @@ namespace lys
 		Group
 	};
 
-	struct DrawableShaderSet
-	{
-		const spl::ShaderProgram* gBufferShader;
-	};
-
-	struct DrawContext
-	{
-		const spl::ShaderProgram* shader;
-		scp::f32mat4x4 transform;
-	};
-
 	class Drawable : public Transformable
 	{
+		public:
+
+			void setShaderSet(const ShaderSet* shaderSet);
+			void setMaterial(const Material* material);
+
+			const ShaderSet* getShaderSet() const;
+			const Material* getMaterial() const;
+
 		protected:
 
-			Drawable() = default;
 
+			Drawable();
 			Drawable(const Drawable& drawable) = default;
 			Drawable(Drawable&& drawable) = default;
 
 			Drawable& operator=(const Drawable& drawable) = default;
 			Drawable& operator=(Drawable&& drawable) = default;
 
+			virtual DrawableType _getType() const = 0;
+			virtual void _draw() const = 0;
+
 			virtual ~Drawable() override = default;
 
-		private:
-
-			virtual DrawableType _getType() const = 0;
-			virtual const DrawableShaderSet& _getShaderSet() const = 0;
-			virtual const Material& _getMaterial() const = 0;
-
-			virtual void _draw(const DrawContext& context) const = 0;
+			const ShaderSet* _shaderSet;
+			const Material* _material;
 
 		friend class Scene;
 	};

@@ -12,13 +12,11 @@
 namespace lys
 {
 	template<CVertex TVertex>
-	const Material Mesh<TVertex>::_defaultMaterial(1.f, 0.83f, 0.83f, 0.04f, 0.f, 0.3f);
-
-	template<CVertex TVertex>
-	Mesh<TVertex>::Mesh() :
+	Mesh<TVertex>::Mesh() : Drawable(),
 		_vao(),
 		_vbo(),
-		_ebo()
+		_ebo(),
+		_normalMap(nullptr)
 	{
 		for (uint32_t i = 0; i < TVertex::getAttributeCount(); ++i)
 		{
@@ -92,6 +90,8 @@ namespace lys
 		_vao.bindArrayBuffer(_vbo, 0, 0, sizeof(TVertex));
 		_vao.bindElementBuffer(_ebo);
 
+		_normalMap = mesh._normalMap;
+
 		return *this;
 	}
 
@@ -103,6 +103,8 @@ namespace lys
 
 		_vao.bindArrayBuffer(_vbo, 0, 0, sizeof(TVertex));
 		_vao.bindElementBuffer(_ebo);
+
+		_normalMap = mesh._normalMap;
 
 		return *this;
 	}
@@ -159,6 +161,12 @@ namespace lys
 	}
 
 	template<CVertex TVertex>
+	void Mesh<TVertex>::setNormalMap(const spl::Texture2D* texture)
+	{
+		_normalMap = texture;
+	}
+
+	template<CVertex TVertex>
 	void Mesh<TVertex>::draw(spl::PrimitiveType primitiveType) const
 	{
 		assert(isValid());
@@ -203,6 +211,12 @@ namespace lys
 	}
 
 	template<CVertex TVertex>
+	const spl::Texture2D* Mesh<TVertex>::getNormalMap() const
+	{
+		return _normalMap;
+	}
+
+	template<CVertex TVertex>
 	bool Mesh<TVertex>::isValid() const
 	{
 		return _vbo.isValid() && _ebo.isValid();
@@ -215,26 +229,8 @@ namespace lys
 	}
 
 	template<CVertex TVertex>
-	const DrawableShaderSet& Mesh<TVertex>::_getShaderSet() const
+	void Mesh<TVertex>::_draw() const
 	{
-		return _shaderSet;
-	}
-
-	template<CVertex TVertex>
-	const Material& Mesh<TVertex>::_getMaterial() const
-	{
-		return _defaultMaterial;
-	}
-
-	template<CVertex TVertex>
-	void Mesh<TVertex>::_draw(const DrawContext& context) const
-	{
-		if constexpr (!std::same_as<TVertex, VertexDefaultMesh>)
-		{
-			assert(false);
-		}
-
-		context.shader->setUniform("u_model", context.transform * getTransformMatrix());
 		draw();
 	}
 

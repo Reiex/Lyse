@@ -174,79 +174,79 @@ namespace spl
 			{
 				case TextureInternalFormat::R_u8:
 				case TextureInternalFormat::R_i8:
-				case TextureInternalFormat::R_nu8:
-				case TextureInternalFormat::R_ni8:
 				case TextureInternalFormat::R_u16:
 				case TextureInternalFormat::R_i16:
-				case TextureInternalFormat::R_nu16:
-				case TextureInternalFormat::R_ni16:
 				case TextureInternalFormat::R_u32:
 				case TextureInternalFormat::R_i32:
 					return TextureFormat::iR;
 
+				case TextureInternalFormat::R_nu8:
+				case TextureInternalFormat::R_ni8:
 				case TextureInternalFormat::R_f16:
+				case TextureInternalFormat::R_nu16:
+				case TextureInternalFormat::R_ni16:
 				case TextureInternalFormat::R_f32:
 					return TextureFormat::R;
 
 				case TextureInternalFormat::RG_u8:
 				case TextureInternalFormat::RG_i8:
-				case TextureInternalFormat::RG_nu8:
-				case TextureInternalFormat::RG_ni8:
 				case TextureInternalFormat::RG_u16:
 				case TextureInternalFormat::RG_i16:
-				case TextureInternalFormat::RG_nu16:
-				case TextureInternalFormat::RG_ni16:
 				case TextureInternalFormat::RG_u32:
 				case TextureInternalFormat::RG_i32:
 					return TextureFormat::iRG;
 
+				case TextureInternalFormat::RG_nu8:
+				case TextureInternalFormat::RG_ni8:
 				case TextureInternalFormat::RG_f16:
+				case TextureInternalFormat::RG_nu16:
+				case TextureInternalFormat::RG_ni16:
 				case TextureInternalFormat::RG_f32:
 					return TextureFormat::RG;
 
 				case TextureInternalFormat::RGB_u8:
 				case TextureInternalFormat::RGB_i8:
-				case TextureInternalFormat::RGB_nu8:
-				case TextureInternalFormat::RGB_ni8:
 				case TextureInternalFormat::RGB_u16:
 				case TextureInternalFormat::RGB_i16:
-				case TextureInternalFormat::RGB_nu16:
-				case TextureInternalFormat::RGB_ni16:
 				case TextureInternalFormat::RGB_u32:
 				case TextureInternalFormat::RGB_i32:
+					return TextureFormat::iRGB;
+
+				case TextureInternalFormat::RGB_nu8:
+				case TextureInternalFormat::RGB_ni8:
+				case TextureInternalFormat::RGB_f16:
+				case TextureInternalFormat::RGB_nu16:
+				case TextureInternalFormat::RGB_ni16:
+				case TextureInternalFormat::RGB_f32:
+				case TextureInternalFormat::R_f11_G_f11_B_f10:
 				case TextureInternalFormat::RGB_nu4:
 				case TextureInternalFormat::RGB_nu5:
 				case TextureInternalFormat::RGB_nu10:
 				case TextureInternalFormat::RGB_nu12:
 				case TextureInternalFormat::R_nu3_G_nu3_B_nu2:
 				case TextureInternalFormat::R_nu5_G_nu6_B_nu5:
-					return TextureFormat::iRGB;
-
-				case TextureInternalFormat::RGB_f16:
-				case TextureInternalFormat::RGB_f32:
-				case TextureInternalFormat::R_f11_G_f11_B_f10:
 					return TextureFormat::RGB;
 
 				case TextureInternalFormat::RGBA_u8:
 				case TextureInternalFormat::RGBA_i8:
-				case TextureInternalFormat::RGBA_nu8:
-				case TextureInternalFormat::RGBA_ni8:
 				case TextureInternalFormat::RGBA_u16:
 				case TextureInternalFormat::RGBA_i16:
-				case TextureInternalFormat::RGBA_nu16:
-				case TextureInternalFormat::RGBA_ni16:
 				case TextureInternalFormat::RGBA_u32:
 				case TextureInternalFormat::RGBA_i32:
+				case TextureInternalFormat::RGB_u10_A_u2:
+					return TextureFormat::iRGBA;
+
+				case TextureInternalFormat::RGBA_nu8:
+				case TextureInternalFormat::RGBA_ni8:
+				case TextureInternalFormat::RGBA_f16:
+				case TextureInternalFormat::RGBA_nu16:
+				case TextureInternalFormat::RGBA_ni16:
+				case TextureInternalFormat::RGBA_f32:
 				case TextureInternalFormat::RGBA_nu2:
 				case TextureInternalFormat::RGBA_nu4:
 				case TextureInternalFormat::RGBA_nu12:
 				case TextureInternalFormat::RGB_nu5_A_nu1:
-				case TextureInternalFormat::RGB_u10_A_u2:
 				case TextureInternalFormat::RGB_nu10_A_nu2:
-					return TextureFormat::iRGBA;
-
-				case TextureInternalFormat::RGBA_f16:
-				case TextureInternalFormat::RGBA_f32:
 					return TextureFormat::RGBA;
 
 				case TextureInternalFormat::Depth_nu16:

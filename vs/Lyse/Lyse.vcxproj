@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\include\Lyse\Core\CameraBase.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\DrawableGroup.hpp" />
+    <ClInclude Include="..\..\include\Lyse\Core\ShaderSet.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\Material.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\Mesh.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\templates\CameraBase.hpp" />
@@ -41,6 +42,8 @@
     <ClInclude Include="..\..\include\Lyse\Core\Transformable.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\Lyse\Core\Drawable.cpp" />
+    <ClCompile Include="..\..\src\Lyse\Core\ShaderSet.cpp" />
     <ClCompile Include="..\..\src\Lyse\Core\Material.cpp" />
     <ClCompile Include="..\..\src\Lyse\Core\Scene.cpp" />
   </ItemGroup>

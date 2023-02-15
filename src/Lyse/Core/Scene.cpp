@@ -13,7 +13,7 @@ namespace lys
 {
 	thread_local uint32_t Scene::_sceneCount(0);
 	thread_local std::vector<spl::ShaderProgram*> Scene::_shaders;
-	thread_local std::unordered_map<DrawableType, std::vector<DrawableShaderSet>> Scene::_shaderMap;
+	thread_local std::unordered_map<DrawableType, std::vector<ShaderSet>> Scene::_shaderMap;
 
 	Scene::Scene(uint32_t width, uint32_t height) :
 		_gBufferFramebuffer(),
@@ -50,6 +50,13 @@ namespace lys
 
 	void Scene::addDrawable(const Drawable* drawable)
 	{
+		switch (drawable->_getType())
+		{
+			case DrawableType::Mesh:
+				assert(dynamic_cast<const Mesh<>*>(drawable));
+				break;
+		}
+
 		_drawables.insert(drawable);
 	}
 
@@ -96,19 +103,6 @@ namespace lys
 			spl::Framebuffer::bind(*framebuffer, spl::FramebufferTarget::DrawFramebuffer);
 			spl::ShaderProgram::bind(*shader);
 		}
-		
-		struct DrawableShaderSetLess
-		{
-			bool operator()(const DrawableShaderSet& a, const DrawableShaderSet& b) const
-			{
-				static std::hash<const spl::ShaderProgram*> h;
-
-				const size_t x = h(a.gBufferShader) * 3 + 0;
-				const size_t y = h(b.gBufferShader) * 3 + 0;
-
-				return x < y;
-			}
-		};
 	}
 
 	void Scene::render() const
@@ -127,41 +121,30 @@ namespace lys
 		context->setClearDepth(1.f);
 		context->setClearStencil(0);
 		
-		// Compute draw sequence - The less shader binding, the better
-		
-		std::multimap<DrawableShaderSet, const Drawable*, DrawableShaderSetLess> drawSequence;
-		for (const Drawable* drawable : _drawables)
-		{
-			_insertInDrawSequence(&drawSequence, drawable);
-		}
-		
-		// Draw gBuffer
+		// Draw G-Buffer
 		
 		spl::Framebuffer::bind(_gBufferFramebuffer, spl::FramebufferTarget::DrawFramebuffer);
 		spl::Framebuffer::clear(true, true, false);
-		
-		DrawContext drawContext;
-		drawContext.shader = nullptr;
-		drawContext.transform = 1.f;
-		
-		for (const std::pair<DrawableShaderSet, const Drawable*>& elt : drawSequence)
+
+		std::multimap<std::pair<const spl::ShaderProgram*, const GBufferShaderInterface*>, const Drawable*> gBufferDrawSequence;
+		for (const Drawable* drawable : _drawables)
 		{
-			if (elt.first.gBufferShader != drawContext.shader)
+			_insertInDrawSequence(&gBufferDrawSequence, drawable, ShaderType::GBuffer);
+		}
+		
+		const spl::ShaderProgram* currentShader = nullptr;
+		for (const std::pair<std::pair<const spl::ShaderProgram*, const GBufferShaderInterface*>, const Drawable*>& elt : gBufferDrawSequence)
+		{
+			if (elt.first.first != currentShader)
 			{
-				drawContext.shader = elt.first.gBufferShader;
-		
-				spl::ShaderProgram::bind(*drawContext.shader);
+				currentShader = elt.first.first;
 
-				drawContext.shader->setUniform("u_projection", _camera->getProjectionMatrix());
-				drawContext.shader->setUniform("u_view", _camera->getViewMatrix());
+				spl::ShaderProgram::bind(*currentShader);
+				_setCameraGBufferUniforms(elt.first, _camera);
 			}
-		
-			const Material& material = elt.second->_getMaterial();
 
-			drawContext.shader->setUniform("u_color", material._color);
-			drawContext.shader->setUniform("u_material", material._props);
-
-			elt.second->_draw(drawContext);
+			_setDrawableGBufferUniforms(elt.first, elt.second);
+			elt.second->_draw();
 		}
 
 		// Merge into final picture
@@ -247,57 +230,74 @@ namespace lys
 		return _camera != nullptr;
 	}
 
-	void Scene::_insertInDrawSequence(void* pDrawSequence, const Drawable* drawable)
-	{
-		DrawableType drawableType = drawable->_getType();
-
-		if (drawableType == DrawableType::Group)
-		{
-			const DrawableGroup* group = dynamic_cast<const DrawableGroup*>(drawable);
-			assert(group != nullptr);
-
-			uint32_t childCount = group->_getChildCount();
-			for (uint32_t i = 0; i < childCount; ++i)
-			{
-				_insertInDrawSequence(pDrawSequence, group->_getChild(i));
-			}
-		}
-		else
-		{
-			std::multimap<DrawableShaderSet, const Drawable*, DrawableShaderSetLess>& drawSequence = *reinterpret_cast<std::multimap<DrawableShaderSet, const Drawable*, DrawableShaderSetLess>*>(pDrawSequence);
-
-			DrawableShaderSet set = drawable->_getShaderSet();
-
-			if (!set.gBufferShader /*|| !set.mergeShader*/)
-			{
-				// TODO: Compute index from material and drawable
-
-				if (!set.gBufferShader)
-				{
-					set.gBufferShader = _shaderMap[drawableType][0].gBufferShader;
-				}
-			}
-
-			drawSequence.insert({ set, drawable });
-		}
-	}
-
 	void Scene::_loadShaders()
 	{
+		constexpr char header[] = "#version 460 core\n";
+		constexpr char colorMap[] = "#define COLOR_MAP\n";
+		constexpr char materialMap[] = "#define MATERIAL_MAP\n";
+		constexpr char normalMap[] = "#define NORMAL_MAP\n";
+
+		const std::vector<const char*> sources[] = {
+			{ header, merge_vert },
+			{ header, merge_frag },
+			{ header, mesh_gBuffer_vert },
+			{ header, mesh_gBuffer_frag },
+			{ header, colorMap, mesh_gBuffer_frag },
+			{ header, materialMap, mesh_gBuffer_frag },
+			{ header, colorMap, materialMap, mesh_gBuffer_frag },
+			{ header, normalMap, mesh_gBuffer_frag },
+			{ header, colorMap, normalMap, mesh_gBuffer_frag },
+			{ header, materialMap, normalMap, mesh_gBuffer_frag },
+			{ header, colorMap, materialMap, normalMap, mesh_gBuffer_frag }
+		};
+
+		const std::vector<uint32_t> sizes[] = {
+			{ sizeof(header) - 1, sizeof(merge_vert) },
+			{ sizeof(header) - 1, sizeof(merge_frag) },
+			{ sizeof(header) - 1, sizeof(mesh_gBuffer_vert) },
+			{ sizeof(header) - 1, sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(colorMap) - 1, sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(materialMap) - 1, sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(colorMap) - 1, sizeof(materialMap) - 1, sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(normalMap) - 1, sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(colorMap) - 1, sizeof(normalMap) - 1, sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(materialMap) - 1, sizeof(normalMap) - 1, sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(colorMap) - 1, sizeof(materialMap) - 1, sizeof(normalMap) - 1, sizeof(mesh_gBuffer_frag) }
+		};
+
 		spl::ShaderModule modules[] = {
-			{ spl::ShaderStage::Vertex,		merge_vert,			sizeof(merge_vert) },
-			{ spl::ShaderStage::Fragment,	merge_frag,			sizeof(merge_frag) },
-			{ spl::ShaderStage::Vertex,		mesh_gBuffer_vert,	sizeof(mesh_gBuffer_vert) },
-			{ spl::ShaderStage::Fragment,	mesh_gBuffer_frag,	sizeof(mesh_gBuffer_frag) }
+			{ spl::ShaderStage::Vertex,		sources[0].data(),	sizes[0].data(),	uint32_t(sources[0].size()) },
+			{ spl::ShaderStage::Fragment,	sources[1].data(),	sizes[1].data(),	uint32_t(sources[1].size()) },
+			{ spl::ShaderStage::Vertex,		sources[2].data(),	sizes[2].data(),	uint32_t(sources[2].size()) },
+			{ spl::ShaderStage::Fragment,	sources[3].data(),	sizes[3].data(),	uint32_t(sources[3].size()) },
+			{ spl::ShaderStage::Fragment,	sources[4].data(),	sizes[4].data(),	uint32_t(sources[4].size()) },
+			{ spl::ShaderStage::Fragment,	sources[5].data(),	sizes[5].data(),	uint32_t(sources[5].size()) },
+			{ spl::ShaderStage::Fragment,	sources[6].data(),	sizes[6].data(),	uint32_t(sources[6].size()) },
+			{ spl::ShaderStage::Fragment,	sources[7].data(),	sizes[7].data(),	uint32_t(sources[7].size()) },
+			{ spl::ShaderStage::Fragment,	sources[8].data(),	sizes[8].data(),	uint32_t(sources[8].size()) },
+			{ spl::ShaderStage::Fragment,	sources[9].data(),	sizes[9].data(),	uint32_t(sources[9].size()) },
+			{ spl::ShaderStage::Fragment,	sources[10].data(),	sizes[10].data(),	uint32_t(sources[10].size()) }
 		};
 
 		std::array<const spl::ShaderModule*, 5> moduleArray;
 
-		// Merge
-		moduleArray = { modules + 0, modules + 1, nullptr, nullptr, nullptr };
+		moduleArray = { modules + 0, modules + 1, nullptr, nullptr, nullptr };	// 0
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		// Mesh gBuffer
-		moduleArray = { modules + 2, modules + 3, nullptr, nullptr, nullptr };
+		moduleArray = { modules + 2, modules + 3, nullptr, nullptr, nullptr };	// 1
+		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
+		moduleArray = { modules + 2, modules + 4, nullptr, nullptr, nullptr };	// 2
+		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
+		moduleArray = { modules + 2, modules + 5, nullptr, nullptr, nullptr };	// 3
+		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
+		moduleArray = { modules + 2, modules + 6, nullptr, nullptr, nullptr };	// 4
+		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
+		moduleArray = { modules + 2, modules + 7, nullptr, nullptr, nullptr };	// 5
+		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
+		moduleArray = { modules + 2, modules + 8, nullptr, nullptr, nullptr };	// 6
+		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
+		moduleArray = { modules + 2, modules + 9, nullptr, nullptr, nullptr };	// 7
+		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
+		moduleArray = { modules + 2, modules + 10, nullptr, nullptr, nullptr };	// 8
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
 
 
@@ -311,7 +311,16 @@ namespace lys
 			{
 				DrawableType::Mesh,
 				{
-					{ _shaders[1] }
+					{
+						_shaders[1],	//
+						_shaders[2],	// colorMap
+						_shaders[3],	// 			  materialMap
+						_shaders[4],	// colorMap + materialMap
+						_shaders[5],	// 							normalMap
+						_shaders[6],	// colorMap					normalMap
+						_shaders[7],	// 			  materialMap + normalMap
+						_shaders[8]		// colorMap + materialMap + normalMap
+					}
 				}
 			},
 			{
@@ -327,5 +336,127 @@ namespace lys
 				}
 			}
 		};
+	}
+
+	void Scene::_insertInDrawSequence(void* pDrawSequence, const Drawable* drawable, ShaderType shaderType)
+	{
+		DrawableType drawableType = drawable->_getType();
+
+		if (drawableType == DrawableType::Group)
+		{
+			const DrawableGroup* group = dynamic_cast<const DrawableGroup*>(drawable);
+			assert(group != nullptr);
+
+			uint32_t childCount = group->_getChildCount();
+			for (uint32_t i = 0; i < childCount; ++i)
+			{
+				_insertInDrawSequence(pDrawSequence, group->_getChild(i), shaderType);
+			}
+		}
+		else
+		{
+			const ShaderSet* drawableShaderSet = drawable->getShaderSet();
+			const Material* material = drawable->getMaterial();
+
+			switch (shaderType)
+			{
+				case ShaderType::GBuffer:
+				{
+					using TKey = std::pair<const spl::ShaderProgram*, const GBufferShaderInterface*>;
+
+					TKey key;
+					if (drawableShaderSet)
+					{
+						key.first = drawableShaderSet->_gBufferShader;
+						key.second = &drawableShaderSet->_gBufferShaderInterface;
+					}
+					else
+					{
+						uint32_t index = (material->getColorTexture() != nullptr) | ((material->getPropertiesTexture() != nullptr) << 1);
+						if (drawableType == DrawableType::Mesh)
+						{
+							index |= (dynamic_cast<const Mesh<>*>(drawable)->getNormalMap() != nullptr) << 2;
+						}
+
+						key.first = _shaderMap[drawableType][index]._gBufferShader;
+						key.second = &_shaderMap[drawableType][index]._gBufferShaderInterface;
+					}
+
+					std::multimap<TKey, const Drawable*>& drawSequence = *reinterpret_cast<std::multimap<TKey, const Drawable*>*>(pDrawSequence);
+					drawSequence.insert({ key, drawable });
+
+					break;
+				}
+				default:
+				{
+					assert(false);
+					break;
+				}
+			}
+		}
+	}
+	
+	void Scene::_setCameraGBufferUniforms(const std::pair<const spl::ShaderProgram*, const GBufferShaderInterface*>& gBuffer, const CameraBase* camera)
+	{
+		if (gBuffer.second->u_projection == spl::GlslType::FloatMat4x4)
+		{
+			gBuffer.first->setUniform("u_projection", camera->getProjectionMatrix());
+		}
+
+		if (gBuffer.second->u_view == spl::GlslType::FloatMat4x4)
+		{
+			gBuffer.first->setUniform("u_view", camera->getViewMatrix());
+		}
+	}
+
+	void Scene::_setDrawableGBufferUniforms(const std::pair<const spl::ShaderProgram*, const GBufferShaderInterface*>& gBuffer, const Drawable* drawable)
+	{
+		if (gBuffer.second->u_model == spl::GlslType::FloatMat4x4)
+		{
+			gBuffer.first->setUniform("u_model", drawable->getTransformMatrix());
+		}
+
+		const Material* material = drawable->getMaterial();
+
+		if (gBuffer.second->u_color == spl::GlslType::Sampler2d)
+		{
+			assert(material->getColorTexture());
+			gBuffer.first->setUniform("u_color", 0, *material->getColorTexture());
+		}
+		else
+		{
+			gBuffer.first->setUniform("u_color", material->getColor());
+		}
+
+		if (gBuffer.second->u_material == spl::GlslType::Sampler2d)
+		{
+			assert(material->getPropertiesTexture());
+			gBuffer.first->setUniform("u_material", 1, *material->getPropertiesTexture());
+		}
+		else
+		{
+			gBuffer.first->setUniform("u_material", material->getProperties());
+		}
+
+		switch (drawable->_getType())
+		{
+			case DrawableType::Mesh:
+			{
+				const Mesh<>& mesh = *dynamic_cast<const Mesh<>*>(drawable);
+
+				if (gBuffer.second->u_normalMap == spl::GlslType::Sampler2d)
+				{
+					assert(mesh.getNormalMap());
+					gBuffer.first->setUniform("u_normalMap", 2, *mesh.getNormalMap());
+				}
+
+				break;
+			}
+			default:
+			{
+				break;
+			}
+		}
+
 	}
 }

@@ -22,6 +22,7 @@
 #include <Lyse/Core/CameraPerspective.hpp>
 
 
+#include <Lyse/Core/ShaderSet.hpp>
 #include <Lyse/Core/Material.hpp>
 
 #include <Lyse/Core/Drawable.hpp>

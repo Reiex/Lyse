@@ -8,10 +8,16 @@ int main()
 	context->setClearColor(0.2f, 0.3f, 0.3f, 1.f);
 
 	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 0.01f, 10.f, 1.f);
-	camera.setTranslation({ 0.f, 0.f, 1.5f });
+	camera.setTranslation({ 0.f, 0.f, 3.f });
 
-	lys::Mesh<> mesh("examples/suzanne.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
-	mesh.scale(0.5);
+	// spl::Texture2D colorTexture("C:/Users/PC/Downloads/color.png"), materialTexture("C:/Users/PC/Downloads/material.png"), normalMap("C:/Users/PC/Downloads/normal.png", spl::TextureInternalFormat::RGB_ni8);
+	spl::Texture2D colorTexture("examples/color.png"), materialTexture("examples/material.png"), normalMap("examples/normal.png", spl::TextureInternalFormat::RGB_ni8);
+	lys::Material material;
+	material.setColorTexture(&colorTexture);
+	material.setPropertiesTexture(&materialTexture);
+	lys::Mesh<> mesh("examples/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
+	mesh.setNormalMap(&normalMap);
+	mesh.setMaterial(&material);
 
 	lys::Scene scene(window.getSize().x, window.getSize().y);
 	scene.addDrawable(&mesh);
@@ -62,6 +68,7 @@ int main()
 		if (window.isKeyPressed(spl::KeyboardKey::LeftShift)) camera.move(camera.getFrontVector() * -0.01f);
 
 		camera.lookAt({ 0.f, 0.f, 0.f });
+		mesh.rotate(0.f, 1.f, 0.f, 0.001f);
 
 		scene.render();
 
