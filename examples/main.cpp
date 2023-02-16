@@ -7,14 +7,19 @@ int main()
 	spl::Context::setCurrentContext(context);
 	context->setClearColor(0.2f, 0.3f, 0.3f, 1.f);
 
-	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 0.01f, 10.f, 1.f);
+	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 10.f);
 	camera.setTranslation({ 0.f, 0.f, 3.f });
 
-	// spl::Texture2D colorTexture("C:/Users/PC/Downloads/color.png"), materialTexture("C:/Users/PC/Downloads/material.png"), normalMap("C:/Users/PC/Downloads/normal.png", spl::TextureInternalFormat::RGB_ni8);
-	spl::Texture2D colorTexture("examples/color.png"), materialTexture("examples/material.png"), normalMap("examples/normal.png", spl::TextureInternalFormat::RGB_ni8);
+	// C:/Users/PC/Downloads/
+	spl::Texture2D colorMap		("examples/color.png");
+	spl::Texture2D materialMap	("examples/material.png");
+	spl::Texture2D normalMap	("examples/normal.png", spl::TextureInternalFormat::RGB_ni8);
+	spl::Texture2D background	("examples/background.png");
+
 	lys::Material material;
-	material.setColorTexture(&colorTexture);
-	material.setPropertiesTexture(&materialTexture);
+	material.setColorTexture(&colorMap);
+	material.setPropertiesTexture(&materialMap);
+
 	lys::Mesh<> mesh("examples/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
 	mesh.setNormalMap(&normalMap);
 	mesh.setMaterial(&material);
@@ -22,6 +27,7 @@ int main()
 	lys::Scene scene(window.getSize().x, window.getSize().y);
 	scene.addDrawable(&mesh);
 	scene.setCamera(&camera);
+	scene.setBackgroundEquirectangular(&background);
 
 	lys::VertexDefaultMesh screenVertices[] = {
 		{ {-1.f,  1.f, 0.f, 1.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f} },

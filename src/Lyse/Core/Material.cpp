@@ -12,31 +12,37 @@ namespace lys
 	const Material Material::defaultMaterial;
 
 	Material::Material() :
-		_color(1.f, 1.f, 1.f),
+		_color(1.f, 1.f, 1.f, 1.f),
 		_props(0.04f, 0.f, 0.3f),
 		_colorTexture(nullptr),
 		_propsTexture(nullptr)
 	{
 	}
 
-	Material::Material(float red, float green, float blue, float ambiant, float metallic, float roughness) : Material()
+	Material::Material(float red, float green, float blue, float alpha, float ambiant, float metallic, float roughness) : Material()
 	{
-		setColor(red, green, blue);
+		setColor(red, green, blue, alpha);
 		setProperties(ambiant, metallic, roughness);
 	}
 
-	void Material::setColor(float red, float green, float blue)
+	void Material::setColor(float red, float green, float blue, float alpha)
 	{
-		// TODO: asserts to check everything is valid
+		assert(red >= 0.f && red <= 1.f);
+		assert(green >= 0.f && green <= 1.f);
+		assert(blue >= 0.f && blue <= 1.f);
+		assert(alpha >= 0.f && alpha <= 1.f);
 
 		_color.x = red;
 		_color.y = green;
 		_color.z = blue;
+		_color.w = alpha;
 	}
 
 	void Material::setProperties(float ambiant, float metallic, float roughness)
 	{
-		// TODO: asserts to check everything is valid
+		assert(ambiant >= 0.f && ambiant <= 1.f);
+		assert(metallic >= 0.f && metallic <= 1.f);
+		assert(roughness >= 0.f && roughness <= 1.f);
 
 		_props.x = ambiant;
 		_props.y = metallic;
@@ -53,7 +59,7 @@ namespace lys
 		_propsTexture = texture;
 	}
 
-	const scp::f32vec3& Material::getColor() const
+	const scp::f32vec4& Material::getColor() const
 	{
 		return _color;
 	}

@@ -19,6 +19,8 @@ namespace lys
 		_gBufferFramebuffer(),
 		_mergeFramebuffer(),
 		_camera(nullptr),
+		_clearColor(0.f, 0.f, 0.f),
+		_background(nullptr),
 		_drawables()
 	{
 		if (++_sceneCount == 1)
@@ -46,6 +48,28 @@ namespace lys
 	void Scene::setCamera(const CameraBase* camera)
 	{
 		_camera = camera;
+	}
+
+	void Scene::setBackgroundFlatColor(float red, float green, float blue)
+	{
+		assert(red >= 0.f && red <= 1.f);
+		assert(green >= 0.f && green <= 1.f);
+		assert(blue >= 0.f && blue <= 1.f);
+
+		_clearColor.x = red;
+		_clearColor.y = green;
+		_clearColor.z = blue;
+	}
+
+	void Scene::setBackgroundEquirectangular(const spl::Texture2D* texture)
+	{
+		_background = &texture->getRawTexture();
+	}
+
+	void Scene::setBackgroundCubemap(const spl::RawTexture* texture)
+	{
+		assert(texture->getCreationParams().target == spl::TextureTarget::CubeMap);
+		_background = texture;
 	}
 
 	void Scene::addDrawable(const Drawable* drawable)
@@ -117,12 +141,12 @@ namespace lys
 		// Set context
 
 		spl::Context* context = spl::Context::getCurrentContext();
-		context->setClearColor(0.f, 0.f, 0.f, 0.f);
 		context->setClearDepth(1.f);
 		context->setClearStencil(0);
 		
 		// Draw G-Buffer
-		
+
+		context->setClearColor(0.f, 0.f, 0.f, 0.f);
 		spl::Framebuffer::bind(_gBufferFramebuffer, spl::FramebufferTarget::DrawFramebuffer);
 		spl::Framebuffer::clear(true, true, false);
 
@@ -148,7 +172,8 @@ namespace lys
 		}
 
 		// Merge into final picture
-		
+
+		context->setClearColor(_clearColor.x, _clearColor.y, _clearColor.z, 1.f);
 		spl::Framebuffer::bind(_mergeFramebuffer, spl::FramebufferTarget::DrawFramebuffer);
 		spl::Framebuffer::clear();
 
@@ -167,16 +192,38 @@ namespace lys
 
 			screenVao.bindArrayBuffer(screenVbo, 0, 0, sizeof(float) * 2);
 		}
+		
+		const spl::ShaderProgram* mergeShader = _shaders[0];
+		if (_background)
+		{
+			if (_background->getCreationParams().target == spl::TextureTarget::CubeMap)
+			{
+				mergeShader = _shaders[2];
+			}
+			else
+			{
+				mergeShader = _shaders[1];
+			}
+		}
 
-		spl::ShaderProgram::bind(*_shaders[0]);
-		_shaders[0]->setUniform("u_depth", 0, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::DepthAttachment));
-		_shaders[0]->setUniform("u_color", 1, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
-		_shaders[0]->setUniform("u_material", 2, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment1));
-		_shaders[0]->setUniform("u_position", 3, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment2));
-		_shaders[0]->setUniform("u_normal", 4, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment3));
-		// _shaders[0]->setUniform("u_tangent", 5, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment4));
+		spl::ShaderProgram::bind(*mergeShader);
+		mergeShader->setUniform("u_depth", 0, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::DepthAttachment));
+		mergeShader->setUniform("u_color", 1, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
+		mergeShader->setUniform("u_material", 2, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment1));
+		mergeShader->setUniform("u_position", 3, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment2));
+		mergeShader->setUniform("u_normal", 4, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment3));
+		// mergeShader->setUniform("u_tangent", 5, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment4));
 
-		_shaders[0]->setUniform("u_cameraPos", _camera->getTranslation());
+		mergeShader->setUniform("u_cameraPos", _camera->getTranslation());
+
+		if (_background)
+		{
+			mergeShader->setUniform("u_cameraUp", _camera->getUpVector());
+			mergeShader->setUniform("u_cameraFront", _camera->getFrontVector());
+			mergeShader->setUniform("u_cameraLeft", _camera->getLeftVector());
+			mergeShader->setUniform("u_ndcToCamera", scp::f32vec2(_camera->getAspect(), 1.f) * std::tan(_camera->getFieldOfView() / 2.f));
+			mergeShader->setUniform("u_background", 5, *_background);
+		}
 
 		screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
 		
@@ -232,72 +279,85 @@ namespace lys
 
 	void Scene::_loadShaders()
 	{
-		constexpr char header[] = "#version 460 core\n";
-		constexpr char colorMap[] = "#define COLOR_MAP\n";
-		constexpr char materialMap[] = "#define MATERIAL_MAP\n";
-		constexpr char normalMap[] = "#define NORMAL_MAP\n";
+		constexpr char header[] =				"#version 460 core\n";
+		constexpr char background[] =			"#define BACKGROUND\n";
+		constexpr char backgroundProjection[] =	"#define BACKGROUND_PROJECTION\n";
+		constexpr char backgroundCubemap[] =	"#define BACKGROUND_CUBEMAP\n";
+		constexpr char colorMap[] =				"#define COLOR_MAP\n";
+		constexpr char materialMap[] =			"#define MATERIAL_MAP\n";
+		constexpr char normalMap[] =			"#define NORMAL_MAP\n";
 
 		const std::vector<const char*> sources[] = {
-			{ header, merge_vert },
-			{ header, merge_frag },
-			{ header, mesh_gBuffer_vert },
-			{ header, mesh_gBuffer_frag },
-			{ header, colorMap, mesh_gBuffer_frag },
-			{ header, materialMap, mesh_gBuffer_frag },
-			{ header, colorMap, materialMap, mesh_gBuffer_frag },
-			{ header, normalMap, mesh_gBuffer_frag },
-			{ header, colorMap, normalMap, mesh_gBuffer_frag },
-			{ header, materialMap, normalMap, mesh_gBuffer_frag },
-			{ header, colorMap, materialMap, normalMap, mesh_gBuffer_frag }
+			{ header,													merge_vert },
+			{ header,													merge_frag },
+			{ header, background,	backgroundProjection,				merge_frag },
+			{ header, background,	backgroundCubemap,					merge_frag },
+			{ header,													mesh_gBuffer_vert },
+			{ header,													mesh_gBuffer_frag },
+			{ header, colorMap,											mesh_gBuffer_frag },
+			{ header,				materialMap,						mesh_gBuffer_frag },
+			{ header, colorMap,		materialMap,						mesh_gBuffer_frag },
+			{ header,										normalMap,	mesh_gBuffer_frag },
+			{ header, colorMap,								normalMap,	mesh_gBuffer_frag },
+			{ header,				materialMap,			normalMap,	mesh_gBuffer_frag },
+			{ header, colorMap,		materialMap,			normalMap,	mesh_gBuffer_frag }
 		};
 
 		const std::vector<uint32_t> sizes[] = {
-			{ sizeof(header) - 1, sizeof(merge_vert) },
-			{ sizeof(header) - 1, sizeof(merge_frag) },
-			{ sizeof(header) - 1, sizeof(mesh_gBuffer_vert) },
-			{ sizeof(header) - 1, sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(colorMap) - 1, sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(materialMap) - 1, sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(colorMap) - 1, sizeof(materialMap) - 1, sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(normalMap) - 1, sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(colorMap) - 1, sizeof(normalMap) - 1, sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(materialMap) - 1, sizeof(normalMap) - 1, sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(colorMap) - 1, sizeof(materialMap) - 1, sizeof(normalMap) - 1, sizeof(mesh_gBuffer_frag) }
+			{ sizeof(header) - 1,																						sizeof(merge_vert) },
+			{ sizeof(header) - 1,																						sizeof(merge_frag) },
+			{ sizeof(header) - 1, sizeof(background) - 1,	sizeof(backgroundProjection) - 1,							sizeof(merge_frag) },
+			{ sizeof(header) - 1, sizeof(background) - 1,	sizeof(backgroundCubemap) - 1,								sizeof(merge_frag) },
+			{ sizeof(header) - 1,																						sizeof(mesh_gBuffer_vert) },
+			{ sizeof(header) - 1,																						sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(colorMap) - 1,																	sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1,							sizeof(materialMap) - 1,									sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(colorMap) - 1,		sizeof(materialMap) - 1,									sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1,																sizeof(normalMap) - 1,	sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(colorMap) - 1,											sizeof(normalMap) - 1,	sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1,							sizeof(materialMap) - 1,			sizeof(normalMap) - 1,	sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(colorMap) - 1,		sizeof(materialMap) - 1,			sizeof(normalMap) - 1,	sizeof(mesh_gBuffer_frag) }
 		};
 
 		spl::ShaderModule modules[] = {
 			{ spl::ShaderStage::Vertex,		sources[0].data(),	sizes[0].data(),	uint32_t(sources[0].size()) },
 			{ spl::ShaderStage::Fragment,	sources[1].data(),	sizes[1].data(),	uint32_t(sources[1].size()) },
-			{ spl::ShaderStage::Vertex,		sources[2].data(),	sizes[2].data(),	uint32_t(sources[2].size()) },
+			{ spl::ShaderStage::Fragment,	sources[2].data(),	sizes[2].data(),	uint32_t(sources[2].size()) },
 			{ spl::ShaderStage::Fragment,	sources[3].data(),	sizes[3].data(),	uint32_t(sources[3].size()) },
-			{ spl::ShaderStage::Fragment,	sources[4].data(),	sizes[4].data(),	uint32_t(sources[4].size()) },
+			{ spl::ShaderStage::Vertex,		sources[4].data(),	sizes[4].data(),	uint32_t(sources[4].size()) },
 			{ spl::ShaderStage::Fragment,	sources[5].data(),	sizes[5].data(),	uint32_t(sources[5].size()) },
 			{ spl::ShaderStage::Fragment,	sources[6].data(),	sizes[6].data(),	uint32_t(sources[6].size()) },
 			{ spl::ShaderStage::Fragment,	sources[7].data(),	sizes[7].data(),	uint32_t(sources[7].size()) },
 			{ spl::ShaderStage::Fragment,	sources[8].data(),	sizes[8].data(),	uint32_t(sources[8].size()) },
 			{ spl::ShaderStage::Fragment,	sources[9].data(),	sizes[9].data(),	uint32_t(sources[9].size()) },
-			{ spl::ShaderStage::Fragment,	sources[10].data(),	sizes[10].data(),	uint32_t(sources[10].size()) }
+			{ spl::ShaderStage::Fragment,	sources[10].data(),	sizes[10].data(),	uint32_t(sources[10].size()) },
+			{ spl::ShaderStage::Fragment,	sources[11].data(),	sizes[11].data(),	uint32_t(sources[11].size()) },
+			{ spl::ShaderStage::Fragment,	sources[12].data(),	sizes[12].data(),	uint32_t(sources[12].size()) }
 		};
 
 		std::array<const spl::ShaderModule*, 5> moduleArray;
 
 		moduleArray = { modules + 0, modules + 1, nullptr, nullptr, nullptr };	// 0
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 2, modules + 3, nullptr, nullptr, nullptr };	// 1
+		moduleArray = { modules + 0, modules + 2, nullptr, nullptr, nullptr };	// 1
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 2, modules + 4, nullptr, nullptr, nullptr };	// 2
+		moduleArray = { modules + 0, modules + 3, nullptr, nullptr, nullptr };	// 2
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 2, modules + 5, nullptr, nullptr, nullptr };	// 3
+		moduleArray = { modules + 4, modules + 5, nullptr, nullptr, nullptr };	// 3
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 2, modules + 6, nullptr, nullptr, nullptr };	// 4
+		moduleArray = { modules + 4, modules + 6, nullptr, nullptr, nullptr };	// 4
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 2, modules + 7, nullptr, nullptr, nullptr };	// 5
+		moduleArray = { modules + 4, modules + 7, nullptr, nullptr, nullptr };	// 5
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 2, modules + 8, nullptr, nullptr, nullptr };	// 6
+		moduleArray = { modules + 4, modules + 8, nullptr, nullptr, nullptr };	// 6
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 2, modules + 9, nullptr, nullptr, nullptr };	// 7
+		moduleArray = { modules + 4, modules + 9, nullptr, nullptr, nullptr };	// 7
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 2, modules + 10, nullptr, nullptr, nullptr };	// 8
+		moduleArray = { modules + 4, modules + 10, nullptr, nullptr, nullptr };	// 8
+		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
+		moduleArray = { modules + 4, modules + 11, nullptr, nullptr, nullptr };	// 9
+		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
+		moduleArray = { modules + 4, modules + 12, nullptr, nullptr, nullptr };	// 10
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
 
 
@@ -312,14 +372,14 @@ namespace lys
 				DrawableType::Mesh,
 				{
 					{
-						_shaders[1],	//
-						_shaders[2],	// colorMap
-						_shaders[3],	// 			  materialMap
-						_shaders[4],	// colorMap + materialMap
-						_shaders[5],	// 							normalMap
-						_shaders[6],	// colorMap					normalMap
-						_shaders[7],	// 			  materialMap + normalMap
-						_shaders[8]		// colorMap + materialMap + normalMap
+						_shaders[3],	//
+						_shaders[4],	// colorMap
+						_shaders[5],	// 			  materialMap
+						_shaders[6],	// colorMap + materialMap
+						_shaders[7],	// 							normalMap
+						_shaders[8],	// colorMap					normalMap
+						_shaders[9],	// 			  materialMap + normalMap
+						_shaders[10]	// colorMap + materialMap + normalMap
 					}
 				}
 			},

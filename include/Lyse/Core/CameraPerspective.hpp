@@ -15,8 +15,8 @@ namespace lys
 	{
 		public:
 
-			constexpr CameraPerspective(float aspect, float near, float far, float fov);
-			constexpr CameraPerspective(uint32_t width, uint32_t height, float near, float far, float fov);
+			constexpr CameraPerspective(float aspect, float fov, float near, float far);
+			constexpr CameraPerspective(uint32_t width, uint32_t height, float fov, float near, float far);
 			constexpr CameraPerspective(const CameraPerspective& camera) = default;
 			constexpr CameraPerspective(CameraPerspective&& camera) = default;
 
@@ -25,14 +25,14 @@ namespace lys
 
 			constexpr void setAspect(float aspect);
 			constexpr void setAspect(uint32_t width, uint32_t height);
+			constexpr void setFieldOfView(float fov);
 			constexpr void setNearDistance(float near);
 			constexpr void setFarDistance(float far);
-			constexpr void setFieldOfView(float fov);
 
-			constexpr float getAspect() const;
+			virtual constexpr float getAspect() const override final;
+			virtual constexpr float getFieldOfView() const override final;
 			constexpr float getNearDistance() const;
 			constexpr float getFarDistance() const;
-			constexpr float getFieldOfView() const;
 			virtual constexpr const scp::f32mat4x4& getProjectionMatrix() const override final;
 
 			virtual constexpr ~CameraPerspective() override final = default;
@@ -40,9 +40,9 @@ namespace lys
 		private:
 
 			float _aspect;
+			float _fov;
 			float _near;
 			float _far;
-			float _fov;
 
 			mutable std::optional<scp::f32mat4x4> _projection;
 	};

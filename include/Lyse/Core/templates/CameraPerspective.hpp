@@ -11,20 +11,20 @@
 
 namespace lys
 {
-	constexpr CameraPerspective::CameraPerspective(float aspect, float near, float far, float fov) :
+	constexpr CameraPerspective::CameraPerspective(float aspect, float fov, float near, float far) :
 		_aspect(aspect),
+		_fov(fov),
 		_near(near),
 		_far(far),
-		_fov(fov),
 		_projection()
 	{
 		assert(aspect > 0.f);
 		assert(near > 0.f);
 		assert(far > near);
-		assert(fov > 0.f && fov < std::numbers::pi / 2);
+		assert(fov > 0.f && fov < std::numbers::pi);
 	}
 
-	constexpr CameraPerspective::CameraPerspective(uint32_t width, uint32_t height, float near, float far, float fov) : CameraPerspective(static_cast<float>(width) / static_cast<float>(height), near, far, fov)
+	constexpr CameraPerspective::CameraPerspective(uint32_t width, uint32_t height, float fov, float near, float far) : CameraPerspective(static_cast<float>(width) / static_cast<float>(height), fov, near, far)
 	{
 	}
 

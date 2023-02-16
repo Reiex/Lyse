@@ -26,6 +26,9 @@ namespace lys
 			void resize(uint32_t width, uint32_t height);
 
 			void setCamera(const CameraBase* camera);
+			void setBackgroundFlatColor(float red, float green, float blue);
+			void setBackgroundEquirectangular(const spl::Texture2D* texture);
+			void setBackgroundCubemap(const spl::RawTexture* texture);	// TODO : Change that when there will a "TextureCubeMap" class in SPL
 
 			void addDrawable(const Drawable* drawable);
 			void removeDrawable(const Drawable* drawable);
@@ -65,6 +68,8 @@ namespace lys
 			spl::Framebuffer _mergeFramebuffer;
 
 			const CameraBase* _camera;
+			scp::f32vec3 _clearColor;
+			const spl::RawTexture* _background;
 			std::unordered_set<const Drawable*> _drawables;
 	};
 }

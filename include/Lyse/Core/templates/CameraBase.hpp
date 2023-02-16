@@ -11,10 +11,6 @@
 
 namespace lys
 {
-	constexpr CameraBase::CameraBase() : Transformable()
-	{
-	}
-
 	inline void CameraBase::lookAt(const scp::f32vec3& position, float dutchAngle)
 	{
 		if (distance(position, getTranslation()) == 0.f)
