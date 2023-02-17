@@ -11,31 +11,27 @@ namespace lys
 {
 	const Material Material::defaultMaterial;
 
-	Material::Material() :
+	Material::Material(float r, float g, float b, float a, float ambiant, float metallic, float roughness) :
 		_color(1.f, 1.f, 1.f, 1.f),
 		_props(0.04f, 0.f, 0.3f),
 		_colorTexture(nullptr),
 		_propsTexture(nullptr)
 	{
-	}
-
-	Material::Material(float red, float green, float blue, float alpha, float ambiant, float metallic, float roughness) : Material()
-	{
-		setColor(red, green, blue, alpha);
+		setColor(r, g, b, a);
 		setProperties(ambiant, metallic, roughness);
 	}
 
-	void Material::setColor(float red, float green, float blue, float alpha)
+	void Material::setColor(float r, float g, float b, float a)
 	{
-		assert(red >= 0.f && red <= 1.f);
-		assert(green >= 0.f && green <= 1.f);
-		assert(blue >= 0.f && blue <= 1.f);
-		assert(alpha >= 0.f && alpha <= 1.f);
+		assert(r >= 0.f && r <= 1.f);
+		assert(g >= 0.f && g <= 1.f);
+		assert(b >= 0.f && b <= 1.f);
+		assert(a >= 0.f && a <= 1.f);
 
-		_color.x = red;
-		_color.y = green;
-		_color.z = blue;
-		_color.w = alpha;
+		_color.x = r;
+		_color.y = g;
+		_color.z = b;
+		_color.w = a;
 	}
 
 	void Material::setProperties(float ambiant, float metallic, float roughness)

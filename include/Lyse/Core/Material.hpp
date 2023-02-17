@@ -15,15 +15,14 @@ namespace lys
 	{
 		public:
 
-			Material();
-			Material(float red, float green, float blue, float alpha, float ambiant, float metallic, float roughness);
+			Material(float r = 1.f, float g = 1.f, float b = 1.f, float a = 1.f, float ambiant = 0.04f, float metallic = 0.1f, float roughness = 0.3f);
 			Material(const Material& material) = default;
 			Material(Material&& material) = default;
 
 			Material& operator=(const Material& material) = default;
 			Material& operator=(Material&& material) = default;
 
-			void setColor(float red, float green, float blue, float alpha);
+			void setColor(float r, float g, float b, float a);
 			void setProperties(float ambiant, float metallic, float roughness);
 			void setColorTexture(const spl::Texture2D* texture);
 			void setPropertiesTexture(const spl::Texture2D* texture);

@@ -26,12 +26,16 @@ namespace lys
 			void resize(uint32_t width, uint32_t height);
 
 			void setCamera(const CameraBase* camera);
+
 			void setBackgroundFlatColor(float red, float green, float blue);
 			void setBackgroundEquirectangular(const spl::Texture2D* texture);
 			void setBackgroundCubemap(const spl::RawTexture* texture);	// TODO : Change that when there will a "TextureCubeMap" class in SPL
 
 			void addDrawable(const Drawable* drawable);
 			void removeDrawable(const Drawable* drawable);
+
+			void addLight(const LightBase* light);
+			void removeLight(const LightBase* light);
 	
 
 			void render() const;
@@ -51,6 +55,9 @@ namespace lys
 
 
 			~Scene() = default;
+
+
+			static constexpr uint32_t maxLightCount = 128;
 	
 		private:
 
@@ -71,5 +78,8 @@ namespace lys
 			scp::f32vec3 _clearColor;
 			const spl::RawTexture* _background;
 			std::unordered_set<const Drawable*> _drawables;
+			
+			std::unordered_set<const LightBase*> _lights;
+			mutable spl::Buffer _uboLights;
 	};
 }

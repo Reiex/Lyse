@@ -49,6 +49,7 @@ namespace lys
 			void draw(spl::PrimitiveType primitiveType = spl::PrimitiveType::Triangles) const;
 
 
+			virtual DrawableType getType() const override final;
 			const spl::VertexArray& getVertexArray() const;
 			spl::VertexArray& getVertexArray();
 			const spl::Buffer& getVertexBuffer() const;
@@ -65,7 +66,6 @@ namespace lys
 
 		private:
 
-			virtual DrawableType _getType() const override final;
 			virtual void _draw() const override final;
 
 			Mesh();

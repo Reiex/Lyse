@@ -15,21 +15,22 @@ namespace lys
 	{
 		public:
 
-			DrawableGroup(const DrawableGroup& group) = delete;
-			DrawableGroup(DrawableGroup&& group) = delete;
-
-			DrawableGroup& operator=(const DrawableGroup& group) = delete;
-			DrawableGroup& operator=(DrawableGroup&& group) = delete;
-
-			virtual ~DrawableGroup() override = default;
+			virtual DrawableType getType() const override = 0;
 
 		protected:
 
 			DrawableGroup() = default;
 
+			DrawableGroup(const DrawableGroup& group) = default;
+			DrawableGroup(DrawableGroup&& group) = default;
+
+			DrawableGroup& operator=(const DrawableGroup& group) = default;
+			DrawableGroup& operator=(DrawableGroup&& group) = default;
+
+			virtual ~DrawableGroup() override = default;
+
 		private:
 
-			virtual DrawableType _getType() const override = 0;
 			virtual void _draw() const override = 0;
 			virtual uint32_t _getChildCount() const = 0;
 			virtual const Drawable* _getChild(uint32_t index) const = 0;

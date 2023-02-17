@@ -28,6 +28,7 @@ namespace lys
 
 			const ShaderSet* getShaderSet() const;
 			const Material* getMaterial() const;
+			virtual DrawableType getType() const = 0;
 
 		protected:
 
@@ -39,7 +40,6 @@ namespace lys
 			Drawable& operator=(const Drawable& drawable) = default;
 			Drawable& operator=(Drawable&& drawable) = default;
 
-			virtual DrawableType _getType() const = 0;
 			virtual void _draw() const = 0;
 
 			virtual ~Drawable() override = default;

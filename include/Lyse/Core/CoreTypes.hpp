@@ -23,6 +23,10 @@ namespace lys
 	class CameraBase;
 	class CameraPerspective;
 
+	enum class LightType;
+	class LightBase;
+	class LightPoint;
+
 
 	enum class ShaderType;
 	struct GBufferShaderInterface;

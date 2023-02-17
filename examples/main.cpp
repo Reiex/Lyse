@@ -24,10 +24,13 @@ int main()
 	mesh.setNormalMap(&normalMap);
 	mesh.setMaterial(&material);
 
+	lys::LightPoint light(3.f, 1.f, 1.f, 1.f, 1.f, 1.f, 100.f);
+
 	lys::Scene scene(window.getSize().x, window.getSize().y);
-	scene.addDrawable(&mesh);
 	scene.setCamera(&camera);
 	scene.setBackgroundEquirectangular(&background);
+	scene.addDrawable(&mesh);
+	scene.addLight(&light);
 
 	lys::VertexDefaultMesh screenVertices[] = {
 		{ {-1.f,  1.f, 0.f, 1.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f} },

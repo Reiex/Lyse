@@ -21,6 +21,9 @@
 #include <Lyse/Core/CameraBase.hpp>
 #include <Lyse/Core/CameraPerspective.hpp>
 
+#include <Lyse/Core/LightBase.hpp>
+#include <Lyse/Core/LightPoint.hpp>
+
 
 #include <Lyse/Core/ShaderSet.hpp>
 #include <Lyse/Core/Material.hpp>

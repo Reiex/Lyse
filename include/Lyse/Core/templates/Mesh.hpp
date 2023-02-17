@@ -175,6 +175,12 @@ namespace lys
 	}
 
 	template<CVertex TVertex>
+	DrawableType Mesh<TVertex>::getType() const
+	{
+		return DrawableType::Mesh;
+	}
+
+	template<CVertex TVertex>
 	const spl::VertexArray& Mesh<TVertex>::getVertexArray() const
 	{
 		return _vao;
@@ -220,12 +226,6 @@ namespace lys
 	bool Mesh<TVertex>::isValid() const
 	{
 		return _vbo.isValid() && _ebo.isValid();
-	}
-
-	template<CVertex TVertex>
-	DrawableType Mesh<TVertex>::_getType() const
-	{
-		return DrawableType::Mesh;
 	}
 
 	template<CVertex TVertex>

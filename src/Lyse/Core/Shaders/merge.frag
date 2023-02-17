@@ -6,12 +6,27 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-const float c_pi = 3.1415926;
+const float c_epsilon = 1e-10;
+const float c_pi = 3.14159265359;
 const vec3 c_dielectricNormalFresnelReflectance = vec3(0.04);
-const vec3 c_light = vec3(-1.0, -0.5, -1.0);
 
 
 in vec2 io_texCoords;
+
+
+struct light_t
+{
+	vec3 color;
+	uint type;
+	vec4 param0;
+	vec4 param1;
+};
+
+layout (std140, binding = 0) uniform ubo_lights_t
+{
+	uint count;
+	light_t lights[MAX_LIGHT_COUNT];
+} ubo_lights;
 
 
 uniform sampler2D u_depth;
@@ -45,13 +60,13 @@ layout (location = 0) out vec3 fo_output;
 vec2 viewDirToProjectionCoords(in vec3 viewDir);
 
 vec3 fresnelSchlick(in vec3 normal, in vec3 lightDir, in vec3 normalFresnelReflectance);
-float distributionGGX(in vec3 normal, in vec3 halfDir, in float roughness);
-float geometryGGX(in vec3 normal, in vec3 vector, in float roughness);
+float distributionGGX(in vec3 normal, in vec3 vector, in float roughness);
+float geometryGGX(in float cTheta, in float roughness);
 
 
 void main()
 {
-	// Retrieve all datas
+	// Retrieve all data
 
 	float depth = texture(u_depth, io_texCoords).r;
 	vec3 color = texture(u_color, io_texCoords).rgb;
@@ -63,9 +78,9 @@ void main()
 	float metallic = material.y;
 	float roughness = material.z;
 
-	// If nothing has been drawn on that fragment, show the background
-
 	vec3 rawColor;
+
+	// If nothing has been drawn on that fragment, show the background
 
 	if (depth == 1.0)
 	{
@@ -89,27 +104,49 @@ void main()
 
 	else
 	{
-		// Compute intermediate values
-
 		vec3 viewDir = normalize(u_cameraPos - position);
-		vec3 lightDir = normalize(-c_light);
-		vec3 halfDir = normalize(lightDir + viewDir);
-
+		float dotNormalViewDir = max(dot(normal, viewDir), c_epsilon);
 		vec3 normalFresnelReflectance = mix(c_dielectricNormalFresnelReflectance, color, metallic);
+		float geometryView = geometryGGX(dotNormalViewDir, roughness);
 
-		vec3 radiance = vec3(10.0) * max(dot(normal, lightDir), 0.0);
-
-		// Compute final "raw" color
-		
-		vec3 fresnelReflectance = fresnelSchlick(halfDir, lightDir, normalFresnelReflectance);
-		float distribution = distributionGGX(normal, halfDir, roughness);
-		float geometry = geometryGGX(normal, viewDir, roughness) * geometryGGX(normal, lightDir, roughness);
-
-		vec3 specular = fresnelReflectance * distribution * geometry / (4.0 * max(dot(normal, viewDir), 0.0) * max(dot(normal, lightDir), 0.0) + 0.0001);
-		vec3 diffuse = color * (1.0 - fresnelReflectance) * (1.0 - metallic) / c_pi;
 		vec3 ambiant = color * ambiantCoeff;
+		vec3 diffuse = vec3(0.0, 0.0, 0.0);
+		vec3 specular = vec3(0.0, 0.0, 0.0);
+		for (uint i = 0; i < ubo_lights.count; ++i)
+		{
+			vec3 lightDir;
+			vec3 radiance;
 
-		rawColor = ambiant + (diffuse + specular) * radiance;
+			switch (ubo_lights.lights[i].type)
+			{
+				case 0:
+				{
+					lightDir = ubo_lights.lights[i].param0.xyz - position;
+					radiance = ubo_lights.lights[i].color / max(dot(lightDir, lightDir), c_epsilon);
+					lightDir = normalize(lightDir);
+				}
+				default:
+				{
+					break;
+				}
+			}
+			
+			float dotNormalLightDir = max(dot(normal, lightDir), c_epsilon);
+			vec3 halfDir = normalize(lightDir + viewDir);
+			radiance *= dotNormalLightDir;
+
+			vec3 fresnelReflectance = fresnelSchlick(halfDir, lightDir, normalFresnelReflectance);
+			float distribution = distributionGGX(normal, halfDir, roughness);
+			float geometryLight = geometryGGX(dotNormalLightDir, roughness);
+
+			diffuse += radiance * (vec3(1.0, 1.0, 1.0) - fresnelReflectance);
+			specular += radiance * fresnelReflectance * distribution * geometryLight / dotNormalLightDir;
+		}
+
+		diffuse *= color * (1.0 - metallic) / c_pi;
+		specular *= geometryView / (4.0 * dotNormalViewDir);
+
+		rawColor = ambiant + diffuse + specular;
 	}
 
 	// Apply HDR and gamma correction to final fragment color
@@ -137,24 +174,22 @@ vec3 fresnelSchlick(in vec3 normal, in vec3 lightDir, in vec3 normalFresnelRefle
 	return normalFresnelReflectance + (1.0 - normalFresnelReflectance) * pow(1.0 - max(dot(normal, lightDir), 0.0), 5);
 }
 
-float distributionGGX(in vec3 normal, in vec3 halfDir, in float roughness)
+float distributionGGX(in vec3 normal, in vec3 vector, in float roughness)
 {
 	float rSq = roughness * roughness;
 	float rSqSq = rSq * rSq;
-	float cTheta  = max(dot(normal, halfDir), 0.0);
-	float cThetaSq = cTheta * cTheta;
+	float cTheta = max(dot(normal, vector), 0.0);
 	
-	float denom = (cThetaSq * (rSqSq - 1.0) + 1.0);
+	float denom = (cTheta * cTheta * (rSqSq - 1.0) + 1.0);
 	denom = c_pi * denom * denom;
 	
 	return rSqSq / denom;
 }
 
-float geometryGGX(in vec3 normal, in vec3 vector, in float roughness)
+float geometryGGX(in float cTheta, in float roughness)
 {
 	float r = (roughness + 1.0);
 	float k = (r*r) / 8.0;
-	float cTheta = max(dot(normal, vector), 0.0);
 
 	return cTheta / (cTheta * (1.0 - k) + k);
 }

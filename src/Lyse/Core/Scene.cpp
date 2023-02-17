@@ -15,13 +15,35 @@ namespace lys
 	thread_local std::vector<spl::ShaderProgram*> Scene::_shaders;
 	thread_local std::unordered_map<DrawableType, std::vector<ShaderSet>> Scene::_shaderMap;
 
+	namespace
+	{
+		#pragma pack(push, 1)
+		struct UboLightData
+		{
+			scp::f32vec3 color;
+			uint32_t type;
+			scp::f32vec4 param0;
+			scp::f32vec4 param1;
+		};
+
+		struct UboLightsData
+		{
+			uint32_t count;
+			scp::f32vec3 padding;
+			UboLightData lights[Scene::maxLightCount];
+		};
+		#pragma pack(pop)
+	}
+
 	Scene::Scene(uint32_t width, uint32_t height) :
 		_gBufferFramebuffer(),
 		_mergeFramebuffer(),
 		_camera(nullptr),
 		_clearColor(0.f, 0.f, 0.f),
 		_background(nullptr),
-		_drawables()
+		_drawables(),
+		_lights(),
+		_uboLights(sizeof(UboLightsData), spl::BufferUsage::StreamDraw)
 	{
 		if (++_sceneCount == 1)
 		{
@@ -74,7 +96,7 @@ namespace lys
 
 	void Scene::addDrawable(const Drawable* drawable)
 	{
-		switch (drawable->_getType())
+		switch (drawable->getType())
 		{
 			case DrawableType::Mesh:
 				assert(dynamic_cast<const Mesh<>*>(drawable));
@@ -89,6 +111,23 @@ namespace lys
 		_drawables.erase(drawable);
 	}
 
+	void Scene::addLight(const LightBase* light)
+	{
+		switch (light->getType())
+		{
+			case LightType::Point:
+				assert(dynamic_cast<const LightPoint*>(light));
+				break;
+		}
+
+		_lights.insert(light);
+	}
+
+	void Scene::removeLight(const LightBase* light)
+	{
+		_lights.erase(light);
+	}
+
 	namespace
 	{
 		struct ContextSave
@@ -99,6 +138,8 @@ namespace lys
 
 			const spl::Framebuffer* framebuffer;
 			const spl::ShaderProgram* shader;
+
+			const spl::Buffer* uniformBlockBuffer;
 
 			void save();
 			void restore() const;
@@ -114,6 +155,8 @@ namespace lys
 
 			framebuffer = context->getFramebufferBinding(spl::FramebufferTarget::DrawFramebuffer);
 			shader = context->getShaderBinding();
+
+			uniformBlockBuffer = context->getBufferBinding(spl::BufferTarget::Uniform, 0);
 		}
 
 		void ContextSave::restore() const
@@ -123,9 +166,10 @@ namespace lys
 			context->setClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
 			context->setClearDepth(clearDepth);
 			context->setClearStencil(clearStencil);
-
-			spl::Framebuffer::bind(*framebuffer, spl::FramebufferTarget::DrawFramebuffer);
-			spl::ShaderProgram::bind(*shader);
+			
+			if (framebuffer)			spl::Framebuffer::bind(*framebuffer, spl::FramebufferTarget::DrawFramebuffer);
+			if (shader)					spl::ShaderProgram::bind(*shader);
+			if (uniformBlockBuffer)		spl::Buffer::bind(*uniformBlockBuffer, spl::BufferTarget::Uniform, 0);
 		}
 	}
 
@@ -177,9 +221,9 @@ namespace lys
 		spl::Framebuffer::bind(_mergeFramebuffer, spl::FramebufferTarget::DrawFramebuffer);
 		spl::Framebuffer::clear();
 
-		static spl::VertexArray screenVao;
 		static constexpr float screenVboData[] = { -1.f,  -1.f, 1.f, -1.f, -1.f, 1.f, 1.f, 1.f };
-		static spl::Buffer screenVbo;
+		thread_local static spl::VertexArray screenVao;
+		thread_local static spl::Buffer screenVbo;
 
 		if (!screenVbo.isValid())
 		{
@@ -224,6 +268,23 @@ namespace lys
 			mergeShader->setUniform("u_ndcToCamera", scp::f32vec2(_camera->getAspect(), 1.f) * std::tan(_camera->getFieldOfView() / 2.f));
 			mergeShader->setUniform("u_background", 5, *_background);
 		}
+
+		thread_local static UboLightsData lightsData;
+
+		uint32_t i = 0;
+		for (const LightBase* light : _lights)
+		{
+			lightsData.lights[i].type = static_cast<uint32_t>(light->getType());
+			lightsData.lights[i].color = light->getColor() * light->getIntensity();
+			light->_getParams(&lightsData.lights[i].param0);
+			++i;
+		}
+		lightsData.count = i;
+
+		_uboLights.update(&lightsData, 4 * sizeof(float) + sizeof(UboLightData) * i);
+
+		spl::Buffer::bind(_uboLights, spl::BufferTarget::Uniform, 0);
+		mergeShader->setUniformBlockBinding(0, 0);
 
 		screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
 		
@@ -287,36 +348,38 @@ namespace lys
 		constexpr char materialMap[] =			"#define MATERIAL_MAP\n";
 		constexpr char normalMap[] =			"#define NORMAL_MAP\n";
 
+		std::string lightCount = "#define MAX_LIGHT_COUNT " + std::to_string(Scene::maxLightCount) + "\n";
+
 		const std::vector<const char*> sources[] = {
-			{ header,													merge_vert },
-			{ header,													merge_frag },
-			{ header, background,	backgroundProjection,				merge_frag },
-			{ header, background,	backgroundCubemap,					merge_frag },
-			{ header,													mesh_gBuffer_vert },
-			{ header,													mesh_gBuffer_frag },
-			{ header, colorMap,											mesh_gBuffer_frag },
-			{ header,				materialMap,						mesh_gBuffer_frag },
-			{ header, colorMap,		materialMap,						mesh_gBuffer_frag },
-			{ header,										normalMap,	mesh_gBuffer_frag },
-			{ header, colorMap,								normalMap,	mesh_gBuffer_frag },
-			{ header,				materialMap,			normalMap,	mesh_gBuffer_frag },
-			{ header, colorMap,		materialMap,			normalMap,	mesh_gBuffer_frag }
+			{ header, 																merge_vert },
+			{ header, lightCount.data(), 											merge_frag },
+			{ header, lightCount.data(),	background,		backgroundProjection,	merge_frag },
+			{ header, lightCount.data(),	background,		backgroundCubemap,		merge_frag },
+			{ header, 																mesh_gBuffer_vert },
+			{ header, 																mesh_gBuffer_frag },
+			{ header, colorMap,														mesh_gBuffer_frag },
+			{ header, 						materialMap,							mesh_gBuffer_frag },
+			{ header, colorMap,				materialMap,							mesh_gBuffer_frag },
+			{ header, 										normalMap,				mesh_gBuffer_frag },
+			{ header, colorMap,								normalMap,				mesh_gBuffer_frag },
+			{ header, 						materialMap,	normalMap,				mesh_gBuffer_frag },
+			{ header, colorMap,				materialMap,	normalMap,				mesh_gBuffer_frag }
 		};
 
 		const std::vector<uint32_t> sizes[] = {
 			{ sizeof(header) - 1,																						sizeof(merge_vert) },
-			{ sizeof(header) - 1,																						sizeof(merge_frag) },
-			{ sizeof(header) - 1, sizeof(background) - 1,	sizeof(backgroundProjection) - 1,							sizeof(merge_frag) },
-			{ sizeof(header) - 1, sizeof(background) - 1,	sizeof(backgroundCubemap) - 1,								sizeof(merge_frag) },
+			{ sizeof(header) - 1, lightCount.size(),																	sizeof(merge_frag) },
+			{ sizeof(header) - 1, lightCount.size(),	sizeof(background) - 1,		sizeof(backgroundProjection) - 1,	sizeof(merge_frag) },
+			{ sizeof(header) - 1, lightCount.size(),	sizeof(background) - 1,		sizeof(backgroundCubemap) - 1,		sizeof(merge_frag) },
 			{ sizeof(header) - 1,																						sizeof(mesh_gBuffer_vert) },
 			{ sizeof(header) - 1,																						sizeof(mesh_gBuffer_frag) },
 			{ sizeof(header) - 1, sizeof(colorMap) - 1,																	sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1,							sizeof(materialMap) - 1,									sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(colorMap) - 1,		sizeof(materialMap) - 1,									sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1,																sizeof(normalMap) - 1,	sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(colorMap) - 1,											sizeof(normalMap) - 1,	sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1,							sizeof(materialMap) - 1,			sizeof(normalMap) - 1,	sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(colorMap) - 1,		sizeof(materialMap) - 1,			sizeof(normalMap) - 1,	sizeof(mesh_gBuffer_frag) }
+			{ sizeof(header) - 1,						sizeof(materialMap) - 1,										sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(colorMap) - 1,	sizeof(materialMap) - 1,										sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1,													sizeof(normalMap) - 1,				sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(colorMap) - 1,								sizeof(normalMap) - 1,				sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1,						sizeof(materialMap) - 1,	sizeof(normalMap) - 1,				sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(colorMap) - 1,	sizeof(materialMap) - 1,	sizeof(normalMap) - 1,				sizeof(mesh_gBuffer_frag) }
 		};
 
 		spl::ShaderModule modules[] = {
@@ -400,7 +463,7 @@ namespace lys
 
 	void Scene::_insertInDrawSequence(void* pDrawSequence, const Drawable* drawable, ShaderType shaderType)
 	{
-		DrawableType drawableType = drawable->_getType();
+		DrawableType drawableType = drawable->getType();
 
 		if (drawableType == DrawableType::Group)
 		{
@@ -498,7 +561,7 @@ namespace lys
 			gBuffer.first->setUniform("u_material", material->getProperties());
 		}
 
-		switch (drawable->_getType())
+		switch (drawable->getType())
 		{
 			case DrawableType::Mesh:
 			{

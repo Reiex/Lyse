@@ -87,6 +87,18 @@
     <ClInclude Include="..\..\include\Lyse\Core\ShaderSet.hpp">
       <Filter>Header Files\Core</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\Lyse\Core\LightBase.hpp">
+      <Filter>Header Files\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\Lyse\Core\LightPoint.hpp">
+      <Filter>Header Files\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\Lyse\Core\templates\LightPoint.hpp">
+      <Filter>Header Files\Core\templates</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\Lyse\Core\templates\LightBase.hpp">
+      <Filter>Header Files\Core\templates</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\Lyse\Core\Scene.cpp">
