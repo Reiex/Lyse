@@ -154,13 +154,27 @@ constexpr const eltType& operator[](uint8_t i) const { assert(i < 2); switch (i)
 constexpr bool operator==(const vecName##3& v) const { return x == v.x && y == v.y && z == v.z; }																\
 constexpr bool operator!=(const vecName##3& v) const { return x != v.x || y != v.y || z != v.z; }																\
 constexpr eltType& operator[](uint8_t i) { assert(i < 3); switch (i) { case 0: return x; case 1: return y; default: return z; } }								\
-constexpr const eltType& operator[](uint8_t i) const { assert(i < 3); switch (i) { case 0: return x; case 1: return y; default: return z; } }
+constexpr const eltType& operator[](uint8_t i) const { assert(i < 3); switch (i) { case 0: return x; case 1: return y; default: return z; } }					\
+inline vecName##2& xy() { return *reinterpret_cast<vecName##2*>(&x); }																							\
+inline const vecName##2& xy() const { return *reinterpret_cast<const vecName##2*>(&x); }																		\
+inline vecName##2& yz() { return *reinterpret_cast<vecName##2*>(&y); }																							\
+inline const vecName##2& yz() const { return *reinterpret_cast<const vecName##2*>(&y); }
 
 #define SCP_VEC4_INTERNAL_FUNC(vecName, vecSize, eltType)																										\
 constexpr bool operator==(const vecName##4& v) const { return x == v.x && y == v.y && z == v.z && w == v.w; }													\
 constexpr bool operator!=(const vecName##4& v) const { return x != v.x || y != v.y || z != v.z || w != v.w; }													\
 constexpr eltType& operator[](uint8_t i) { assert(i < 4); switch (i) { case 0: return x; case 1: return y; case 2: return z; default: return w; } }				\
-constexpr const eltType& operator[](uint8_t i) const { assert(i < 4); switch (i) { case 0: return x; case 1: return y; case 2: return z; default: return w; } }
+constexpr const eltType& operator[](uint8_t i) const { assert(i < 4); switch (i) { case 0: return x; case 1: return y; case 2: return z; default: return w; } }	\
+inline vecName##2& xy() { return *reinterpret_cast<vecName##2*>(&x); }																							\
+inline const vecName##2& xy() const { return *reinterpret_cast<const vecName##2*>(&x); }																		\
+inline vecName##2& yz() { return *reinterpret_cast<vecName##2*>(&y); }																							\
+inline const vecName##2& yz() const { return *reinterpret_cast<const vecName##2*>(&y); }																		\
+inline vecName##2& zw() { return *reinterpret_cast<vecName##2*>(&z); }																							\
+inline const vecName##2& zw() const { return *reinterpret_cast<const vecName##2*>(&z); }																		\
+inline vecName##3& xyz() { return *reinterpret_cast<vecName##3*>(&x); }																							\
+inline const vecName##3& xyz() const { return *reinterpret_cast<const vecName##3*>(&x); }																		\
+inline vecName##3& yzw() { return *reinterpret_cast<vecName##3*>(&y); }																							\
+inline const vecName##3& yzw() const { return *reinterpret_cast<const vecName##3*>(&y); }
 
 
 // Vec external operators

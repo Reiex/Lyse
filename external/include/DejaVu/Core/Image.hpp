@@ -159,21 +159,21 @@ namespace djv
 			constexpr void _saveToPng(std::ostream& stream, const uint8_t* swizzling) const;
 			template<ImageFormat Format> constexpr void _saveToPnm(std::ostream& stream, const uint8_t* swizzling) const;
 
-			static constexpr void (Image<TPixel>::* _imageFormatToLoadFunc[])(std::istream&, const uint8_t*) = {
+			static constexpr void (Image<TPixel>::*_imageFormatToLoadFunc[])(std::istream&, const uint8_t*) = {
 				&Image<TPixel>::_createFromPng,
 				&Image<TPixel>::_createFromPnm<ImageFormat::Pbm>,
 				&Image<TPixel>::_createFromPnm<ImageFormat::Pgm>,
 				&Image<TPixel>::_createFromPnm<ImageFormat::Ppm>,
-				&Image<TPixel>::_createFromPnm<ImageFormat::Pnm>,
+				&Image<TPixel>::_createFromPnm<ImageFormat::Pnm>
 			};
-			static constexpr void (Image<TPixel>::* _imageFormatToSaveFunc[])(std::ostream&, const uint8_t*) const = {
+			static constexpr void (Image<TPixel>::*_imageFormatToSaveFunc[])(std::ostream&, const uint8_t*) const = {
 				&Image<TPixel>::_saveToPng,
 				&Image<TPixel>::_saveToPnm<ImageFormat::Pbm>,
 				&Image<TPixel>::_saveToPnm<ImageFormat::Pgm>,
 				&Image<TPixel>::_saveToPnm<ImageFormat::Ppm>,
-				&Image<TPixel>::_saveToPnm<ImageFormat::Pnm>,
+				&Image<TPixel>::_saveToPnm<ImageFormat::Pnm>
 			};
-			static constexpr bool _extensionToImageFormat(const std::filesystem::path& extension, ImageFormat& imageFormat);
+			static constexpr bool _extensionToImageFormat(const std::filesystem::path& extension, ImageFormat& format);
 
 
 			uint64_t _width;

@@ -367,19 +367,19 @@ namespace lys
 		};
 
 		const std::vector<uint32_t> sizes[] = {
-			{ sizeof(header) - 1,																						sizeof(merge_vert) },
-			{ sizeof(header) - 1, lightCount.size(),																	sizeof(merge_frag) },
-			{ sizeof(header) - 1, lightCount.size(),	sizeof(background) - 1,		sizeof(backgroundProjection) - 1,	sizeof(merge_frag) },
-			{ sizeof(header) - 1, lightCount.size(),	sizeof(background) - 1,		sizeof(backgroundCubemap) - 1,		sizeof(merge_frag) },
-			{ sizeof(header) - 1,																						sizeof(mesh_gBuffer_vert) },
-			{ sizeof(header) - 1,																						sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(colorMap) - 1,																	sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1,						sizeof(materialMap) - 1,										sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(colorMap) - 1,	sizeof(materialMap) - 1,										sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1,													sizeof(normalMap) - 1,				sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(colorMap) - 1,								sizeof(normalMap) - 1,				sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1,						sizeof(materialMap) - 1,	sizeof(normalMap) - 1,				sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(colorMap) - 1,	sizeof(materialMap) - 1,	sizeof(normalMap) - 1,				sizeof(mesh_gBuffer_frag) }
+			{ sizeof(header) - 1,																								sizeof(merge_vert) },
+			{ sizeof(header) - 1, uint32_t(lightCount.size()),																	sizeof(merge_frag) },
+			{ sizeof(header) - 1, uint32_t(lightCount.size()),	sizeof(background) - 1,		sizeof(backgroundProjection) - 1,	sizeof(merge_frag) },
+			{ sizeof(header) - 1, uint32_t(lightCount.size()),	sizeof(background) - 1,		sizeof(backgroundCubemap) - 1,		sizeof(merge_frag) },
+			{ sizeof(header) - 1,																								sizeof(mesh_gBuffer_vert) },
+			{ sizeof(header) - 1,																								sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(colorMap) - 1,																			sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1,								sizeof(materialMap) - 1,										sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(colorMap) - 1,			sizeof(materialMap) - 1,										sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1,															sizeof(normalMap) - 1,				sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(colorMap) - 1,										sizeof(normalMap) - 1,				sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1,								sizeof(materialMap) - 1,	sizeof(normalMap) - 1,				sizeof(mesh_gBuffer_frag) },
+			{ sizeof(header) - 1, sizeof(colorMap) - 1,			sizeof(materialMap) - 1,	sizeof(normalMap) - 1,				sizeof(mesh_gBuffer_frag) }
 		};
 
 		spl::ShaderModule modules[] = {

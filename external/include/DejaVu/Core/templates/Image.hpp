@@ -1327,30 +1327,6 @@ namespace djv
 	}
 
 	template<CPixel TPixel>
-	constexpr bool Image<TPixel>::_extensionToImageFormat(const std::filesystem::path& extension, ImageFormat& imageFormat)
-	{
-		static const std::unordered_map<std::filesystem::path, ImageFormat> extensionToImageFormat = {
-			{ ".png", ImageFormat::Png },
-			{ ".pbm", ImageFormat::Pbm },
-			{ ".pgm", ImageFormat::Pgm },
-			{ ".ppm", ImageFormat::Ppm },
-			{ ".pnm", ImageFormat::Pnm }
-		};
-
-		auto it = extensionToImageFormat.find(extension);
-
-		if (it == extensionToImageFormat.end())
-		{
-			return false;
-		}
-		else
-		{
-			imageFormat = it->second;
-			return true;
-		}
-	}
-
-	template<CPixel TPixel>
 	constexpr void Image<TPixel>::_createFromFile(const std::filesystem::path& path, const uint8_t* swizzling)
 	{
 		if (!std::filesystem::exists(path))
@@ -1682,6 +1658,30 @@ namespace djv
 			}
 
 			pnmOStream.writePixels(buffer, 1);
+		}
+	}
+
+	template<CPixel TPixel>
+	constexpr bool Image<TPixel>::_extensionToImageFormat(const std::filesystem::path& extension, ImageFormat& format)
+	{
+		static const std::unordered_map<std::filesystem::path, ImageFormat> extensionToImageFormat = {
+			{ ".png", ImageFormat::Png },
+			{ ".pbm", ImageFormat::Pbm },
+			{ ".pgm", ImageFormat::Pgm },
+			{ ".ppm", ImageFormat::Ppm },
+			{ ".pnm", ImageFormat::Pnm }
+		};
+
+		auto it = extensionToImageFormat.find(extension);
+
+		if (it == extensionToImageFormat.end())
+		{
+			return false;
+		}
+		else
+		{
+			format = it->second;
+			return true;
 		}
 	}
 }
