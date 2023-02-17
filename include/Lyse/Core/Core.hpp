@@ -23,6 +23,8 @@
 
 #include <Lyse/Core/templates/LightBase.hpp>
 #include <Lyse/Core/templates/LightPoint.hpp>
+#include <Lyse/Core/templates/LightSun.hpp>
+#include <Lyse/Core/templates/LightSpot.hpp>
 
 
 #include <Lyse/Core/templates/Vertex.hpp>

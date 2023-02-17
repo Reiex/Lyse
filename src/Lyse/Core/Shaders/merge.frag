@@ -119,11 +119,38 @@ void main()
 
 			switch (ubo_lights.lights[i].type)
 			{
-				case 0:
+				case 0:		// Point
 				{
 					lightDir = ubo_lights.lights[i].param0.xyz - position;
 					radiance = ubo_lights.lights[i].color / max(dot(lightDir, lightDir), c_epsilon);
 					lightDir = normalize(lightDir);
+					break;
+				}
+				case 1:		// Sun
+				{
+					lightDir = ubo_lights.lights[i].param0.xyz;
+					radiance = ubo_lights.lights[i].color;
+					break;
+				}
+				case 2:		// Spot
+				{
+					lightDir = ubo_lights.lights[i].param0.xyz - position;
+					radiance = ubo_lights.lights[i].color / max(dot(lightDir, lightDir), c_epsilon);
+					lightDir = normalize(lightDir);
+
+					float cThetaIn = ubo_lights.lights[i].param0.w;
+					float cThetaOut = ubo_lights.lights[i].param1.w;
+					if (cThetaIn == cThetaOut)
+					{
+						radiance *= float(dot(lightDir, ubo_lights.lights[i].param1.xyz) < cThetaIn);
+					}
+					else
+					{
+						float t = (clamp(dot(lightDir, ubo_lights.lights[i].param1.xyz), cThetaOut, cThetaIn) - cThetaOut) / (cThetaIn - cThetaOut);
+						radiance *= exp(-pow(1.0 / t, 2.0));
+					}
+
+					break;
 				}
 				default:
 				{

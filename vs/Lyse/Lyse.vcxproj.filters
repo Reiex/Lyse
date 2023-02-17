@@ -99,6 +99,18 @@
     <ClInclude Include="..\..\include\Lyse\Core\templates\LightBase.hpp">
       <Filter>Header Files\Core\templates</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\Lyse\Core\LightSun.hpp">
+      <Filter>Header Files\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\Lyse\Core\LightSpot.hpp">
+      <Filter>Header Files\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\Lyse\Core\templates\LightSpot.hpp">
+      <Filter>Header Files\Core\templates</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\Lyse\Core\templates\LightSun.hpp">
+      <Filter>Header Files\Core\templates</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\Lyse\Core\Scene.cpp">

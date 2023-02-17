@@ -26,6 +26,8 @@ namespace lys
 	enum class LightType;
 	class LightBase;
 	class LightPoint;
+	class LightSun;
+	class LightSpot;
 
 
 	enum class ShaderType;

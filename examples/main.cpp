@@ -24,7 +24,7 @@ int main()
 	mesh.setNormalMap(&normalMap);
 	mesh.setMaterial(&material);
 
-	lys::LightPoint light(3.f, 1.f, 1.f, 1.f, 1.f, 1.f, 100.f);
+	lys::LightSun light(-3.f, -1.f, -1.f, 1.f, 1.f, 1.f, 10.f);
 
 	lys::Scene scene(window.getSize().x, window.getSize().y);
 	scene.setCamera(&camera);

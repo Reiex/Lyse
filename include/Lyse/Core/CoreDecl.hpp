@@ -23,6 +23,8 @@
 
 #include <Lyse/Core/LightBase.hpp>
 #include <Lyse/Core/LightPoint.hpp>
+#include <Lyse/Core/LightSun.hpp>
+#include <Lyse/Core/LightSpot.hpp>
 
 
 #include <Lyse/Core/ShaderSet.hpp>

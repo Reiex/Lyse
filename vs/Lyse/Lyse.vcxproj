@@ -23,6 +23,8 @@
     <ClInclude Include="..\..\include\Lyse\Core\DrawableGroup.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\LightBase.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\LightPoint.hpp" />
+    <ClInclude Include="..\..\include\Lyse\Core\LightSpot.hpp" />
+    <ClInclude Include="..\..\include\Lyse\Core\LightSun.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\ShaderSet.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\Material.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\Mesh.hpp" />
@@ -30,6 +32,8 @@
     <ClInclude Include="..\..\include\Lyse\Core\templates\CameraPerspective.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\templates\LightBase.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\templates\LightPoint.hpp" />
+    <ClInclude Include="..\..\include\Lyse\Core\templates\LightSpot.hpp" />
+    <ClInclude Include="..\..\include\Lyse\Core\templates\LightSun.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\templates\Mesh.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\templates\Transformable.hpp" />
     <ClInclude Include="..\..\include\Lyse\Core\templates\Vertex.hpp" />
