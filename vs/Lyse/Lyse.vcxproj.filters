@@ -22,6 +22,9 @@
     <Filter Include="Header Files\Core\templates">
       <UniqueIdentifier>{72b8a8b0-a3e4-41c0-b865-bf0d5e55ebb9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{859ed88f-8aa0-423c-89a1-1442167c2cac}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\Lyse\Lyse.hpp">
@@ -125,5 +128,25 @@
     <ClCompile Include="..\..\src\Lyse\Core\ShaderSet.cpp">
       <Filter>Source Files\Core</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\merge.frag">
+      <Filter>Shaders</Filter>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\merge.vert">
+      <Filter>Shaders</Filter>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_gBuffer.frag">
+      <Filter>Shaders</Filter>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_gBuffer.vert">
+      <Filter>Shaders</Filter>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\ssao.frag">
+      <Filter>Shaders</Filter>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\ssao.vert">
+      <Filter>Shaders</Filter>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>

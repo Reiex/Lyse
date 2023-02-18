@@ -46,6 +46,9 @@ namespace lys
 			const spl::Texture2D& getColorTexture() const;
 			const spl::Texture2D& getMaterialTexture() const;
 			const spl::Texture2D& getNormalTexture() const;
+			const spl::Texture2D& getTangentTexture() const;
+
+			const spl::Texture2D& getSsaoTexture() const;
 
 			const spl::Texture2D& getRenderTexture() const;
 
@@ -70,6 +73,7 @@ namespace lys
 
 
 			spl::Framebuffer _gBufferFramebuffer;
+			spl::Framebuffer _ssaoFramebuffer;
 			spl::Framebuffer _mergeFramebuffer;
 
 			const CameraBase* _camera;

@@ -37,6 +37,7 @@ namespace lys
 
 	Scene::Scene(uint32_t width, uint32_t height) :
 		_gBufferFramebuffer(),
+		_ssaoFramebuffer(),
 		_mergeFramebuffer(),
 		_camera(nullptr),
 		_clearColor(0.f, 0.f, 0.f),
@@ -60,8 +61,10 @@ namespace lys
 		/* Color    */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_nu8);
 		/* Material */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment1, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_nu8);
 		/* Normal   */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment2, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_ni16);
+		/* Tangent  */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment3, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_ni16);
 		
-		_mergeFramebuffer.createNewRenderbufferAttachment(spl::FramebufferAttachment::DepthStencilAttachment, spl::TextureInternalFormat::Depth_nu24_Stencil_u8, width, height);
+		_ssaoFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, scp::u32vec2{ width, height }, spl::TextureInternalFormat::R_nu16);
+
 		_mergeFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_nu8);
 	}
 
@@ -213,11 +216,7 @@ namespace lys
 			elt.second->_draw();
 		}
 
-		// Merge into final picture
-
-		context->setClearColor(_clearColor.x, _clearColor.y, _clearColor.z, 1.f);
-		spl::Framebuffer::bind(_mergeFramebuffer, spl::FramebufferTarget::DrawFramebuffer);
-		spl::Framebuffer::clear();
+		// Create "screen" mesh
 
 		static constexpr float screenVboData[] = { -1.f,  -1.f, 1.f, -1.f, -1.f, 1.f, 1.f, 1.f };
 		thread_local static spl::VertexArray screenVao;
@@ -234,6 +233,30 @@ namespace lys
 
 			screenVao.bindArrayBuffer(screenVbo, 0, 0, sizeof(float) * 2);
 		}
+
+		// Compute SSAO
+
+		context->setIsDepthTestEnabled(false);
+		spl::Framebuffer::bind(_ssaoFramebuffer, spl::FramebufferTarget::DrawFramebuffer);
+		spl::Framebuffer::clear(true, false, false);
+
+		const spl::ShaderProgram* ssaoShader = _shaders[3];
+		spl::ShaderProgram::bind(*ssaoShader);
+
+		ssaoShader->setUniform("u_depth", 0, getDepthTexture());
+		ssaoShader->setUniform("u_normal", 1, getNormalTexture());
+		ssaoShader->setUniform("u_tangent", 2, getTangentTexture());
+		
+		ssaoShader->setUniform("u_projection", _camera->getProjectionMatrix());
+		ssaoShader->setUniform("u_cameraInfos", scp::f32vec4(_camera->getNearDistance(), _camera->getFarDistance(), scp::f32vec2(_camera->getAspect(), 1.f) * std::tan(_camera->getFieldOfView() / 2.f)));
+
+		screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
+
+		// Merge into final picture
+
+		context->setClearColor(_clearColor.x, _clearColor.y, _clearColor.z, 1.f);
+		spl::Framebuffer::bind(_mergeFramebuffer, spl::FramebufferTarget::DrawFramebuffer);
+		spl::Framebuffer::clear(true, false, false);
 		
 		const spl::ShaderProgram* mergeShader = _shaders[0];
 		if (_background)
@@ -249,17 +272,19 @@ namespace lys
 		}
 
 		spl::ShaderProgram::bind(*mergeShader);
-		mergeShader->setUniform("u_depth", 0, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::DepthAttachment));
-		mergeShader->setUniform("u_color", 1, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
-		mergeShader->setUniform("u_material", 2, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment1));
-		mergeShader->setUniform("u_normal", 3, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment2));
+		mergeShader->setUniform("u_depth", 0, getDepthTexture());
+		mergeShader->setUniform("u_color", 1, getColorTexture());
+		mergeShader->setUniform("u_material", 2, getMaterialTexture());
+		mergeShader->setUniform("u_normal", 3, getNormalTexture());
+
+		mergeShader->setUniform("u_ssao", 4, getSsaoTexture());
 
 		mergeShader->setUniform("u_cameraInfos", scp::f32vec4(_camera->getNearDistance(), _camera->getFarDistance(), scp::f32vec2(_camera->getAspect(), 1.f) * std::tan(_camera->getFieldOfView() / 2.f)));
 
 		if (_background)
 		{
 			mergeShader->setUniform("u_invView", _camera->getInverseViewMatrix());
-			mergeShader->setUniform("u_background", 4, *_background);
+			mergeShader->setUniform("u_background", 5, *_background);
 		}
 
 		thread_local static UboLightsData lightsData;
@@ -282,7 +307,8 @@ namespace lys
 		screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
 		
 		// Restore OpenGL context
-		
+
+		context->setIsDepthTestEnabled(true);
 		contextSave.restore();
 	}
 
@@ -309,6 +335,16 @@ namespace lys
 	const spl::Texture2D& Scene::getNormalTexture() const
 	{
 		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment2));
+	}
+
+	const spl::Texture2D& Scene::getTangentTexture() const
+	{
+		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment3));
+	}
+
+	const spl::Texture2D& Scene::getSsaoTexture() const
+	{
+		return dynamic_cast<const spl::Texture2D&>(*_ssaoFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
 	}
 
 	const spl::Texture2D& Scene::getRenderTexture() const
@@ -338,6 +374,8 @@ namespace lys
 			{ header, lightCount.data(), 											merge_frag },
 			{ header, lightCount.data(),	background,		backgroundProjection,	merge_frag },
 			{ header, lightCount.data(),	background,		backgroundCubemap,		merge_frag },
+			{ header, 																ssao_vert },
+			{ header, 																ssao_frag },
 			{ header, 																mesh_gBuffer_vert },
 			{ header, 																mesh_gBuffer_frag },
 			{ header, colorMap,														mesh_gBuffer_frag },
@@ -354,6 +392,8 @@ namespace lys
 			{ sizeof(header) - 1, uint32_t(lightCount.size()),																	sizeof(merge_frag) },
 			{ sizeof(header) - 1, uint32_t(lightCount.size()),	sizeof(background) - 1,		sizeof(backgroundProjection) - 1,	sizeof(merge_frag) },
 			{ sizeof(header) - 1, uint32_t(lightCount.size()),	sizeof(background) - 1,		sizeof(backgroundCubemap) - 1,		sizeof(merge_frag) },
+			{ sizeof(header) - 1,																								sizeof(ssao_vert) },
+			{ sizeof(header) - 1,																								sizeof(ssao_frag) },
 			{ sizeof(header) - 1,																								sizeof(mesh_gBuffer_vert) },
 			{ sizeof(header) - 1,																								sizeof(mesh_gBuffer_frag) },
 			{ sizeof(header) - 1, sizeof(colorMap) - 1,																			sizeof(mesh_gBuffer_frag) },
@@ -372,13 +412,15 @@ namespace lys
 			{ spl::ShaderStage::Fragment,	sources[3].data(),	sizes[3].data(),	uint32_t(sources[3].size()) },
 			{ spl::ShaderStage::Vertex,		sources[4].data(),	sizes[4].data(),	uint32_t(sources[4].size()) },
 			{ spl::ShaderStage::Fragment,	sources[5].data(),	sizes[5].data(),	uint32_t(sources[5].size()) },
-			{ spl::ShaderStage::Fragment,	sources[6].data(),	sizes[6].data(),	uint32_t(sources[6].size()) },
+			{ spl::ShaderStage::Vertex,		sources[6].data(),	sizes[6].data(),	uint32_t(sources[6].size()) },
 			{ spl::ShaderStage::Fragment,	sources[7].data(),	sizes[7].data(),	uint32_t(sources[7].size()) },
 			{ spl::ShaderStage::Fragment,	sources[8].data(),	sizes[8].data(),	uint32_t(sources[8].size()) },
 			{ spl::ShaderStage::Fragment,	sources[9].data(),	sizes[9].data(),	uint32_t(sources[9].size()) },
 			{ spl::ShaderStage::Fragment,	sources[10].data(),	sizes[10].data(),	uint32_t(sources[10].size()) },
 			{ spl::ShaderStage::Fragment,	sources[11].data(),	sizes[11].data(),	uint32_t(sources[11].size()) },
-			{ spl::ShaderStage::Fragment,	sources[12].data(),	sizes[12].data(),	uint32_t(sources[12].size()) }
+			{ spl::ShaderStage::Fragment,	sources[12].data(),	sizes[12].data(),	uint32_t(sources[12].size()) },
+			{ spl::ShaderStage::Fragment,	sources[13].data(),	sizes[13].data(),	uint32_t(sources[13].size()) },
+			{ spl::ShaderStage::Fragment,	sources[14].data(),	sizes[14].data(),	uint32_t(sources[14].size()) }
 		};
 
 		std::array<const spl::ShaderModule*, 5> moduleArray;
@@ -391,19 +433,21 @@ namespace lys
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
 		moduleArray = { modules + 4, modules + 5, nullptr, nullptr, nullptr };	// 3
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 4, modules + 6, nullptr, nullptr, nullptr };	// 4
+		moduleArray = { modules + 6, modules + 7, nullptr, nullptr, nullptr };	// 4
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 4, modules + 7, nullptr, nullptr, nullptr };	// 5
+		moduleArray = { modules + 6, modules + 8, nullptr, nullptr, nullptr };	// 5
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 4, modules + 8, nullptr, nullptr, nullptr };	// 6
+		moduleArray = { modules + 6, modules + 9, nullptr, nullptr, nullptr };	// 6
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 4, modules + 9, nullptr, nullptr, nullptr };	// 7
+		moduleArray = { modules + 6, modules + 10, nullptr, nullptr, nullptr };	// 7
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 4, modules + 10, nullptr, nullptr, nullptr };	// 8
+		moduleArray = { modules + 6, modules + 11, nullptr, nullptr, nullptr };	// 8
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 4, modules + 11, nullptr, nullptr, nullptr };	// 9
+		moduleArray = { modules + 6, modules + 12, nullptr, nullptr, nullptr };	// 9
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 4, modules + 12, nullptr, nullptr, nullptr };	// 10
+		moduleArray = { modules + 6, modules + 13, nullptr, nullptr, nullptr };	// 10
+		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
+		moduleArray = { modules + 6, modules + 14, nullptr, nullptr, nullptr };	// 11
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
 
 
@@ -418,14 +462,14 @@ namespace lys
 				DrawableType::Mesh,
 				{
 					{
-						_shaders[3],	//
-						_shaders[4],	// colorMap
-						_shaders[5],	// 			  materialMap
-						_shaders[6],	// colorMap + materialMap
-						_shaders[7],	// 							normalMap
-						_shaders[8],	// colorMap					normalMap
-						_shaders[9],	// 			  materialMap + normalMap
-						_shaders[10]	// colorMap + materialMap + normalMap
+						_shaders[4],	//
+						_shaders[5],	// colorMap
+						_shaders[6],	// 			  materialMap
+						_shaders[7],	// colorMap + materialMap
+						_shaders[8],	// 							normalMap
+						_shaders[9],	// colorMap					normalMap
+						_shaders[10],	// 			  materialMap + normalMap
+						_shaders[11]	// colorMap + materialMap + normalMap
 					}
 				}
 			},

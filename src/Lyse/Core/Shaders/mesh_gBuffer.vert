@@ -5,15 +5,20 @@
 //! \date 2023
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Vertex attributes
 
 layout (location = 0) in vec4 va_position;
 layout (location = 1) in vec4 va_normal;
 layout (location = 2) in vec4 va_tangent;
 layout (location = 3) in vec4 va_texCoords;
 
+// Uniforms
+
 uniform mat4 u_projection;
 uniform mat4 u_view;
 uniform mat4 u_model;
+
+// Outputs
 
 out VertexOutput
 {
@@ -23,6 +28,7 @@ out VertexOutput
 	vec2 texCoords;
 } io_vertexOutput;
 
+// Function definitions
 
 void main()
 {

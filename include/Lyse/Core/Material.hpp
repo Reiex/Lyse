@@ -15,7 +15,7 @@ namespace lys
 	{
 		public:
 
-			Material(float r = 1.f, float g = 1.f, float b = 1.f, float a = 1.f, float ambiant = 0.04f, float metallic = 0.1f, float roughness = 0.3f);
+			Material(float r = 1.f, float g = 1.f, float b = 1.f, float a = 1.f, float ambiant = 0.1f, float metallic = 0.1f, float roughness = 0.3f);
 			Material(const Material& material) = default;
 			Material(Material&& material) = default;
 

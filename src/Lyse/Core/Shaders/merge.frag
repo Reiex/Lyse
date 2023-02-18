@@ -40,6 +40,8 @@ uniform sampler2D u_color;
 uniform sampler2D u_material;
 uniform sampler2D u_normal;
 
+uniform sampler2D u_ssao;
+
 uniform vec4 u_cameraInfos;
 
 #ifdef BACKGROUND
@@ -54,7 +56,7 @@ uniform vec4 u_cameraInfos;
 	#endif
 #endif
 
-// Outputs
+// Fragment outputs
 
 layout (location = 0) out vec3 fo_output;
 
@@ -70,12 +72,15 @@ float geometryGGX(in float cTheta, in float roughness);
 
 void main()
 {
-	// Retrieve all data from G-Buffer and uniforms
+	// Retrieve all data from application and precedent shader passes
 
 	float near = u_cameraInfos.x;
 	float far = u_cameraInfos.y;
 
 	float depth = (2.0 * near * far) / (far + near - (texture(u_depth, io_texCoords).r * 2.0 - 1.0) * (far - near));
+	vec3 viewDir = normalize(vec3((io_texCoords * 2.0 - 1.0) * u_cameraInfos.zw, -1.0));
+	vec3 position = viewDir * depth;
+
 	vec3 color = texture(u_color, io_texCoords).rgb;
 	vec3 material = texture(u_material, io_texCoords).rgb;
 	vec3 normal = normalize(texture(u_normal, io_texCoords).rgb);
@@ -84,10 +89,8 @@ void main()
 	float metallic = material.y;
 	float roughness = material.z;
 
-	// Deduce some useful variables from G-Buffer
+	float ssao = texture(u_ssao, io_texCoords).r;
 
-	vec3 viewDir = normalize(vec3((io_texCoords * 2.0 - 1.0) * u_cameraInfos.zw, -1.0));
-	vec3 position = viewDir * depth;
 
 	vec3 rawColor;
 
@@ -119,7 +122,7 @@ void main()
 		vec3 normalFresnelReflectance = mix(c_dielectricNormalFresnelReflectance, color, metallic);
 		float geometryView = geometryGGX(dotNormalViewDir, roughness);
 
-		vec3 ambiant = color * ambiantCoeff;
+		vec3 ambiant = color * ambiantCoeff * ssao;
 		vec3 diffuse = vec3(0.0, 0.0, 0.0);
 		vec3 specular = vec3(0.0, 0.0, 0.0);
 		for (uint i = 0; i < ubo_lights.count; ++i)
@@ -195,7 +198,7 @@ void main()
 	// Apply HDR and gamma correction to final fragment color
 
 	rawColor = rawColor / (rawColor + 1.0);
-	rawColor = pow(rawColor, vec3(1.0 / 1.8));
+	rawColor = pow(rawColor, vec3(1.0 / 1.2));
 
 	fo_output = rawColor;
 } 
