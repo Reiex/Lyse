@@ -31,8 +31,8 @@ namespace lys
 
 			virtual constexpr float getAspect() const override final;
 			virtual constexpr float getFieldOfView() const override final;
-			constexpr float getNearDistance() const;
-			constexpr float getFarDistance() const;
+			virtual constexpr float getNearDistance() const override final;
+			virtual constexpr float getFarDistance() const override final;
 			virtual constexpr const scp::f32mat4x4& getProjectionMatrix() const override final;
 
 			virtual constexpr ~CameraPerspective() override final = default;

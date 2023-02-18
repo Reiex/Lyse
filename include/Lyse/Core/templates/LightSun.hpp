@@ -38,12 +38,8 @@ namespace lys
 		return _dir;
 	}
 
-	inline void LightSun::_getParams(scp::f32vec4* params) const
+	inline void LightSun::_getParams(const scp::f32mat4x4 view, scp::f32vec4* params) const
 	{
-		scp::f32vec3 tmp = -scp::normalize(_dir);
-
-		params[0].x = tmp.x;
-		params[0].y = tmp.y;
-		params[0].z = tmp.z;
+		params[0] = view * scp::f32vec4{ -scp::normalize(_dir), 0.f };
 	}
 }

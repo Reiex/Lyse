@@ -59,9 +59,7 @@ namespace lys
 		// TODO : Stencil
 		/* Color    */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_nu8);
 		/* Material */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment1, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_nu8);
-		/* Position */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment2, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_f32);
-		/* Normal   */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment3, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_ni16);
-		/* Tangent  */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment4, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_ni16);
+		/* Normal   */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment2, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_ni16);
 		
 		_mergeFramebuffer.createNewRenderbufferAttachment(spl::FramebufferAttachment::DepthStencilAttachment, spl::TextureInternalFormat::Depth_nu24_Stencil_u8, width, height);
 		_mergeFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_nu8);
@@ -254,19 +252,14 @@ namespace lys
 		mergeShader->setUniform("u_depth", 0, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::DepthAttachment));
 		mergeShader->setUniform("u_color", 1, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
 		mergeShader->setUniform("u_material", 2, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment1));
-		mergeShader->setUniform("u_position", 3, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment2));
-		mergeShader->setUniform("u_normal", 4, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment3));
-		// mergeShader->setUniform("u_tangent", 5, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment4));
+		mergeShader->setUniform("u_normal", 3, *_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment2));
 
-		mergeShader->setUniform("u_cameraPos", _camera->getTranslation());
+		mergeShader->setUniform("u_cameraInfos", scp::f32vec4(_camera->getNearDistance(), _camera->getFarDistance(), scp::f32vec2(_camera->getAspect(), 1.f) * std::tan(_camera->getFieldOfView() / 2.f)));
 
 		if (_background)
 		{
-			mergeShader->setUniform("u_cameraUp", _camera->getUpVector());
-			mergeShader->setUniform("u_cameraFront", _camera->getFrontVector());
-			mergeShader->setUniform("u_cameraLeft", _camera->getLeftVector());
-			mergeShader->setUniform("u_ndcToCamera", scp::f32vec2(_camera->getAspect(), 1.f) * std::tan(_camera->getFieldOfView() / 2.f));
-			mergeShader->setUniform("u_background", 5, *_background);
+			mergeShader->setUniform("u_invView", _camera->getInverseViewMatrix());
+			mergeShader->setUniform("u_background", 4, *_background);
 		}
 
 		thread_local static UboLightsData lightsData;
@@ -276,7 +269,7 @@ namespace lys
 		{
 			lightsData.lights[i].type = static_cast<uint32_t>(light->getType());
 			lightsData.lights[i].color = light->getColor() * light->getIntensity();
-			light->_getParams(&lightsData.lights[i].param0);
+			light->_getParams(_camera->getViewMatrix(), &lightsData.lights[i].param0);
 			++i;
 		}
 		lightsData.count = i;
@@ -313,19 +306,9 @@ namespace lys
 		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment1));
 	}
 
-	const spl::Texture2D& Scene::getPositionTexture() const
-	{
-		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment2));
-	}
-
 	const spl::Texture2D& Scene::getNormalTexture() const
 	{
-		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment3));
-	}
-
-	const spl::Texture2D& Scene::getTangentTexture() const
-	{
-		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment4));
+		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment2));
 	}
 
 	const spl::Texture2D& Scene::getRenderTexture() const

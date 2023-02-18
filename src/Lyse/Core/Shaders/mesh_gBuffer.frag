@@ -34,9 +34,7 @@ in VertexOutput
 
 layout (location = 0) out vec3 fo_color;
 layout (location = 1) out vec3 fo_material;
-layout (location = 2) out vec3 fo_position;
-layout (location = 3) out vec3 fo_normal;
-layout (location = 4) out vec3 fo_tangent;
+layout (location = 2) out vec3 fo_normal;
 
 
 void main()
@@ -62,18 +60,14 @@ void main()
 		fo_material = u_material;
 	#endif
 
-	// Position
-
-	fo_position = io_vertexOutput.position;
-
-	// Normal and Tangent
+	// Normal
 
 	fo_normal = normalize(io_vertexOutput.normal);
-	fo_tangent = normalize(io_vertexOutput.tangent);
 
 	#ifdef NORMAL_MAP
-		vec3 normal = normalize(texture(u_normalMap, io_vertexOutput.texCoords).rgb);
-		fo_normal = normalize(fo_tangent * normal.x + cross(fo_normal, fo_tangent) * normal.y + fo_normal * normal.z);
-		fo_tangent = normalize(fo_tangent - dot(fo_tangent, fo_normal) * fo_normal);
+		vec3 tangent = normalize(io_vertexOutput.tangent);
+		vec3 bitangent = cross(fo_normal, tangent);
+		vec3 normalMapValue = normalize(texture(u_normalMap, io_vertexOutput.texCoords).rgb);
+		fo_normal = normalize(tangent * normalMapValue.x + bitangent * normalMapValue.y + fo_normal * normalMapValue.z);
 	#endif
 } 

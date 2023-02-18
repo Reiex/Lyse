@@ -38,7 +38,7 @@ namespace lys
 			constexpr LightBase& operator=(const LightBase& light) = default;
 			constexpr LightBase& operator=(LightBase&& light) = default;
 
-			virtual constexpr void _getParams(scp::f32vec4* params) const = 0;
+			virtual constexpr void _getParams(const scp::f32mat4x4 view, scp::f32vec4* params) const = 0;
 
 			virtual constexpr ~LightBase() override = default;
 

@@ -70,18 +70,12 @@ namespace lys
 		return _radii;
 	}
 
-	inline void LightSpot::_getParams(scp::f32vec4* params) const
+	inline void LightSpot::_getParams(const scp::f32mat4x4 view, scp::f32vec4* params) const
 	{
-		scp::f32vec3 tmp = -scp::normalize(_dir);
+		params[0] = view * scp::f32vec4(_position, 1.f);
+		params[1] = view * scp::f32vec4{ -scp::normalize(_dir), 0.f };
 
-		params[0].x = _position.x;
-		params[0].y = _position.y;
-		params[0].z = _position.z;
 		params[0].w = std::cos(_radii.x);
-
-		params[1].x = tmp.x;
-		params[1].y = tmp.y;
-		params[1].z = tmp.z;
 		params[1].w = std::cos(_radii.y);
 	}
 }

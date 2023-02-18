@@ -28,8 +28,8 @@ void main()
 {
 	gl_Position = u_projection * u_view * u_model * va_position;
 
-	io_vertexOutput.position = (u_model * va_position).xyz;
-	io_vertexOutput.normal = normalize(u_model * va_normal).xyz;
-	io_vertexOutput.tangent = normalize(u_model * va_tangent).xyz;
+	io_vertexOutput.position = (u_view * u_model * va_position).xyz;
+	io_vertexOutput.normal = normalize(u_view * u_model * va_normal).xyz;
+	io_vertexOutput.tangent = normalize(u_view * u_model * va_tangent).xyz;
 	io_vertexOutput.texCoords = va_texCoords.xy;
 }

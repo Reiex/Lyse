@@ -38,10 +38,8 @@ namespace lys
 		return _position;
 	}
 
-	constexpr void LightPoint::_getParams(scp::f32vec4* params) const
+	constexpr void LightPoint::_getParams(const scp::f32mat4x4 view, scp::f32vec4* params) const
 	{
-		params[0].x = _position.x;
-		params[0].y = _position.y;
-		params[0].z = _position.z;
+		params[0] = view * scp::f32vec4(_position, 1.f);
 	}
 }

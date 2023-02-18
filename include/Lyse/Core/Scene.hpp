@@ -45,9 +45,7 @@ namespace lys
 			const spl::Texture2D& getStencilTexture() const;
 			const spl::Texture2D& getColorTexture() const;
 			const spl::Texture2D& getMaterialTexture() const;
-			const spl::Texture2D& getPositionTexture() const;
 			const spl::Texture2D& getNormalTexture() const;
-			const spl::Texture2D& getTangentTexture() const;
 
 			const spl::Texture2D& getRenderTexture() const;
 

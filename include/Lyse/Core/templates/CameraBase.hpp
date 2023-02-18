@@ -70,4 +70,9 @@ namespace lys
 	{
 		return getInverseTransformMatrix();
 	}
+
+	constexpr const scp::f32mat4x4& CameraBase::getInverseViewMatrix() const
+	{
+		return getTransformMatrix();
+	}
 }

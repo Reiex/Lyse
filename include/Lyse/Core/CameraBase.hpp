@@ -21,12 +21,15 @@ namespace lys
 
 			virtual constexpr float getAspect() const = 0;
 			virtual constexpr float getFieldOfView() const = 0;
+			virtual constexpr float getNearDistance() const = 0;
+			virtual constexpr float getFarDistance() const = 0;
 
 			constexpr scp::f32vec3 getUpVector() const;
 			constexpr scp::f32vec3 getFrontVector() const;
 			constexpr scp::f32vec3 getLeftVector() const;
 
 			constexpr const scp::f32mat4x4& getViewMatrix() const;
+			constexpr const scp::f32mat4x4& getInverseViewMatrix() const;
 			virtual constexpr const scp::f32mat4x4& getProjectionMatrix() const = 0;
 
 		protected:

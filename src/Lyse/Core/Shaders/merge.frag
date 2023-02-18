@@ -5,14 +5,7 @@
 //! \date 2023
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-const float c_epsilon = 1e-10;
-const float c_pi = 3.14159265359;
-const vec3 c_dielectricNormalFresnelReflectance = vec3(0.04);
-
-
-in vec2 io_texCoords;
-
+// Custom types
 
 struct light_t
 {
@@ -22,27 +15,35 @@ struct light_t
 	vec4 param1;
 };
 
+// Constants
+
+const float c_epsilon = 1e-5;
+const float c_pi = 3.14159265359;
+const vec3 c_dielectricNormalFresnelReflectance = vec3(0.04);
+
+// Inputs
+
+in vec2 io_texCoords;
+
+// Uniform blocks
+
 layout (std140, binding = 0) uniform ubo_lights_t
 {
 	uint count;
 	light_t lights[MAX_LIGHT_COUNT];
 } ubo_lights;
 
+// Uniforms
 
 uniform sampler2D u_depth;
 uniform sampler2D u_color;
 uniform sampler2D u_material;
-uniform sampler2D u_position;
 uniform sampler2D u_normal;
-// uniform sampler2D u_tangent;
 
-uniform vec3 u_cameraPos;
+uniform vec4 u_cameraInfos;
 
 #ifdef BACKGROUND
-	uniform vec3 u_cameraUp;
-	uniform vec3 u_cameraFront;
-	uniform vec3 u_cameraLeft;
-	uniform vec2 u_ndcToCamera;
+	uniform mat4 u_invView;
 
 	#ifdef BACKGROUND_PROJECTION
 		uniform sampler2D u_background;
@@ -53,9 +54,11 @@ uniform vec3 u_cameraPos;
 	#endif
 #endif
 
+// Outputs
 
 layout (location = 0) out vec3 fo_output;
 
+// Function declarations
 
 vec2 viewDirToProjectionCoords(in vec3 viewDir);
 
@@ -63,33 +66,40 @@ vec3 fresnelSchlick(in vec3 normal, in vec3 lightDir, in vec3 normalFresnelRefle
 float distributionGGX(in vec3 normal, in vec3 vector, in float roughness);
 float geometryGGX(in float cTheta, in float roughness);
 
+// Function definitions
 
 void main()
 {
-	// Retrieve all data
+	// Retrieve all data from G-Buffer and uniforms
 
-	float depth = texture(u_depth, io_texCoords).r;
+	float near = u_cameraInfos.x;
+	float far = u_cameraInfos.y;
+
+	float depth = (2.0 * near * far) / (far + near - (texture(u_depth, io_texCoords).r * 2.0 - 1.0) * (far - near));
 	vec3 color = texture(u_color, io_texCoords).rgb;
 	vec3 material = texture(u_material, io_texCoords).rgb;
-	vec3 position = texture(u_position, io_texCoords).rgb;
 	vec3 normal = normalize(texture(u_normal, io_texCoords).rgb);
 
 	float ambiantCoeff = material.x;
 	float metallic = material.y;
 	float roughness = material.z;
 
+	// Deduce some useful variables from G-Buffer
+
+	vec3 viewDir = normalize(vec3((io_texCoords * 2.0 - 1.0) * u_cameraInfos.zw, -1.0));
+	vec3 position = viewDir * depth;
+
 	vec3 rawColor;
 
 	// If nothing has been drawn on that fragment, show the background
 
-	if (depth == 1.0)
+	if (depth >= far * 0.999)
 	{
 		#ifndef BACKGROUND
 			discard;
 		#else
-			vec2 cameraSpaceCoords = (io_texCoords * 2.0 - 1.0) * u_ndcToCamera;
-			vec3 viewDir = normalize(u_cameraFront + cameraSpaceCoords.x * -u_cameraLeft + cameraSpaceCoords.y * u_cameraUp);
-
+			viewDir = (u_invView * vec4(viewDir, 0)).xyz;
+		
 			#ifdef BACKGROUND_PROJECTION
 				rawColor = texture(u_background, viewDirToProjectionCoords(viewDir)).rgb;
 			#endif
@@ -104,7 +114,7 @@ void main()
 
 	else
 	{
-		vec3 viewDir = normalize(u_cameraPos - position);
+		viewDir = -viewDir;
 		float dotNormalViewDir = max(dot(normal, viewDir), c_epsilon);
 		vec3 normalFresnelReflectance = mix(c_dielectricNormalFresnelReflectance, color, metallic);
 		float geometryView = geometryGGX(dotNormalViewDir, roughness);
@@ -159,8 +169,14 @@ void main()
 			}
 			
 			float dotNormalLightDir = max(dot(normal, lightDir), c_epsilon);
-			vec3 halfDir = normalize(lightDir + viewDir);
 			radiance *= dotNormalLightDir;
+
+			if (length(radiance) < 1e-3)
+			{
+				continue;
+			}
+
+			vec3 halfDir = normalize(lightDir + viewDir);
 
 			vec3 fresnelReflectance = fresnelSchlick(halfDir, lightDir, normalFresnelReflectance);
 			float distribution = distributionGGX(normal, halfDir, roughness);

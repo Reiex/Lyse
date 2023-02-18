@@ -35,7 +35,7 @@ namespace lys
 
 		private:
 
-			virtual inline void _getParams(scp::f32vec4* params) const override final;
+			virtual inline void _getParams(const scp::f32mat4x4 view, scp::f32vec4* params) const override final;
 
 			scp::f32vec3 _dir;
 	};
