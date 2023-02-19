@@ -72,6 +72,8 @@ namespace lys
 			thread_local static std::unordered_map<DrawableType, std::vector<ShaderSet>> _shaderMap;
 
 
+			scp::u32vec2 _resolution;
+
 			spl::Framebuffer _gBufferFramebuffer;
 			spl::Framebuffer _ssaoFramebuffer;
 			spl::Framebuffer _mergeFramebuffer;

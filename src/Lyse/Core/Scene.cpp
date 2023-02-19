@@ -36,6 +36,7 @@ namespace lys
 	}
 
 	Scene::Scene(uint32_t width, uint32_t height) :
+		_resolution(width, height),
 		_gBufferFramebuffer(),
 		_ssaoFramebuffer(),
 		_mergeFramebuffer(),
@@ -56,6 +57,9 @@ namespace lys
 
 	void Scene::resize(uint32_t width, uint32_t height)
 	{
+		_resolution.x = width;
+		_resolution.y = height;
+
 		/* Depth    */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::DepthAttachment, scp::u32vec2{ width, height }, spl::TextureInternalFormat::Depth_nu32);
 		// TODO : Stencil
 		/* Color    */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_nu8);
@@ -250,6 +254,9 @@ namespace lys
 		ssaoShader->setUniform("u_projection", _camera->getProjectionMatrix());
 		ssaoShader->setUniform("u_cameraInfos", scp::f32vec4(_camera->getNearDistance(), _camera->getFarDistance(), scp::f32vec2(_camera->getAspect(), 1.f) * std::tan(_camera->getFieldOfView() / 2.f)));
 
+		ssaoShader->setUniform("u_sampleCount", uint32_t(16));
+		ssaoShader->setUniform("u_radius", 1.f);
+
 		screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
 
 		// Merge into final picture
@@ -279,6 +286,7 @@ namespace lys
 
 		mergeShader->setUniform("u_ssao", 4, getSsaoTexture());
 
+		mergeShader->setUniform("u_texelStep", scp::f32vec2(1.f / _resolution.x, 1.f / _resolution.y));
 		mergeShader->setUniform("u_cameraInfos", scp::f32vec4(_camera->getNearDistance(), _camera->getFarDistance(), scp::f32vec2(_camera->getAspect(), 1.f) * std::tan(_camera->getFieldOfView() / 2.f)));
 
 		if (_background)

@@ -42,6 +42,7 @@ uniform sampler2D u_normal;
 
 uniform sampler2D u_ssao;
 
+uniform vec2 u_texelStep;
 uniform vec4 u_cameraInfos;
 
 #ifdef BACKGROUND
@@ -61,6 +62,8 @@ uniform vec4 u_cameraInfos;
 layout (location = 0) out vec3 fo_output;
 
 // Function declarations
+
+float computeSsao();
 
 vec2 viewDirToProjectionCoords(in vec3 viewDir);
 
@@ -85,11 +88,11 @@ void main()
 	vec3 material = texture(u_material, io_texCoords).rgb;
 	vec3 normal = normalize(texture(u_normal, io_texCoords).rgb);
 
+	float ssao = computeSsao();
+
 	float ambiantCoeff = material.x;
 	float metallic = material.y;
 	float roughness = material.z;
-
-	float ssao = texture(u_ssao, io_texCoords).r;
 
 
 	vec3 rawColor;
@@ -203,6 +206,20 @@ void main()
 	fo_output = rawColor;
 } 
 
+float computeSsao()
+{
+	float ssao = 0.0;
+
+	for (int i = -1; i <= 1; ++i)
+	{
+		for (int j = -1; j <= 1; ++j)
+		{
+			ssao += texture(u_ssao, io_texCoords + u_texelStep * vec2(i, j)).r;
+		}
+	}
+
+	return ssao * 0.111;
+}
 
 vec2 viewDirToProjectionCoords(in vec3 viewDir)
 {
