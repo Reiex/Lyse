@@ -5,6 +5,11 @@
 //! \date 2023
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Constants
+
+const float c_halfPi = 1.57079632679;
+const float c_2pi = 6.28318530718;
+
 // Inputs
 
 in vec2 io_texCoords;
@@ -54,10 +59,15 @@ void main()
 	mat3 tbn = mat3(tangent, bitangent, normal);
 	
 	float occlusion = 0.0;
-	const float scaleStep = u_radius / u_sampleCount;
+	const float scaleStep = u_radius / (u_sampleCount * u_sampleCount);
 	for (uint i = 1; i <= u_sampleCount; ++i)
 	{
-		vec3 randomVec = vec3(2.0 * random(seed) - 1.0, 2.0 * random(seed) - 1.0, random(seed)) * (i * scaleStep);
+		float theta = random(seed) * c_2pi;
+		float phi = random(seed) * c_halfPi;
+		float cPhi = cos(phi);
+		vec3 randomVec = vec3(cos(theta) * cPhi, sin(theta) * cPhi, sin(phi));	// Not uniform random because more light comes from normal angle than from grazing angle
+		randomVec *= i * i * scaleStep;	// Not uniform distance because more light comes from near diffusors than far ones...
+
 		vec3 viewPos = position + tbn * randomVec;
 		vec4 ndcPos = u_projection * vec4(viewPos, 1.0);
 		ndcPos.xy = (clamp(ndcPos.xy / ndcPos.w, vec2(-1.0), vec2(1.0)) + 1.0) * 0.5;

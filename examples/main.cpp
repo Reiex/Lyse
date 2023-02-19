@@ -11,7 +11,7 @@ int main()
 	camera.setTranslation({ 0.f, 0.f, 3.f });
 	lys::Mesh<> mesh("examples/suzanne.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
 	lys::LightPoint light(3.f, 1.f, 1.f, 1.f, 1.f, 1.f, 20.f);
-	lys::LightPoint light2(-3.f, 1.f, 1.f, 1.f, 0.8f, 0.7f, 20.f);
+	lys::LightPoint light2(1.f, 2.f, 1.f, 1.f, 0.8f, 0.7f, 20.f);
 	lys::Scene scene(window.getSize().x, window.getSize().y);
 	scene.setCamera(&camera);
 	scene.addDrawable(&mesh);
