@@ -11,10 +11,6 @@
 
 namespace lys
 {
-	thread_local uint32_t Scene::_sceneCount(0);
-	thread_local std::vector<spl::ShaderProgram*> Scene::_shaders;
-	thread_local std::unordered_map<DrawableType, std::vector<ShaderSet>> Scene::_shaderMap;
-
 	namespace
 	{
 		#pragma pack(push, 1)
@@ -36,6 +32,8 @@ namespace lys
 	}
 
 	Scene::Scene(uint32_t width, uint32_t height) :
+		_shaders(),
+		_shaderMap(),
 		_resolution(width, height),
 		_gBufferFramebuffer(),
 		_ssaoFramebuffer(),
@@ -45,14 +43,22 @@ namespace lys
 		_background(nullptr),
 		_drawables(),
 		_lights(),
-		_uboLights(sizeof(UboLightsData), spl::BufferUsage::StreamDraw)
+		_uboLights(sizeof(UboLightsData), spl::BufferUsage::StreamDraw),
+		_screenVao(),
+		_screenVbo()
 	{
-		if (++_sceneCount == 1)
-		{
-			_loadShaders();
-		}
-
+		_loadShaders();
 		resize(width, height);
+
+
+		_screenVao.setAttributeFormat(0, spl::GlslType::FloatVec2, 0);
+		_screenVao.setAttributeEnabled(0, true);
+		_screenVao.setAttributeBinding(0, 0);
+		_screenVao.setBindingDivisor(0, 0);
+
+		static constexpr float screenVboData[] = { -1.f,  -1.f, 1.f, -1.f, -1.f, 1.f, 1.f, 1.f };
+		_screenVbo.createNew(sizeof(screenVboData), spl::BufferStorageFlags::None, screenVboData);
+		_screenVao.bindArrayBuffer(_screenVbo, 0, 0, sizeof(float) * 2);
 	}
 
 	void Scene::resize(uint32_t width, uint32_t height)
@@ -220,24 +226,6 @@ namespace lys
 			elt.second->_draw();
 		}
 
-		// Create "screen" mesh
-
-		static constexpr float screenVboData[] = { -1.f,  -1.f, 1.f, -1.f, -1.f, 1.f, 1.f, 1.f };
-		thread_local static spl::VertexArray screenVao;
-		thread_local static spl::Buffer screenVbo;
-
-		if (!screenVbo.isValid())
-		{
-			screenVbo.createNew(sizeof(screenVboData), spl::BufferStorageFlags::None, screenVboData);
-
-			screenVao.setAttributeFormat(0, spl::GlslType::FloatVec2, 0);
-			screenVao.setAttributeEnabled(0, true);
-			screenVao.setAttributeBinding(0, 0);
-			screenVao.setBindingDivisor(0, 0);
-
-			screenVao.bindArrayBuffer(screenVbo, 0, 0, sizeof(float) * 2);
-		}
-
 		// Compute SSAO
 
 		context->setIsDepthTestEnabled(false);
@@ -257,7 +245,7 @@ namespace lys
 		ssaoShader->setUniform("u_sampleCount", uint32_t(16));
 		ssaoShader->setUniform("u_radius", 1.f);
 
-		screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
+		_screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
 
 		// Merge into final picture
 
@@ -312,7 +300,7 @@ namespace lys
 		spl::Buffer::bind(_uboLights, spl::BufferTarget::Uniform, 0);
 		mergeShader->setUniformBlockBinding(0, 0);
 
-		screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
+		_screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
 		
 		// Restore OpenGL context
 
@@ -363,6 +351,14 @@ namespace lys
 	bool Scene::isValid() const
 	{
 		return _camera != nullptr;
+	}
+
+	Scene::~Scene()
+	{
+		for (spl::ShaderProgram* shader : _shaders)
+		{
+			delete shader;
+		}
 	}
 
 	void Scene::_loadShaders()
@@ -496,7 +492,7 @@ namespace lys
 		};
 	}
 
-	void Scene::_insertInDrawSequence(void* pDrawSequence, const Drawable* drawable, ShaderType shaderType)
+	void Scene::_insertInDrawSequence(void* pDrawSequence, const Drawable* drawable, ShaderType shaderType) const
 	{
 		DrawableType drawableType = drawable->getType();
 
@@ -536,8 +532,8 @@ namespace lys
 							index |= (dynamic_cast<const Mesh<>*>(drawable)->getNormalMap() != nullptr) << 2;
 						}
 
-						key.first = _shaderMap[drawableType][index]._gBufferShader;
-						key.second = &_shaderMap[drawableType][index]._gBufferShaderInterface;
+						key.first = _shaderMap.find(drawableType)->second[index]._gBufferShader;
+						key.second = &_shaderMap.find(drawableType)->second[index]._gBufferShaderInterface;
 					}
 
 					std::multimap<TKey, const Drawable*>& drawSequence = *reinterpret_cast<std::multimap<TKey, const Drawable*>*>(pDrawSequence);

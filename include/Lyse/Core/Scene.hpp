@@ -55,22 +55,22 @@ namespace lys
 			bool isValid() const;
 
 
-			~Scene() = default;
+			~Scene();
 
 
 			static constexpr uint32_t maxLightCount = 128;
 	
 		private:
 
-			static void _loadShaders();
-			static void _insertInDrawSequence(void* pDrawSequence, const Drawable* drawable, ShaderType shaderType);
+			void _loadShaders();
+			void _insertInDrawSequence(void* pDrawSequence, const Drawable* drawable, ShaderType shaderType) const;
+
 			static void _setCameraGBufferUniforms(const std::pair<const spl::ShaderProgram*, const GBufferShaderInterface*>& gBuffer, const CameraBase* camera);
 			static void _setDrawableGBufferUniforms(const std::pair<const spl::ShaderProgram*, const GBufferShaderInterface*>& gBuffer, const Drawable* drawable);
 
-			thread_local static uint32_t _sceneCount;
-			thread_local static std::vector<spl::ShaderProgram*> _shaders;
-			thread_local static std::unordered_map<DrawableType, std::vector<ShaderSet>> _shaderMap;
 
+			std::vector<spl::ShaderProgram*> _shaders;
+			std::unordered_map<DrawableType, std::vector<ShaderSet>> _shaderMap;
 
 			scp::u32vec2 _resolution;
 
@@ -85,5 +85,8 @@ namespace lys
 			
 			std::unordered_set<const LightBase*> _lights;
 			mutable spl::Buffer _uboLights;
+
+			spl::VertexArray _screenVao;
+			spl::Buffer _screenVbo;
 	};
 }
