@@ -16,6 +16,9 @@ namespace lys
 		public:
 
 			Material(float r = 1.f, float g = 1.f, float b = 1.f, float a = 1.f, float ambiant = 0.1f, float metallic = 0.1f, float roughness = 0.3f);
+			Material(const spl::Texture2D* colorTexture, float ambiant, float metallic, float roughness);
+			Material(float r, float g, float b, float a, const spl::Texture2D* propsTexture);
+			Material(const spl::Texture2D* colorTexture, const spl::Texture2D* propsTexture);
 			Material(const Material& material) = default;
 			Material(Material&& material) = default;
 

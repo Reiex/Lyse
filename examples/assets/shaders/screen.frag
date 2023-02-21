@@ -1,12 +1,27 @@
-#version 330 core
+#version 460 core
 
-in vec2 texCoords;
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//! \file
+//! \author Reiex
+//! \copyright The MIT License (MIT)
+//! \date 2023
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-uniform sampler2D scene;
+// Inputs
 
-out vec4 FragColor;
+in vec2 io_texCoords;
+
+// Uniforms
+
+uniform sampler2D u_scene;
+
+// Outputs
+
+layout (location = 0) out vec4 fo_output;
+
+// Function definitions
 
 void main()
 {
-    FragColor = texture(scene, texCoords);
+    fo_output = texture(u_scene, io_texCoords);
 }

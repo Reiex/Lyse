@@ -1,12 +1,25 @@
-#version 330 core
+#version 460 core
 
-layout (location = 0) in vec4 aPos;
-layout (location = 3) in vec4 aTexCoords;
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//! \file
+//! \author Reiex
+//! \copyright The MIT License (MIT)
+//! \date 2023
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-out vec2 texCoords;
+// Vertex attributes
+
+layout (location = 0) in vec2 va_position;
+
+// Outputs
+
+out vec2 io_texCoords;
+
+// Function definitions
 
 void main()
 {
-    texCoords = aTexCoords.xy;
-    gl_Position = aPos;
+	gl_Position = vec4(va_position, 0.0, 1.0);
+
+	io_texCoords = (va_position + 1.0) / 2.0;
 }

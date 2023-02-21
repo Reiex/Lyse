@@ -12,13 +12,49 @@ namespace lys
 	const Material Material::defaultMaterial;
 
 	Material::Material(float r, float g, float b, float a, float ambiant, float metallic, float roughness) :
-		_color(1.f, 1.f, 1.f, 1.f),
-		_props(0.04f, 0.f, 0.3f),
+		_color(r, g, b, a),
+		_props(ambiant, metallic, roughness),
 		_colorTexture(nullptr),
 		_propsTexture(nullptr)
 	{
-		setColor(r, g, b, a);
-		setProperties(ambiant, metallic, roughness);
+		assert(r >= 0.f && r <= 1.f);
+		assert(g >= 0.f && g <= 1.f);
+		assert(b >= 0.f && b <= 1.f);
+		assert(a >= 0.f && a <= 1.f);
+		assert(ambiant >= 0.f && ambiant <= 1.f);
+		assert(metallic >= 0.f && metallic <= 1.f);
+		assert(roughness >= 0.f && roughness <= 1.f);
+	}
+
+	Material::Material(const spl::Texture2D* colorTexture, float ambiant, float metallic, float roughness) :
+		_color(1.f, 1.f, 1.f, 1.f),
+		_props(ambiant, metallic, roughness),
+		_colorTexture(colorTexture),
+		_propsTexture(nullptr)
+	{
+		assert(ambiant >= 0.f && ambiant <= 1.f);
+		assert(metallic >= 0.f && metallic <= 1.f);
+		assert(roughness >= 0.f && roughness <= 1.f);
+	}
+
+	Material::Material(float r, float g, float b, float a, const spl::Texture2D* propsTexture) :
+		_color(r, g, b, a),
+		_props(0.1f, 0.1f, 0.3f),
+		_colorTexture(nullptr),
+		_propsTexture(propsTexture)
+	{
+		assert(r >= 0.f && r <= 1.f);
+		assert(g >= 0.f && g <= 1.f);
+		assert(b >= 0.f && b <= 1.f);
+		assert(a >= 0.f && a <= 1.f);
+	}
+
+	Material::Material(const spl::Texture2D* colorTexture, const spl::Texture2D* propsTexture) :
+		_color(1.f, 1.f, 1.f, 1.f),
+		_props(0.1f, 0.1f, 0.3f),
+		_colorTexture(colorTexture),
+		_propsTexture(propsTexture)
+	{
 	}
 
 	void Material::setColor(float r, float g, float b, float a)
