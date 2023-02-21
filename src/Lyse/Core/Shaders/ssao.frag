@@ -33,10 +33,10 @@ layout (location = 0) out float fo_output;
 
 // Function declarations
 
-uint hash(in uint x);
-uint hash(in uvec2 v);
-uint hash(in uvec3 v);
-uint hash(in uvec4 v);
+uint hash(in const uint x);
+uint hash(in const uvec2 v);
+uint hash(in const uvec3 v);
+uint hash(in const uvec4 v);
 
 float random(inout uint seed);
 
@@ -80,7 +80,7 @@ void main()
 	fo_output = 1.0 - occlusion / u_sampleCount;
 } 
 
-uint hash(in uint x)
+uint hash(in const uint x)
 {
 	x += (x << 10);
 	x ^= (x >> 6);
@@ -90,9 +90,9 @@ uint hash(in uint x)
 	return x;
 }
 
-uint hash(in uvec2 v) { return hash( v.x ^ hash(v.y)); }
-uint hash(in uvec3 v) { return hash( v.x ^ hash(v.y) ^ hash(v.z)); }
-uint hash(in uvec4 v) { return hash( v.x ^ hash(v.y) ^ hash(v.z) ^ hash(v.w)); }
+uint hash(in const uvec2 v) { return hash( v.x ^ hash(v.y)); }
+uint hash(in const uvec3 v) { return hash( v.x ^ hash(v.y) ^ hash(v.z)); }
+uint hash(in const uvec4 v) { return hash( v.x ^ hash(v.y) ^ hash(v.z) ^ hash(v.w)); }
 
 float random(inout uint seed)
 {

@@ -27,6 +27,9 @@ const float c_epsilon = 1e-5;
 const float c_halfPi = 1.57079632679;
 const float c_pi = 3.14159265359;
 const float c_2pi = 6.28318530718;
+const float c_invHalfPi = 0.63661977236;
+const float c_invPi = 0.31830988618;
+const float c_inv2pi = 0.15915494309;
 
 // Function declarations
 

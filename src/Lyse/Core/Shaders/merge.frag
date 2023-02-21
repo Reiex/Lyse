@@ -70,11 +70,11 @@ layout (location = 0) out vec3 fo_output;
 
 float computeSsao();
 
-vec2 viewDirToProjectionCoords(in vec3 viewDir);
+vec2 viewDirToProjectionCoords(in const vec3 viewDir);
 
-vec3 fresnelSchlick(in vec3 normal, in vec3 lightDir, in vec3 normalFresnelReflectance);
-float distributionGGX(in vec3 normal, in vec3 vector, in float roughness);
-float geometryGGX(in float cTheta, in float roughness);
+vec3 fresnelSchlick(in const vec3 normal, in const vec3 lightDir, in const vec3 normalFresnelReflectance);
+float distributionGGX(in const vec3 normal, in const vec3 vector, in const float roughness);
+float geometryGGX(in const float cTheta, in const float roughness);
 
 // Function definitions
 
@@ -96,6 +96,9 @@ void main()
 	const float ambiantCoeff = material.x;
 	const float metallic = material.y;
 	const float roughness = material.z;
+	const float roughnessSq = roughness * roughness;
+	const float roughnessSqSq = roughnessSq * roughnessSq;
+	const float geometryConstant = roughnessSq * 0.125;
 
 
 	vec3 rawColor;
@@ -188,8 +191,8 @@ void main()
 			const vec3 halfDir = normalize(lightDir + nViewDir);
 
 			const vec3 fresnelReflectance = fresnelSchlick(halfDir, lightDir, normalFresnelReflectance);
-			const float distribution = distributionGGX(normal, halfDir, roughness);
-			const float geometryLight = geometryGGX(dotNormalLightDir, roughness);
+			const float distribution = distributionGGX(normal, halfDir, roughnessSqSq);
+			const float geometryLight = geometryGGX(dotNormalLightDir, geometryConstant);
 
 			diffuse += radiance * (vec3(1.0, 1.0, 1.0) - fresnelReflectance);
 			specular += radiance * fresnelReflectance * distribution * geometryLight / dotNormalLightDir;
@@ -224,38 +227,33 @@ float computeSsao()
 	) * 0.111111;
 }
 
-vec2 viewDirToProjectionCoords(in vec3 viewDir)
+vec2 viewDirToProjectionCoords(in const vec3 viewDir)
 {
 	vec2 result = vec2(0.0, 0.0);
 
 	vec2 hDir = normalize(viewDir.xz);
-	result.x = atan(hDir.y, hDir.x) / (2.0 * c_pi);
-	result.y = -asin(viewDir.y) / c_pi + 0.5;
+	result.x = atan(hDir.y, hDir.x) * c_inv2pi;
+	result.y = -asin(viewDir.y) * c_invPi + 0.5;
 
 	return result;
 }
 
-vec3 fresnelSchlick(in vec3 normal, in vec3 lightDir, in vec3 normalFresnelReflectance)
+vec3 fresnelSchlick(in const vec3 normal, in const vec3 lightDir, in const vec3 normalFresnelReflectance)
 {
 	return normalFresnelReflectance + (1.0 - normalFresnelReflectance) * pow(1.0 - max(dot(normal, lightDir), 0.0), 5);
 }
 
-float distributionGGX(in vec3 normal, in vec3 vector, in float roughness)
+float distributionGGX(in const vec3 normal, in const vec3 vector, in const float roughnessSqSq)
 {
-	float rSq = roughness * roughness;
-	float rSqSq = rSq * rSq;
-	float cTheta = max(dot(normal, vector), 0.0);
+	const float cTheta = max(dot(normal, vector), 0.0);
 	
-	float denom = (cTheta * cTheta * (rSqSq - 1.0) + 1.0);
+	float denom = (cTheta * cTheta * (roughnessSqSq - 1.0) + 1.0);
 	denom = c_pi * denom * denom;
 	
-	return rSqSq / denom;
+	return roughnessSqSq / denom;
 }
 
-float geometryGGX(in float cTheta, in float roughness)
+float geometryGGX(in const float cTheta, in const float geometryConstant)
 {
-	float r = (roughness + 1.0);
-	float k = (r*r) / 8.0;
-
-	return cTheta / (cTheta * (1.0 - k) + k);
+	return cTheta / mix(cTheta, 1.0, geometryConstant);
 }

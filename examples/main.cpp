@@ -8,40 +8,40 @@ int main()
 	context->setClearColor(0.2f, 0.3f, 0.3f, 1.f);
 
 	// lys::CameraOrthographic camera(window.getSize().x, window.getSize().y, 5.f, 0.3f);
-	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 10.f);
-	camera.setTranslation({ 0.f, 0.f, 3.f });
-	lys::Mesh<> mesh("examples/suzanne.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
-	lys::LightPoint light(3.f, 1.f, 1.f, 1.f, 1.f, 1.f, 20.f);
-	lys::LightPoint light2(1.f, 2.f, 1.f, 1.f, 0.8f, 0.7f, 20.f);
-	lys::Scene scene(window.getSize().x, window.getSize().y);
-	scene.setCamera(&camera);
-	scene.addDrawable(&mesh);
-	scene.addLight(&light);
-	scene.addLight(&light2);
-
 	// lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 10.f);
 	// camera.setTranslation({ 0.f, 0.f, 3.f });
-	// 
-	// spl::Texture2D colorMap		("examples/color.png");
-	// spl::Texture2D materialMap	("examples/material.png");
-	// spl::Texture2D normalMap	("examples/normal.png", spl::TextureInternalFormat::RGB_ni8);
-	// spl::Texture2D background	("examples/background.png");
-	// 
-	// lys::Material material;
-	// material.setColorTexture(&colorMap);
-	// material.setPropertiesTexture(&materialMap);
-	// 
-	// lys::Mesh<> mesh("examples/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
-	// mesh.setNormalMap(&normalMap);
-	// mesh.setMaterial(&material);
-	// 
-	// lys::LightSun light(-3.f, -1.f, -1.f, 1.f, 1.f, 1.f, 10.f);
-	// 
+	// lys::Mesh<> mesh("examples/suzanne.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
+	// lys::LightPoint light(3.f, 1.f, 1.f, 1.f, 1.f, 1.f, 20.f);
+	// lys::LightPoint light2(1.f, 2.f, 1.f, 1.f, 0.8f, 0.7f, 20.f);
 	// lys::Scene scene(window.getSize().x, window.getSize().y);
 	// scene.setCamera(&camera);
-	// scene.setBackgroundEquirectangular(&background);
 	// scene.addDrawable(&mesh);
 	// scene.addLight(&light);
+	// scene.addLight(&light2);
+
+	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 10.f);
+	camera.setTranslation({ 0.f, 0.f, 3.f });
+	
+	spl::Texture2D colorMap		("examples/color.png");
+	spl::Texture2D materialMap	("examples/material.png");
+	spl::Texture2D normalMap	("examples/normal.png", spl::TextureInternalFormat::RGB_ni8);
+	spl::Texture2D background	("examples/background.png");
+	
+	lys::Material material;
+	material.setColorTexture(&colorMap);
+	material.setPropertiesTexture(&materialMap);
+	
+	lys::Mesh<> mesh("examples/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
+	mesh.setNormalMap(&normalMap);
+	mesh.setMaterial(&material);
+	
+	lys::LightSun light(-3.f, -1.f, -1.f, 1.f, 1.f, 1.f, 10.f);
+	
+	lys::Scene scene(window.getSize().x, window.getSize().y);
+	scene.setCamera(&camera);
+	scene.setBackgroundEquirectangular(&background);
+	scene.addDrawable(&mesh);
+	scene.addLight(&light);
 
 	lys::VertexDefaultMesh screenVertices[] = {
 		{ {-1.f,  1.f, 0.f, 1.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f} },
