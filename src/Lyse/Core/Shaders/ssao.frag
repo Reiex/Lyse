@@ -33,7 +33,7 @@ layout (location = 0) out float fo_output;
 
 // Function declarations
 
-uint hash(in const uint x);
+uint hash(in uint x);
 uint hash(in const uvec2 v);
 uint hash(in const uvec3 v);
 uint hash(in const uvec4 v);
@@ -80,7 +80,7 @@ void main()
 	fo_output = 1.0 - occlusion / u_sampleCount;
 } 
 
-uint hash(in const uint x)
+uint hash(in uint x)
 {
 	x += (x << 10);
 	x ^= (x >> 6);

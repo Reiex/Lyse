@@ -7,10 +7,9 @@ int main()
 	spl::Context::setCurrentContext(context);
 	context->setClearColor(0.2f, 0.3f, 0.3f, 1.f);
 
-	// lys::CameraOrthographic camera(window.getSize().x, window.getSize().y, 5.f, 0.3f);
 	// lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 10.f);
 	// camera.setTranslation({ 0.f, 0.f, 3.f });
-	// lys::Mesh<> mesh("examples/suzanne.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
+	// lys::Mesh<> mesh("examples/assets/meshes/suzanne.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
 	// lys::LightPoint light(3.f, 1.f, 1.f, 1.f, 1.f, 1.f, 20.f);
 	// lys::LightPoint light2(1.f, 2.f, 1.f, 1.f, 0.8f, 0.7f, 20.f);
 	// lys::Scene scene(window.getSize().x, window.getSize().y);
@@ -19,29 +18,39 @@ int main()
 	// scene.addLight(&light);
 	// scene.addLight(&light2);
 
-	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 10.f);
-	camera.setTranslation({ 0.f, 0.f, 3.f });
-	
-	spl::Texture2D colorMap		("examples/color.png");
-	spl::Texture2D materialMap	("examples/material.png");
-	spl::Texture2D normalMap	("examples/normal.png", spl::TextureInternalFormat::RGB_ni8);
-	spl::Texture2D background	("examples/background.png");
-	
-	lys::Material material;
-	material.setColorTexture(&colorMap);
-	material.setPropertiesTexture(&materialMap);
-	
-	lys::Mesh<> mesh("examples/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
-	mesh.setNormalMap(&normalMap);
-	mesh.setMaterial(&material);
-	
-	lys::LightSun light(-3.f, -1.f, -1.f, 1.f, 1.f, 1.f, 10.f);
-	
-	lys::Scene scene(window.getSize().x, window.getSize().y);
-	scene.setCamera(&camera);
-	scene.setBackgroundEquirectangular(&background);
-	scene.addDrawable(&mesh);
-	scene.addLight(&light);
+	// lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 10.f);
+	// camera.setTranslation({ 0.f, 0.f, 3.f });
+	// 
+	// spl::Texture2D colorMap				("examples/assets/images/color.png");
+	// spl::Texture2D moonColorMap			("examples/assets/images/moonColor.png");
+	// spl::Texture2D normalMap			("examples/assets/images/normal.png", spl::TextureInternalFormat::RGB_ni8);
+	// spl::Texture2D moonNormalMap		("examples/assets/images/moonNormal.png", spl::TextureInternalFormat::RGB_ni8);
+	// spl::Texture2D materialMap			("examples/assets/images/material.png");
+	// spl::Texture2D background			("examples/assets/images/background.png");
+	// 
+	// lys::Material material;
+	// material.setColorTexture(&colorMap);
+	// material.setPropertiesTexture(&materialMap);
+	// lys::Mesh<> mesh("examples/assets/meshes/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
+	// mesh.setNormalMap(&normalMap);
+	// mesh.setMaterial(&material);
+	// 
+	// lys::Material moonMaterial(1.f, 1.f, 1.f, 1.f, 0.1f, 0.0f, 1.f);
+	// moonMaterial.setColorTexture(&moonColorMap);
+	// lys::Mesh<> moonMesh("examples/assets/meshes/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
+	// moonMesh.setNormalMap(&moonNormalMap);
+	// moonMesh.setMaterial(&moonMaterial);
+	// moonMesh.setScale(0.1);
+	// moonMesh.move(2.f, 1.f, 1.f);
+	// 
+	// lys::LightSun light(-3.f, -1.f, -1.f, 1.f, 1.f, 1.f, 10.f);
+	// 
+	// lys::Scene scene(window.getSize().x, window.getSize().y);
+	// scene.setCamera(&camera);
+	// scene.setBackgroundEquirectangular(&background);
+	// scene.addDrawable(&mesh);
+	// scene.addDrawable(&moonMesh);
+	// scene.addLight(&light);
 
 	lys::VertexDefaultMesh screenVertices[] = {
 		{ {-1.f,  1.f, 0.f, 1.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f} },
@@ -52,7 +61,7 @@ int main()
 	uint32_t screenIndices[] = { 0, 1, 3, 1, 2, 3 };
 	lys::Mesh<> screenMesh(screenVertices, 4, spl::BufferStorageFlags::None, screenIndices, 6, spl::BufferStorageFlags::None);
 
-	spl::ShaderProgram screenShader("examples/screen.vert", "examples/screen.frag");
+	spl::ShaderProgram screenShader("examples/assets/shaders/screen.vert", "examples/assets/shaders/screen.frag");
 	spl::ShaderProgram::bind(screenShader);
 
 

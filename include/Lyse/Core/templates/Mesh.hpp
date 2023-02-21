@@ -84,6 +84,8 @@ namespace lys
 	template<CVertex TVertex>
 	Mesh<TVertex>& Mesh<TVertex>::operator=(const Mesh<TVertex>& mesh)
 	{
+		Drawable::operator=(mesh);
+
 		_vbo.copyFrom(mesh._vbo);
 		_ebo.copyFrom(mesh._ebo);
 
@@ -98,6 +100,8 @@ namespace lys
 	template<CVertex TVertex>
 	Mesh<TVertex>& Mesh<TVertex>::operator=(Mesh<TVertex>&& mesh)
 	{
+		Drawable::operator=(std::move(mesh));
+
 		_vbo.moveFrom(mesh._vbo);
 		_ebo.moveFrom(mesh._ebo);
 
