@@ -211,16 +211,17 @@ void main()
 
 float computeSsao()
 {
-	float ssao = 0.0;
-	for (int i = -2; i <= 2; i += 2)
-	{
-		for (int j = -2; j <= 2; j += 2)
-		{
-			ssao += texture(u_ssao, io_texCoords + ubo_camera.texelSize * vec2(i, j)).r;
-		}
-	}
-
-	return ssao * 0.111;
+	return (
+		  texture(u_ssao, vec2(io_texCoords.x - ubo_camera.blurOffset.x, io_texCoords.y - ubo_camera.blurOffset.y)).r
+		+ texture(u_ssao, vec2(io_texCoords.x - ubo_camera.blurOffset.x, io_texCoords.y                          )).r
+		+ texture(u_ssao, vec2(io_texCoords.x - ubo_camera.blurOffset.x, io_texCoords.y + ubo_camera.blurOffset.y)).r
+		+ texture(u_ssao, vec2(io_texCoords.x,							 io_texCoords.y - ubo_camera.blurOffset.y)).r
+		+ texture(u_ssao, vec2(io_texCoords.x,                           io_texCoords.y                          )).r
+		+ texture(u_ssao, vec2(io_texCoords.x,							 io_texCoords.y + ubo_camera.blurOffset.y)).r
+		+ texture(u_ssao, vec2(io_texCoords.x + ubo_camera.blurOffset.x, io_texCoords.y - ubo_camera.blurOffset.y)).r
+		+ texture(u_ssao, vec2(io_texCoords.x + ubo_camera.blurOffset.x, io_texCoords.y                          )).r
+		+ texture(u_ssao, vec2(io_texCoords.x + ubo_camera.blurOffset.x, io_texCoords.y + ubo_camera.blurOffset.y)).r
+	) * 0.111111;
 }
 
 vec2 viewDirToProjectionCoords(in vec3 viewDir)

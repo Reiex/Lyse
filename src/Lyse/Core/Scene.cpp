@@ -25,7 +25,7 @@ namespace lys
 
 			float tanHalfFov;
 			uint32_t padding;
-			scp::f32vec2 texelSize;
+			scp::f32vec2 blurOffset;
 			scp::f32vec2 depthConversion;
 		};
 
@@ -501,7 +501,7 @@ namespace lys
 		cameraData.fov = _camera->getFieldOfView();
 
 		cameraData.tanHalfFov = std::tan(cameraData.fov * 0.5f);
-		cameraData.texelSize = scp::f32vec2(1.f / _resolution.x, 1.f / _resolution.y);
+		cameraData.blurOffset = scp::f32vec2(2.f / _resolution.x, 2.f / _resolution.y);
 		cameraData.depthConversion = scp::f32vec2(cameraData.near * cameraData.far, cameraData.far - cameraData.near);
 
 		_uboCamera.update(&cameraData, sizeof(UboCameraData));

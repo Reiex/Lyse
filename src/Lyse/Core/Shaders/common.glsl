@@ -17,7 +17,7 @@ struct UboCameraData
 	float fov;
 
 	float tanHalfFov;
-	vec2 texelSize;
+	vec2 blurOffset;
 	vec2 depthConversion;
 };
 
