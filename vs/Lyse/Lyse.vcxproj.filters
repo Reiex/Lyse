@@ -114,6 +114,12 @@
     <ClInclude Include="..\..\include\Lyse\Core\templates\LightSun.hpp">
       <Filter>Header Files\Core\templates</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\Lyse\Core\CameraOrthographic.hpp">
+      <Filter>Header Files\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\Lyse\Core\templates\CameraOrthographic.hpp">
+      <Filter>Header Files\Core\templates</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\Lyse\Core\Scene.cpp">
@@ -146,6 +152,9 @@
       <Filter>Shaders</Filter>
     </EmbeddedResource>
     <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\ssao.vert">
+      <Filter>Shaders</Filter>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\common.glsl">
       <Filter>Shaders</Filter>
     </EmbeddedResource>
   </ItemGroup>

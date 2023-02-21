@@ -63,6 +63,9 @@ namespace lys
 		private:
 
 			void _loadShaders();
+
+			void _updateUboCamera() const;
+			void _updateUboLights() const;
 			void _insertInDrawSequence(void* pDrawSequence, const Drawable* drawable, ShaderType shaderType) const;
 
 			static void _setCameraGBufferUniforms(const std::pair<const spl::ShaderProgram*, const GBufferShaderInterface*>& gBuffer, const CameraBase* camera);
@@ -72,13 +75,14 @@ namespace lys
 			std::vector<spl::ShaderProgram*> _shaders;
 			std::unordered_map<DrawableType, std::vector<ShaderSet>> _shaderMap;
 
-			scp::u32vec2 _resolution;
-
 			spl::Framebuffer _gBufferFramebuffer;
 			spl::Framebuffer _ssaoFramebuffer;
 			spl::Framebuffer _mergeFramebuffer;
 
+			scp::u32vec2 _resolution;
 			const CameraBase* _camera;
+			mutable spl::Buffer _uboCamera;
+
 			scp::f32vec3 _clearColor;
 			const spl::RawTexture* _background;
 			std::unordered_set<const Drawable*> _drawables;

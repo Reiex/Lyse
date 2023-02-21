@@ -20,8 +20,10 @@ namespace lys
 
 	class Transformable;
 	
+	enum class CameraType;
 	class CameraBase;
 	class CameraPerspective;
+	class CameraOrthographic;
 
 	enum class LightType;
 	class LightBase;

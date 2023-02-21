@@ -62,10 +62,15 @@ namespace lys
 
 	constexpr void CameraPerspective::setFieldOfView(float fov)
 	{
-		assert(fov > 0.f && fov < std::numbers::pi / 2);
+		assert(fov > 0.f && fov < std::numbers::pi);
 
 		_fov = fov;
 		_projection.reset();
+	}
+
+	constexpr CameraType CameraPerspective::getType() const
+	{
+		return CameraType::Perspective;
 	}
 
 	constexpr float CameraPerspective::getAspect() const

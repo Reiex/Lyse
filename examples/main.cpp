@@ -7,6 +7,7 @@ int main()
 	spl::Context::setCurrentContext(context);
 	context->setClearColor(0.2f, 0.3f, 0.3f, 1.f);
 
+	// lys::CameraOrthographic camera(window.getSize().x, window.getSize().y, 5.f, 0.3f);
 	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 10.f);
 	camera.setTranslation({ 0.f, 0.f, 3.f });
 	lys::Mesh<> mesh("examples/suzanne.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);

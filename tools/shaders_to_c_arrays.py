@@ -39,6 +39,8 @@ def main(argv):
 			variable_name = filename.split(".")[0] + "_frag"
 		elif filename.split(".")[1] == "comp":
 			variable_name = filename.split(".")[0] + "_comp"
+		elif filename.split(".")[1] == "glsl":
+			variable_name = filename.split(".")[0] + "_glsl"
 		else:
 			continue
 
@@ -55,7 +57,10 @@ def main(argv):
 					output.write("\n\t")
 				output.write("0x" + hex(ord(c))[2:].zfill(2) + ", ")
 
-			output.write("\n};\n\n")
+			if len(shader_source) % 20 == 0:
+				output.write("\n\t")
+
+			output.write("0x00\n}};\n\n".format(variable_name))
 
 
 if __name__ == "__main__":

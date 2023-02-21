@@ -11,23 +11,22 @@
 
 namespace lys
 {
-	class CameraPerspective : public CameraBase
+	class CameraOrthographic : public CameraBase
 	{
 		public:
 
-			constexpr CameraPerspective(float aspect, float fov, float near, float far);
-			constexpr CameraPerspective(uint32_t width, uint32_t height, float fov, float near, float far);
-			constexpr CameraPerspective(const CameraPerspective& camera) = default;
-			constexpr CameraPerspective(CameraPerspective&& camera) = default;
+			// fov != -1 means width and height only specifies an aspect and can be modified
+			constexpr CameraOrthographic(float width, float height, float depth, float fov = -1.f);	
+			constexpr CameraOrthographic(const CameraOrthographic& camera) = default;
+			constexpr CameraOrthographic(CameraOrthographic&& camera) = default;
 
-			constexpr CameraPerspective& operator=(const CameraPerspective& camera) = default;
-			constexpr CameraPerspective& operator=(CameraPerspective&& camera) = default;
+			constexpr CameraOrthographic& operator=(const CameraOrthographic& camera) = default;
+			constexpr CameraOrthographic& operator=(CameraOrthographic&& camera) = default;
 
 			constexpr void setAspect(float aspect);
 			constexpr void setAspect(uint32_t width, uint32_t height);
 			constexpr void setFieldOfView(float fov);
-			constexpr void setNearDistance(float near);
-			constexpr void setFarDistance(float far);
+			constexpr void setDepth(float depth);
 
 			virtual constexpr CameraType getType() const override final;
 			virtual constexpr float getAspect() const override final;
@@ -36,14 +35,13 @@ namespace lys
 			virtual constexpr float getFarDistance() const override final;
 			virtual constexpr const scp::f32mat4x4& getProjectionMatrix() const override final;
 
-			virtual constexpr ~CameraPerspective() override final = default;
+			virtual constexpr ~CameraOrthographic() override final = default;
 
 		private:
 
 			float _aspect;
 			float _fov;
-			float _near;
-			float _far;
+			float _depth;
 
 			mutable std::optional<scp::f32mat4x4> _projection;
 	};

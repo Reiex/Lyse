@@ -7,7 +7,7 @@
 
 // Custom types
 
-struct light_t
+struct UboLightData
 {
 	vec3 color;
 	uint type;
@@ -15,10 +15,14 @@ struct light_t
 	vec4 param1;
 };
 
+struct UboLightsData
+{
+	uint count;
+	UboLightData lights[MAX_LIGHT_COUNT];
+};
+
 // Constants
 
-const float c_epsilon = 1e-5;
-const float c_pi = 3.14159265359;
 const vec3 c_dielectricNormalFresnelReflectance = vec3(0.04);
 
 // Inputs
@@ -27,11 +31,15 @@ in vec2 io_texCoords;
 
 // Uniform blocks
 
-layout (std140, binding = 0) uniform ubo_lights_t
+layout (std140, row_major, binding = 0) uniform ubo_camera_layout
 {
-	uint count;
-	light_t lights[MAX_LIGHT_COUNT];
-} ubo_lights;
+	UboCameraData ubo_camera;
+};
+
+layout (std140, binding = 1) uniform ubo_lights_layout
+{
+	UboLightsData ubo_lights;
+};
 
 // Uniforms
 
@@ -41,9 +49,6 @@ uniform sampler2D u_material;
 uniform sampler2D u_normal;
 
 uniform sampler2D u_ssao;
-
-uniform vec2 u_texelStep;
-uniform vec4 u_cameraInfos;
 
 #ifdef BACKGROUND
 	uniform mat4 u_invView;
@@ -76,42 +81,40 @@ float geometryGGX(in float cTheta, in float roughness);
 void main()
 {
 	// Retrieve all data from application and precedent shader passes
+	
+	const float depth = cameraComputeDepth(ubo_camera, u_depth, io_texCoords);
+	const vec3 viewDirUnnormalized = cameraComputeUnnormalizedViewDir(ubo_camera, io_texCoords, depth);
+	const vec3 position = cameraComputePosition(ubo_camera, io_texCoords, depth, viewDirUnnormalized);
+	const vec3 viewDir = normalize(viewDirUnnormalized);
 
-	float near = u_cameraInfos.x;
-	float far = u_cameraInfos.y;
+	const vec3 color = texture(u_color, io_texCoords).rgb;
+	const vec3 material = texture(u_material, io_texCoords).rgb;
+	const vec3 normal = normalize(texture(u_normal, io_texCoords).rgb);
 
-	float depth = (2.0 * near * far) / (far + near - (texture(u_depth, io_texCoords).r * 2.0 - 1.0) * (far - near));
-	vec3 viewDir = normalize(vec3((io_texCoords * 2.0 - 1.0) * u_cameraInfos.zw, -1.0));
-	vec3 position = viewDir * depth;
+	const float ssao = computeSsao();
 
-	vec3 color = texture(u_color, io_texCoords).rgb;
-	vec3 material = texture(u_material, io_texCoords).rgb;
-	vec3 normal = normalize(texture(u_normal, io_texCoords).rgb);
-
-	float ssao = computeSsao();
-
-	float ambiantCoeff = material.x;
-	float metallic = material.y;
-	float roughness = material.z;
+	const float ambiantCoeff = material.x;
+	const float metallic = material.y;
+	const float roughness = material.z;
 
 
 	vec3 rawColor;
 
 	// If nothing has been drawn on that fragment, show the background
 
-	if (depth >= far * 0.999)
+	if (depth >= ubo_camera.far * 0.999)
 	{
 		#ifndef BACKGROUND
 			discard;
 		#else
-			viewDir = (u_invView * vec4(viewDir, 0)).xyz;
+			const vec3 modelViewDir = (u_invView * vec4(viewDir, 0)).xyz;
 		
 			#ifdef BACKGROUND_PROJECTION
-				rawColor = texture(u_background, viewDirToProjectionCoords(viewDir)).rgb;
+				rawColor = texture(u_background, viewDirToProjectionCoords(modelViewDir)).rgb;
 			#endif
 
 			#ifdef BACKGROUND_CUBEMAP
-				rawColor = texture(u_background, viewDir).rgb;
+				rawColor = texture(u_background, modelViewDir).rgb;
 			#endif
 		#endif
 	}
@@ -120,12 +123,12 @@ void main()
 
 	else
 	{
-		viewDir = -viewDir;
-		float dotNormalViewDir = max(dot(normal, viewDir), c_epsilon);
-		vec3 normalFresnelReflectance = mix(c_dielectricNormalFresnelReflectance, color, metallic);
-		float geometryView = geometryGGX(dotNormalViewDir, roughness);
+		const vec3 nViewDir = -viewDir;
+		const float dotNormalViewDir = max(dot(normal, nViewDir), c_epsilon);
+		const vec3 normalFresnelReflectance = mix(c_dielectricNormalFresnelReflectance, color, metallic);
+		const float geometryView = geometryGGX(dotNormalViewDir, roughness);
 
-		vec3 ambiant = color * ambiantCoeff * ssao;
+		const vec3 ambiant = color * ambiantCoeff * ssao;
 		vec3 diffuse = vec3(0.0, 0.0, 0.0);
 		vec3 specular = vec3(0.0, 0.0, 0.0);
 		for (uint i = 0; i < ubo_lights.count; ++i)
@@ -154,15 +157,15 @@ void main()
 					radiance = ubo_lights.lights[i].color / max(dot(lightDir, lightDir), c_epsilon);
 					lightDir = normalize(lightDir);
 
-					float cThetaIn = ubo_lights.lights[i].param0.w;
-					float cThetaOut = ubo_lights.lights[i].param1.w;
+					const float cThetaIn = ubo_lights.lights[i].param0.w;
+					const float cThetaOut = ubo_lights.lights[i].param1.w;
 					if (cThetaIn == cThetaOut)
 					{
 						radiance *= float(dot(lightDir, ubo_lights.lights[i].param1.xyz) < cThetaIn);
 					}
 					else
 					{
-						float t = (clamp(dot(lightDir, ubo_lights.lights[i].param1.xyz), cThetaOut, cThetaIn) - cThetaOut) / (cThetaIn - cThetaOut);
+						const float t = (clamp(dot(lightDir, ubo_lights.lights[i].param1.xyz), cThetaOut, cThetaIn) - cThetaOut) / (cThetaIn - cThetaOut);
 						radiance *= exp(-pow(1.0 / t, 2.0));
 					}
 
@@ -174,7 +177,7 @@ void main()
 				}
 			}
 			
-			float dotNormalLightDir = max(dot(normal, lightDir), c_epsilon);
+			const float dotNormalLightDir = max(dot(normal, lightDir), c_epsilon);
 			radiance *= dotNormalLightDir;
 
 			if (length(radiance) < 1e-3)
@@ -182,11 +185,11 @@ void main()
 				continue;
 			}
 
-			vec3 halfDir = normalize(lightDir + viewDir);
+			const vec3 halfDir = normalize(lightDir + nViewDir);
 
-			vec3 fresnelReflectance = fresnelSchlick(halfDir, lightDir, normalFresnelReflectance);
-			float distribution = distributionGGX(normal, halfDir, roughness);
-			float geometryLight = geometryGGX(dotNormalLightDir, roughness);
+			const vec3 fresnelReflectance = fresnelSchlick(halfDir, lightDir, normalFresnelReflectance);
+			const float distribution = distributionGGX(normal, halfDir, roughness);
+			const float geometryLight = geometryGGX(dotNormalLightDir, roughness);
 
 			diffuse += radiance * (vec3(1.0, 1.0, 1.0) - fresnelReflectance);
 			specular += radiance * fresnelReflectance * distribution * geometryLight / dotNormalLightDir;
@@ -209,12 +212,11 @@ void main()
 float computeSsao()
 {
 	float ssao = 0.0;
-
-	for (int i = -1; i <= 1; ++i)
+	for (int i = -2; i <= 2; i += 2)
 	{
-		for (int j = -1; j <= 1; ++j)
+		for (int j = -2; j <= 2; j += 2)
 		{
-			ssao += texture(u_ssao, io_texCoords + u_texelStep * vec2(i, j)).r;
+			ssao += texture(u_ssao, io_texCoords + ubo_camera.texelSize * vec2(i, j)).r;
 		}
 	}
 

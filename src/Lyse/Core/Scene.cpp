@@ -14,6 +14,21 @@ namespace lys
 	namespace
 	{
 		#pragma pack(push, 1)
+		struct UboCameraData
+		{
+			scp::f32mat4x4 projection;
+			scp::u32vec2 resolution;
+			float near;
+			float far;
+			float aspect;
+			float fov;
+
+			float tanHalfFov;
+			uint32_t padding;
+			scp::f32vec2 texelSize;
+			scp::f32vec2 depthConversion;
+		};
+
 		struct UboLightData
 		{
 			scp::f32vec3 color;
@@ -34,11 +49,12 @@ namespace lys
 	Scene::Scene(uint32_t width, uint32_t height) :
 		_shaders(),
 		_shaderMap(),
-		_resolution(width, height),
 		_gBufferFramebuffer(),
 		_ssaoFramebuffer(),
 		_mergeFramebuffer(),
+		_resolution(width, height),
 		_camera(nullptr),
+		_uboCamera(sizeof(UboCameraData), spl::BufferUsage::StreamDraw),
 		_clearColor(0.f, 0.f, 0.f),
 		_background(nullptr),
 		_drawables(),
@@ -198,6 +214,11 @@ namespace lys
 		spl::Context* context = spl::Context::getCurrentContext();
 		context->setClearDepth(1.f);
 		context->setClearStencil(0);
+
+		// Update UBOs
+
+		_updateUboCamera();
+		_updateUboLights();
 		
 		// Draw G-Buffer
 
@@ -232,18 +253,19 @@ namespace lys
 		spl::Framebuffer::bind(_ssaoFramebuffer, spl::FramebufferTarget::DrawFramebuffer);
 		spl::Framebuffer::clear(true, false, false);
 
-		const spl::ShaderProgram* ssaoShader = _shaders[3];
+		const spl::ShaderProgram* ssaoShader = _shaders[_camera->getType() == CameraType::Orthographic ? 7 : 6];
+
 		spl::ShaderProgram::bind(*ssaoShader);
+
+		ssaoShader->setUniformBlockBinding(0, 0);
 
 		ssaoShader->setUniform("u_depth", 0, getDepthTexture());
 		ssaoShader->setUniform("u_normal", 1, getNormalTexture());
 		ssaoShader->setUniform("u_tangent", 2, getTangentTexture());
-		
-		ssaoShader->setUniform("u_projection", _camera->getProjectionMatrix());
-		ssaoShader->setUniform("u_cameraInfos", scp::f32vec4(_camera->getNearDistance(), _camera->getFarDistance(), scp::f32vec2(_camera->getAspect(), 1.f) * std::tan(_camera->getFieldOfView() / 2.f)));
 
 		ssaoShader->setUniform("u_sampleCount", uint32_t(16));
 		ssaoShader->setUniform("u_radius", 1.f);
+		ssaoShader->setUniform("u_scaleStep", 1.f / (16 * 16));
 
 		_screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
 
@@ -253,20 +275,19 @@ namespace lys
 		spl::Framebuffer::bind(_mergeFramebuffer, spl::FramebufferTarget::DrawFramebuffer);
 		spl::Framebuffer::clear(true, false, false);
 		
-		const spl::ShaderProgram* mergeShader = _shaders[0];
-		if (_background)
+		uint32_t mergeShaderIndex = _background ? (_background->getCreationParams().target == spl::TextureTarget::CubeMap ? 4 : 2) : 0;
+		if (_camera->getType() == CameraType::Orthographic)
 		{
-			if (_background->getCreationParams().target == spl::TextureTarget::CubeMap)
-			{
-				mergeShader = _shaders[2];
-			}
-			else
-			{
-				mergeShader = _shaders[1];
-			}
+			++mergeShaderIndex;
 		}
 
+		const spl::ShaderProgram* mergeShader = _shaders[mergeShaderIndex];
+
 		spl::ShaderProgram::bind(*mergeShader);
+
+		mergeShader->setUniformBlockBinding(0, 0);
+		mergeShader->setUniformBlockBinding(1, 1);
+
 		mergeShader->setUniform("u_depth", 0, getDepthTexture());
 		mergeShader->setUniform("u_color", 1, getColorTexture());
 		mergeShader->setUniform("u_material", 2, getMaterialTexture());
@@ -274,32 +295,12 @@ namespace lys
 
 		mergeShader->setUniform("u_ssao", 4, getSsaoTexture());
 
-		mergeShader->setUniform("u_texelStep", scp::f32vec2(1.f / _resolution.x, 1.f / _resolution.y));
-		mergeShader->setUniform("u_cameraInfos", scp::f32vec4(_camera->getNearDistance(), _camera->getFarDistance(), scp::f32vec2(_camera->getAspect(), 1.f) * std::tan(_camera->getFieldOfView() / 2.f)));
-
 		if (_background)
 		{
 			mergeShader->setUniform("u_invView", _camera->getInverseViewMatrix());
 			mergeShader->setUniform("u_background", 5, *_background);
 		}
-
-		thread_local static UboLightsData lightsData;
-
-		uint32_t i = 0;
-		for (const LightBase* light : _lights)
-		{
-			lightsData.lights[i].type = static_cast<uint32_t>(light->getType());
-			lightsData.lights[i].color = light->getColor() * light->getIntensity();
-			light->_getParams(_camera->getViewMatrix(), &lightsData.lights[i].param0);
-			++i;
-		}
-		lightsData.count = i;
-
-		_uboLights.update(&lightsData, 4 * sizeof(float) + sizeof(UboLightData) * i);
-
-		spl::Buffer::bind(_uboLights, spl::BufferTarget::Uniform, 0);
-		mergeShader->setUniformBlockBinding(0, 0);
-
+		
 		_screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
 		
 		// Restore OpenGL context
@@ -363,95 +364,91 @@ namespace lys
 
 	void Scene::_loadShaders()
 	{
-		constexpr char header[] =				"#version 460 core\n";
-		constexpr char background[] =			"#define BACKGROUND\n";
-		constexpr char backgroundProjection[] =	"#define BACKGROUND_PROJECTION\n";
-		constexpr char backgroundCubemap[] =	"#define BACKGROUND_CUBEMAP\n";
-		constexpr char colorMap[] =				"#define COLOR_MAP\n";
-		constexpr char materialMap[] =			"#define MATERIAL_MAP\n";
-		constexpr char normalMap[] =			"#define NORMAL_MAP\n";
+		static const std::string lightCountData =				"#define MAX_LIGHT_COUNT " + std::to_string(Scene::maxLightCount) + "\n";
 
-		std::string lightCount = "#define MAX_LIGHT_COUNT " + std::to_string(Scene::maxLightCount) + "\n";
+		static const std::string_view header =					"#version 460 core\n";
+		static const std::string_view cameraPerspective =		"#define CAMERA_PERSPECTIVE\n";
+		static const std::string_view cameraOrthographic =		"#define CAMERA_ORTHOGRAPHIC\n";
+		static const std::string_view background =				"#define BACKGROUND\n";
+		static const std::string_view backgroundProjection =	"#define BACKGROUND_PROJECTION\n";
+		static const std::string_view backgroundCubemap =		"#define BACKGROUND_CUBEMAP\n";
+		static const std::string_view colorMap =				"#define COLOR_MAP\n";
+		static const std::string_view materialMap =				"#define MATERIAL_MAP\n";
+		static const std::string_view normalMap =				"#define NORMAL_MAP\n";
+		static const std::string_view lightCount =				{ lightCountData.data(), lightCountData.size() };
 
-		const std::vector<const char*> sources[] = {
-			{ header, 																merge_vert },
-			{ header, lightCount.data(), 											merge_frag },
-			{ header, lightCount.data(),	background,		backgroundProjection,	merge_frag },
-			{ header, lightCount.data(),	background,		backgroundCubemap,		merge_frag },
-			{ header, 																ssao_vert },
-			{ header, 																ssao_frag },
-			{ header, 																mesh_gBuffer_vert },
-			{ header, 																mesh_gBuffer_frag },
-			{ header, colorMap,														mesh_gBuffer_frag },
-			{ header, 						materialMap,							mesh_gBuffer_frag },
-			{ header, colorMap,				materialMap,							mesh_gBuffer_frag },
-			{ header, 										normalMap,				mesh_gBuffer_frag },
-			{ header, colorMap,								normalMap,				mesh_gBuffer_frag },
-			{ header, 						materialMap,	normalMap,				mesh_gBuffer_frag },
-			{ header, colorMap,				materialMap,	normalMap,				mesh_gBuffer_frag }
+
+		static const std::pair<spl::ShaderStage::Stage, std::vector<std::string_view>> sources[] = {
+			{ spl::ShaderStage::Vertex,		{ header, 																			common_glsl, merge_vert } },
+			{ spl::ShaderStage::Fragment,	{ header, cameraPerspective,	lightCount, 										common_glsl, merge_frag } },
+			{ spl::ShaderStage::Fragment,	{ header, cameraOrthographic,	lightCount, 										common_glsl, merge_frag } },
+			{ spl::ShaderStage::Fragment,	{ header, cameraPerspective,	lightCount,		background,	backgroundProjection,	common_glsl, merge_frag } },
+			{ spl::ShaderStage::Fragment,	{ header, cameraOrthographic,	lightCount,		background,	backgroundProjection,	common_glsl, merge_frag } },
+			{ spl::ShaderStage::Fragment,	{ header, cameraPerspective,	lightCount,		background,	backgroundCubemap,		common_glsl, merge_frag } },
+			{ spl::ShaderStage::Fragment,	{ header, cameraOrthographic,	lightCount,		background,	backgroundCubemap,		common_glsl, merge_frag } },
+			{ spl::ShaderStage::Vertex,		{ header, 																			common_glsl, ssao_vert } },
+			{ spl::ShaderStage::Fragment,	{ header, cameraPerspective,														common_glsl, ssao_frag } },
+			{ spl::ShaderStage::Fragment,	{ header, cameraOrthographic,														common_glsl, ssao_frag } },
+			{ spl::ShaderStage::Vertex,		{ header, 																			common_glsl, mesh_gBuffer_vert } },
+			{ spl::ShaderStage::Fragment,	{ header, 																			common_glsl, mesh_gBuffer_frag } },
+			{ spl::ShaderStage::Fragment,	{ header, colorMap,																	common_glsl, mesh_gBuffer_frag } },
+			{ spl::ShaderStage::Fragment,	{ header, 						materialMap,										common_glsl, mesh_gBuffer_frag } },
+			{ spl::ShaderStage::Fragment,	{ header, colorMap,				materialMap,										common_glsl, mesh_gBuffer_frag } },
+			{ spl::ShaderStage::Fragment,	{ header, 									normalMap,								common_glsl, mesh_gBuffer_frag } },
+			{ spl::ShaderStage::Fragment,	{ header, colorMap,							normalMap,								common_glsl, mesh_gBuffer_frag } },
+			{ spl::ShaderStage::Fragment,	{ header, 						materialMap,	normalMap,							common_glsl, mesh_gBuffer_frag } },
+			{ spl::ShaderStage::Fragment,	{ header, colorMap,				materialMap,	normalMap,							common_glsl, mesh_gBuffer_frag } }
 		};
 
-		const std::vector<uint32_t> sizes[] = {
-			{ sizeof(header) - 1,																								sizeof(merge_vert) },
-			{ sizeof(header) - 1, uint32_t(lightCount.size()),																	sizeof(merge_frag) },
-			{ sizeof(header) - 1, uint32_t(lightCount.size()),	sizeof(background) - 1,		sizeof(backgroundProjection) - 1,	sizeof(merge_frag) },
-			{ sizeof(header) - 1, uint32_t(lightCount.size()),	sizeof(background) - 1,		sizeof(backgroundCubemap) - 1,		sizeof(merge_frag) },
-			{ sizeof(header) - 1,																								sizeof(ssao_vert) },
-			{ sizeof(header) - 1,																								sizeof(ssao_frag) },
-			{ sizeof(header) - 1,																								sizeof(mesh_gBuffer_vert) },
-			{ sizeof(header) - 1,																								sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(colorMap) - 1,																			sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1,								sizeof(materialMap) - 1,										sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(colorMap) - 1,			sizeof(materialMap) - 1,										sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1,															sizeof(normalMap) - 1,				sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(colorMap) - 1,										sizeof(normalMap) - 1,				sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1,								sizeof(materialMap) - 1,	sizeof(normalMap) - 1,				sizeof(mesh_gBuffer_frag) },
-			{ sizeof(header) - 1, sizeof(colorMap) - 1,			sizeof(materialMap) - 1,	sizeof(normalMap) - 1,				sizeof(mesh_gBuffer_frag) }
-		};
+		static constexpr uint32_t count = sizeof(sources) / sizeof(sources[0]);
 
-		spl::ShaderModule modules[] = {
-			{ spl::ShaderStage::Vertex,		sources[0].data(),	sizes[0].data(),	uint32_t(sources[0].size()) },
-			{ spl::ShaderStage::Fragment,	sources[1].data(),	sizes[1].data(),	uint32_t(sources[1].size()) },
-			{ spl::ShaderStage::Fragment,	sources[2].data(),	sizes[2].data(),	uint32_t(sources[2].size()) },
-			{ spl::ShaderStage::Fragment,	sources[3].data(),	sizes[3].data(),	uint32_t(sources[3].size()) },
-			{ spl::ShaderStage::Vertex,		sources[4].data(),	sizes[4].data(),	uint32_t(sources[4].size()) },
-			{ spl::ShaderStage::Fragment,	sources[5].data(),	sizes[5].data(),	uint32_t(sources[5].size()) },
-			{ spl::ShaderStage::Vertex,		sources[6].data(),	sizes[6].data(),	uint32_t(sources[6].size()) },
-			{ spl::ShaderStage::Fragment,	sources[7].data(),	sizes[7].data(),	uint32_t(sources[7].size()) },
-			{ spl::ShaderStage::Fragment,	sources[8].data(),	sizes[8].data(),	uint32_t(sources[8].size()) },
-			{ spl::ShaderStage::Fragment,	sources[9].data(),	sizes[9].data(),	uint32_t(sources[9].size()) },
-			{ spl::ShaderStage::Fragment,	sources[10].data(),	sizes[10].data(),	uint32_t(sources[10].size()) },
-			{ spl::ShaderStage::Fragment,	sources[11].data(),	sizes[11].data(),	uint32_t(sources[11].size()) },
-			{ spl::ShaderStage::Fragment,	sources[12].data(),	sizes[12].data(),	uint32_t(sources[12].size()) },
-			{ spl::ShaderStage::Fragment,	sources[13].data(),	sizes[13].data(),	uint32_t(sources[13].size()) },
-			{ spl::ShaderStage::Fragment,	sources[14].data(),	sizes[14].data(),	uint32_t(sources[14].size()) }
-		};
+		spl::ShaderModule modules[count];
+		for (uint32_t i = 0; i < count; ++i)
+		{
+			std::vector<const char*> srcPtrs;
+			std::vector<uint32_t> srcSizes;
+			for (const std::string_view& src : sources[i].second)
+			{
+				srcPtrs.push_back(src.data());
+				srcSizes.push_back(src.size());
+			}
+
+			modules[i].createFromGlsl(sources[i].first, srcPtrs.data(), srcSizes.data(), sources[i].second.size());
+		}
 
 		std::array<const spl::ShaderModule*, 5> moduleArray;
 
-		moduleArray = { modules + 0, modules + 1, nullptr, nullptr, nullptr };	// 0
+		moduleArray = { modules + 0, modules + 1, nullptr, nullptr, nullptr };		// 0
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 0, modules + 2, nullptr, nullptr, nullptr };	// 1
+		moduleArray = { modules + 0, modules + 2, nullptr, nullptr, nullptr };		// 1
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 0, modules + 3, nullptr, nullptr, nullptr };	// 2
+		moduleArray = { modules + 0, modules + 3, nullptr, nullptr, nullptr };		// 2
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 4, modules + 5, nullptr, nullptr, nullptr };	// 3
+		moduleArray = { modules + 0, modules + 4, nullptr, nullptr, nullptr };		// 3
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 6, modules + 7, nullptr, nullptr, nullptr };	// 4
+		moduleArray = { modules + 0, modules + 5, nullptr, nullptr, nullptr };		// 4
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 6, modules + 8, nullptr, nullptr, nullptr };	// 5
+		moduleArray = { modules + 0, modules + 6, nullptr, nullptr, nullptr };		// 5
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 6, modules + 9, nullptr, nullptr, nullptr };	// 6
+		moduleArray = { modules + 7, modules + 8, nullptr, nullptr, nullptr };		// 6
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 6, modules + 10, nullptr, nullptr, nullptr };	// 7
+		moduleArray = { modules + 7, modules + 9, nullptr, nullptr, nullptr };		// 7
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 6, modules + 11, nullptr, nullptr, nullptr };	// 8
+		moduleArray = { modules + 10, modules + 11, nullptr, nullptr, nullptr };	// 8
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 6, modules + 12, nullptr, nullptr, nullptr };	// 9
+		moduleArray = { modules + 10, modules + 12, nullptr, nullptr, nullptr };	// 9
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 6, modules + 13, nullptr, nullptr, nullptr };	// 10
+		moduleArray = { modules + 10, modules + 13, nullptr, nullptr, nullptr };	// 10
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 6, modules + 14, nullptr, nullptr, nullptr };	// 11
+		moduleArray = { modules + 10, modules + 14, nullptr, nullptr, nullptr };	// 11
+		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
+		moduleArray = { modules + 10, modules + 15, nullptr, nullptr, nullptr };	// 12
+		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
+		moduleArray = { modules + 10, modules + 16, nullptr, nullptr, nullptr };	// 13
+		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
+		moduleArray = { modules + 10, modules + 17, nullptr, nullptr, nullptr };	// 14
+		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
+		moduleArray = { modules + 10, modules + 18, nullptr, nullptr, nullptr };	// 15
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
 
 
@@ -466,14 +463,14 @@ namespace lys
 				DrawableType::Mesh,
 				{
 					{
-						_shaders[4],	//
-						_shaders[5],	// colorMap
-						_shaders[6],	// 			  materialMap
-						_shaders[7],	// colorMap + materialMap
-						_shaders[8],	// 							normalMap
-						_shaders[9],	// colorMap					normalMap
-						_shaders[10],	// 			  materialMap + normalMap
-						_shaders[11]	// colorMap + materialMap + normalMap
+						_shaders[8],	//
+						_shaders[9],	// colorMap
+						_shaders[10],	// 			  materialMap
+						_shaders[11],	// colorMap + materialMap
+						_shaders[12],	// 							normalMap
+						_shaders[13],	// colorMap					normalMap
+						_shaders[14],	// 			  materialMap + normalMap
+						_shaders[15]	// colorMap + materialMap + normalMap
 					}
 				}
 			},
@@ -490,6 +487,45 @@ namespace lys
 				}
 			}
 		};
+	}
+
+	void Scene::_updateUboCamera() const
+	{
+		thread_local static UboCameraData cameraData;
+
+		cameraData.projection = _camera->getProjectionMatrix();
+		cameraData.resolution = _resolution;
+		cameraData.near = _camera->getNearDistance();
+		cameraData.far = _camera->getFarDistance();
+		cameraData.aspect = _camera->getAspect();
+		cameraData.fov = _camera->getFieldOfView();
+
+		cameraData.tanHalfFov = std::tan(cameraData.fov * 0.5f);
+		cameraData.texelSize = scp::f32vec2(1.f / _resolution.x, 1.f / _resolution.y);
+		cameraData.depthConversion = scp::f32vec2(cameraData.near * cameraData.far, cameraData.far - cameraData.near);
+
+		_uboCamera.update(&cameraData, sizeof(UboCameraData));
+
+		spl::Buffer::bind(_uboCamera, spl::BufferTarget::Uniform, 0);
+	}
+
+	void Scene::_updateUboLights() const
+	{
+		thread_local static UboLightsData lightsData;
+
+		uint32_t i = 0;
+		for (const LightBase* light : _lights)
+		{
+			lightsData.lights[i].type = static_cast<uint32_t>(light->getType());
+			lightsData.lights[i].color = light->getColor() * light->getIntensity();
+			light->_getParams(_camera->getViewMatrix(), &lightsData.lights[i].param0);
+			++i;
+		}
+		lightsData.count = i;
+
+		_uboLights.update(&lightsData, 4 * sizeof(float) + sizeof(UboLightData) * i);
+
+		spl::Buffer::bind(_uboLights, spl::BufferTarget::Uniform, 1);
 	}
 
 	void Scene::_insertInDrawSequence(void* pDrawSequence, const Drawable* drawable, ShaderType shaderType) const

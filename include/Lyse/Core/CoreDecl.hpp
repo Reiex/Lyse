@@ -20,6 +20,7 @@
 
 #include <Lyse/Core/CameraBase.hpp>
 #include <Lyse/Core/CameraPerspective.hpp>
+#include <Lyse/Core/CameraOrthographic.hpp>
 
 #include <Lyse/Core/LightBase.hpp>
 #include <Lyse/Core/LightPoint.hpp>

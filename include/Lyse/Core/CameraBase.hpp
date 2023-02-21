@@ -11,6 +11,12 @@
 
 namespace lys
 {
+	enum class CameraType
+	{
+		Orthographic,
+		Perspective
+	};
+
 	class CameraBase : public Transformable
 	{
 		public:
@@ -18,6 +24,8 @@ namespace lys
 			// TODO: Make it constexpr when C++23 fully implemented in MSVC
 			inline void lookAt(const scp::f32vec3& position, float dutchAngle = 0.f);
 
+
+			virtual constexpr CameraType getType() const = 0;
 
 			virtual constexpr float getAspect() const = 0;
 			virtual constexpr float getFieldOfView() const = 0;
