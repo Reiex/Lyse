@@ -15,8 +15,8 @@ namespace lys
 	{
 		public:
 
-			constexpr LightPoint(float x, float y, float z);
-			constexpr LightPoint(float x, float y, float z, float r, float g, float b, float intensity);
+			constexpr LightPoint(float xPos, float yPos, float zPos);
+			constexpr LightPoint(float xPos, float yPos, float zPos, float r, float g, float b, float intensity);
 			constexpr LightPoint(const LightPoint& light) = default;
 			constexpr LightPoint(LightPoint&& light) = default;
 
@@ -24,11 +24,12 @@ namespace lys
 			constexpr LightPoint& operator=(LightPoint&& light) = default;
 
 			
-			constexpr void setPosition(float x, float y, float z);
+			using LightBase::setPosition;
+			using LightBase::move;
 
 
 			virtual constexpr LightType getType() const override final;
-			constexpr const scp::f32vec3& getPosition() const;
+			using LightBase::getPosition;
 
 
 			virtual constexpr ~LightPoint() override final = default;
@@ -36,7 +37,5 @@ namespace lys
 		private:
 
 			virtual constexpr void _getParams(const scp::f32mat4x4 view, scp::f32vec4* params) const override final;
-
-			scp::f32vec3 _position;
 	};
 }

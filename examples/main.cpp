@@ -38,9 +38,11 @@ int main()
 	moonMesh.setNormalMap(&moonNormalMap);
 	moonMesh.setMaterial(&moonMaterial);
 	moonMesh.setScale(0.1);
+	moonMesh.rotate(0.f, 1.f, 0.f, std::numbers::pi);
 	moonMesh.move(2.f, 1.f, 1.f);
 	
-	lys::LightSun light(-3.f, -1.f, -1.f, 1.f, 1.f, 1.f, 10.f);
+	scp::f32vec3 lightDir = scp::normalize(scp::f32vec3(-3.f, -1.f, -1.f));
+	lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, 1.f, 1.f, 1.f, 10.f);
 	
 	lys::Scene scene(window.getSize().x, window.getSize().y);
 	scene.setCamera(&camera);

@@ -23,20 +23,18 @@ namespace lys
 			constexpr LightSun& operator=(const LightSun& light) = default;
 			constexpr LightSun& operator=(LightSun&& light) = default;
 
-			
-			constexpr void setLightDir(float x, float y, float z);
+
+			using LightBase::setDirection;
+			using LightBase::rotate;
 
 
 			virtual constexpr LightType getType() const override final;
-			constexpr const scp::f32vec3& getLightDir() const;
 
 
 			virtual constexpr ~LightSun() override final = default;
 
 		private:
 
-			virtual inline void _getParams(const scp::f32mat4x4 view, scp::f32vec4* params) const override final;
-
-			scp::f32vec3 _dir;
+			virtual constexpr void _getParams(const scp::f32mat4x4 view, scp::f32vec4* params) const override final;
 	};
 }

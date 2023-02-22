@@ -18,7 +18,7 @@ namespace lys
 		Spot
 	};
 
-	class LightBase : public Transformable
+	class LightBase : protected Transformable
 	{
 		public:
 

@@ -11,21 +11,14 @@
 
 namespace lys
 {
-	constexpr LightSun::LightSun(float xDir, float yDir, float zDir) : LightBase(),
-		_dir(xDir, yDir, zDir)
+	constexpr LightSun::LightSun(float xDir, float yDir, float zDir) : LightBase()
 	{
+		setDirection(xDir, yDir, zDir);
 	}
 
-	constexpr LightSun::LightSun(float xDir, float yDir, float zDir, float r, float g, float b, float intensity) : LightBase(r, g, b, intensity),
-		_dir(xDir, yDir, zDir)
+	constexpr LightSun::LightSun(float xDir, float yDir, float zDir, float r, float g, float b, float intensity) : LightBase(r, g, b, intensity)
 	{
-	}
-
-	constexpr void LightSun::setLightDir(float x, float y, float z)
-	{
-		_dir.x = x;
-		_dir.y = y;
-		_dir.z = z;
+		setDirection(xDir, yDir, zDir);
 	}
 
 	constexpr LightType LightSun::getType() const
@@ -33,13 +26,11 @@ namespace lys
 		return LightType::Sun;
 	}
 
-	constexpr const scp::f32vec3& LightSun::getLightDir() const
+	constexpr void LightSun::_getParams(const scp::f32mat4x4 view, scp::f32vec4* params) const
 	{
-		return _dir;
-	}
+		scp::f32vec3 lightDir(0.f, 0.f, -1.f);
+		applyRotationTo(lightDir);
 
-	inline void LightSun::_getParams(const scp::f32mat4x4 view, scp::f32vec4* params) const
-	{
-		params[0] = view * scp::f32vec4{ -scp::normalize(_dir), 0.f };
+		params[0] = view * scp::f32vec4{ -lightDir, 0.f };
 	}
 }

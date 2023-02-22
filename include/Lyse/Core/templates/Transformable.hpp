@@ -38,6 +38,24 @@ namespace lys
 		_invTransform.reset();
 	}
 
+	constexpr void Transformable::setPosition(const scp::f32vec3& position)
+	{
+		_translation = position;
+
+		_transform.reset();
+		_invTransform.reset();
+	}
+
+	constexpr void Transformable::setPosition(float x, float y, float z)
+	{
+		_translation.x = x;
+		_translation.y = y;
+		_translation.z = z;
+
+		_transform.reset();
+		_invTransform.reset();
+	}
+
 	constexpr void Transformable::move(const scp::f32vec3& offset)
 	{
 		_translation += offset;
@@ -51,6 +69,22 @@ namespace lys
 		_translation.x += dx;
 		_translation.y += dy;
 		_translation.z += dz;
+
+		_transform.reset();
+		_invTransform.reset();
+	}
+
+	constexpr void Transformable::setDirection(const scp::f32vec3& direction)
+	{
+		_rotation.setFromUnitVectorRotation(0.f, 0.f, -1.f, direction.x, direction.y, direction.z);
+
+		_transform.reset();
+		_invTransform.reset();
+	}
+
+	constexpr void Transformable::setDirection(float x, float y, float z)
+	{
+		_rotation.setFromUnitVectorRotation(0.f, 0.f, -1.f, x, y, z);
 
 		_transform.reset();
 		_invTransform.reset();
@@ -396,6 +430,11 @@ namespace lys
 	}
 
 	constexpr const scp::f32vec3& Transformable::getTranslation() const
+	{
+		return _translation;
+	}
+
+	constexpr const scp::f32vec3& Transformable::getPosition() const
 	{
 		return _translation;
 	}

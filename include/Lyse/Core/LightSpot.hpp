@@ -24,14 +24,15 @@ namespace lys
 			constexpr LightSpot& operator=(LightSpot&& light) = default;
 
 			
-			constexpr void setPosition(float x, float y, float z);
-			constexpr void setLightDir(float x, float y, float z);
+			using LightBase::setPosition;
+			using LightBase::move;
+			using LightBase::setDirection;
+			using LightBase::rotate;
 			constexpr void setAngularRadii(float in, float out);
 
 
 			virtual constexpr LightType getType() const override final;
-			constexpr const scp::f32vec3& getPosition() const;
-			constexpr const scp::f32vec3& getLightDir() const;
+			using LightBase::getPosition;
 			constexpr const scp::f32vec2& getAngularRadii() const;
 
 
@@ -41,8 +42,6 @@ namespace lys
 
 			virtual inline void _getParams(const scp::f32mat4x4 view, scp::f32vec4* params) const override final;
 
-			scp::f32vec3 _position;
-			scp::f32vec3 _dir;
 			scp::f32vec2 _radii;
 	};
 }

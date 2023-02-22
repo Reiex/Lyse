@@ -25,9 +25,13 @@ namespace lys
 
 			constexpr void setTranslation(const scp::f32vec3& translation);
 			constexpr void setTranslation(float x, float y, float z);
+			constexpr void setPosition(const scp::f32vec3& position);
+			constexpr void setPosition(float x, float y, float z);
 			constexpr void move(const scp::f32vec3& offset);
 			constexpr void move(float dx, float dy, float dz);
 
+			constexpr void setDirection(const scp::f32vec3& direction);
+			constexpr void setDirection(float x, float y, float z);
 			constexpr void setRotation(const scp::f32quat& rotation);
 			constexpr void setRotation(const scp::f32vec3& axis, float angle);
 			constexpr void setRotation(float xAxis, float yAxis, float zAxis, float angle);
@@ -66,6 +70,7 @@ namespace lys
 			constexpr const scp::f32mat4x4& getInverseTransformMatrix() const;
 
 			constexpr const scp::f32vec3& getTranslation() const;
+			constexpr const scp::f32vec3& getPosition() const;
 			constexpr const scp::f32quat& getRotation() const;
 			constexpr const scp::f32vec3& getScale() const;
 

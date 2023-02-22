@@ -11,21 +11,14 @@
 
 namespace lys
 {
-	constexpr LightPoint::LightPoint(float x, float y, float z) : LightBase(),
-		_position(x, y, z)
+	constexpr LightPoint::LightPoint(float x, float y, float z) : LightBase()
 	{
+		setPosition(x, y, z);
 	}
 
-	constexpr LightPoint::LightPoint(float x, float y, float z, float r, float g, float b, float intensity) : LightBase(r, g, b, intensity),
-		_position(x, y, z)
+	constexpr LightPoint::LightPoint(float x, float y, float z, float r, float g, float b, float intensity) : LightBase(r, g, b, intensity)
 	{
-	}
-
-	constexpr void LightPoint::setPosition(float x, float y, float z)
-	{
-		_position.x = x;
-		_position.y = y;
-		_position.z = z;
+		setPosition(x, y, z);
 	}
 
 	constexpr LightType LightPoint::getType() const
@@ -33,13 +26,8 @@ namespace lys
 		return LightType::Point;
 	}
 
-	constexpr const scp::f32vec3& LightPoint::getPosition() const
-	{
-		return _position;
-	}
-
 	constexpr void LightPoint::_getParams(const scp::f32mat4x4 view, scp::f32vec4* params) const
 	{
-		params[0] = view * scp::f32vec4(_position, 1.f);
+		params[0] = view * scp::f32vec4(getPosition(), 1.f);
 	}
 }

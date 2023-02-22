@@ -40,7 +40,9 @@ namespace scp
 			constexpr void getRotationAxisAngle(TValue& xAxis, TValue& yAxis, TValue& zAxis, TValue& angle) const;
 
 			constexpr void setFromRotationMatrix(const TValue& r00, const TValue& r01, const TValue& r02, const TValue& r10, const TValue& r11, const TValue& r12, const TValue& r20, const TValue& r21, const TValue& r22);
-			constexpr void getRotationMatrix(TValue& r00, TValue& r01, TValue& r02, TValue& r10, TValue& r11, TValue& r12, TValue& r20, TValue& r21, TValue& r22);
+			constexpr void getRotationMatrix(TValue& r00, TValue& r01, TValue& r02, TValue& r10, TValue& r11, TValue& r12, TValue& r20, TValue& r21, TValue& r22) const;
+
+			constexpr void setFromUnitVectorRotation(const TValue& xFrom, const TValue& yFrom, const TValue& zFrom, const TValue& xTo, const TValue& yTo, const TValue& zTo);
 
 			constexpr void inverse();
 			constexpr void conjugate();

@@ -11,7 +11,7 @@
 
 namespace lys
 {
-	constexpr LightBase::LightBase(float r, float g, float b, float intensity) :
+	constexpr LightBase::LightBase(float r, float g, float b, float intensity) : Transformable(),
 		_color(1.f, 1.f, 1.f),
 		_intensity(1.f)
 	{

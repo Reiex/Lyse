@@ -186,7 +186,7 @@ namespace scp
 	}
 
 	template<typename TValue>
-	constexpr void Quat<TValue>::getRotationMatrix(TValue& r00, TValue& r01, TValue& r02, TValue& r10, TValue& r11, TValue& r12, TValue& r20, TValue& r21, TValue& r22)
+	constexpr void Quat<TValue>::getRotationMatrix(TValue& r00, TValue& r01, TValue& r02, TValue& r10, TValue& r11, TValue& r12, TValue& r20, TValue& r21, TValue& r22) const
 	{
 		assert(std::abs(normSq() - _one) < 1e-2f);
 
@@ -211,6 +211,30 @@ namespace scp
 		r20 = xz2 - wy2;
 		r21 = wx2 + yz2;
 		r22 = ww - xx - yy + zz;
+	}
+
+	template<typename TValue>
+	constexpr void Quat<TValue>::setFromUnitVectorRotation(const TValue& xFrom, const TValue& yFrom, const TValue& zFrom, const TValue& xTo, const TValue& yTo, const TValue& zTo)
+	{
+		assert(std::abs(xFrom * xFrom + yFrom * yFrom + zFrom * zFrom - _one) < 1e-2f);
+		assert(std::abs(xTo * xTo + yTo * yTo + zTo * zTo - _one) < 1e-2f);
+
+		if (xFrom == -xTo && yFrom == -yTo && zFrom == -zTo)
+		{
+			w = _zero;
+			x = _one;
+			y = _zero;
+			z = _zero;
+		}
+		else
+		{
+			const TValue xN = yFrom * zTo - yTo * zFrom;
+			const TValue yN = zFrom * xTo - zTo * xFrom;
+			const TValue zN = xFrom * yTo - xTo * yFrom;
+			const TValue nLength = std::sqrt(xN * xN + yN * yN + zN * zN);
+
+			setFromRotationAxisAngle(xN / nLength, yN / nLength, zN / nLength, std::asin(nLength));
+		}
 	}
 
 	template<typename TValue>
