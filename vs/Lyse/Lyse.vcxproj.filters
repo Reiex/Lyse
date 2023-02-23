@@ -139,22 +139,28 @@
     <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\merge.frag">
       <Filter>Shaders</Filter>
     </EmbeddedResource>
-    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\merge.vert">
-      <Filter>Shaders</Filter>
-    </EmbeddedResource>
     <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_gBuffer.frag">
-      <Filter>Shaders</Filter>
-    </EmbeddedResource>
-    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_gBuffer.vert">
       <Filter>Shaders</Filter>
     </EmbeddedResource>
     <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\ssao.frag">
       <Filter>Shaders</Filter>
     </EmbeddedResource>
-    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\ssao.vert">
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\common.glsl">
       <Filter>Shaders</Filter>
     </EmbeddedResource>
-    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\common.glsl">
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\merge.vert">
+      <Filter>Shaders</Filter>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_gBuffer.vert">
+      <Filter>Shaders</Filter>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_shadowMapping.frag">
+      <Filter>Shaders</Filter>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_shadowMapping.vert">
+      <Filter>Shaders</Filter>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\ssao.vert">
       <Filter>Shaders</Filter>
     </EmbeddedResource>
   </ItemGroup>

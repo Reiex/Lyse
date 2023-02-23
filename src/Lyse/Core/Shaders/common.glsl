@@ -7,18 +7,33 @@
 
 // Custom types 
 
-struct UboCameraData
+struct CameraData
 {
-	mat4 projection;
-	uvec2 resolution;
-	float near;
-	float far;
 	float aspect;
 	float fov;
+	float near;
+	float far;
 
-	float tanHalfFov;
-	vec2 blurOffset;
-	vec2 depthConversion;
+	vec3 up;
+	vec3 front;
+	vec3 left;
+
+	mat4 view;
+	mat4 invView;
+	mat4 projection;
+	mat4 invProjection;
+	mat4 projectionView;
+	mat4 invProjectionView;
+};
+
+struct DrawableData
+{
+	mat4 model;
+	mat4 invModel;
+	mat4 viewModel;
+	mat4 invViewModel;
+	mat4 projectionViewModel;
+	mat4 invProjectionViewModel;
 };
 
 // Constants
@@ -30,50 +45,3 @@ const float c_2pi = 6.28318530718;
 const float c_invHalfPi = 0.63661977236;
 const float c_invPi = 0.31830988618;
 const float c_inv2pi = 0.15915494309;
-
-// Function declarations
-
-float cameraComputeDepth(in const UboCameraData cameraData, in const sampler2D depthMap, in const vec2 texCoords);
-vec3 cameraComputeUnnormalizedViewDir(in const UboCameraData cameraData, in const vec2 texCoords, in const float depth);
-vec3 cameraComputePosition(in const UboCameraData cameraData, in const vec2 texCoords, in const float depth, in const vec3 unnormaliedViewDir);
-
-// Function definitions
-
-float cameraComputeDepth(in const UboCameraData cameraData, in const sampler2D depthMap, in const vec2 texCoords)
-{
-	#ifdef CAMERA_PERSPECTIVE
-		return cameraData.depthConversion.x / (cameraData.far - texture(depthMap, texCoords).r * cameraData.depthConversion.y);
-	#endif
-
-	#ifdef CAMERA_ORTHOGRAPHIC
-		return texture(depthMap, texCoords).r * cameraData.far;
-	#endif
-
-	return 0.0;
-}
-
-vec3 cameraComputeUnnormalizedViewDir(in const UboCameraData cameraData, in const vec2 texCoords, in const float depth)
-{
-	#ifdef CAMERA_PERSPECTIVE
-		return vec3(vec2((texCoords.x - 0.5) * cameraData.aspect, texCoords.y - 0.5) * (cameraData.tanHalfFov * 2.0), -1.0);
-	#endif
-
-	#ifdef CAMERA_ORTHOGRAPHIC
-		return vec3(0.0, 0.0, -1.0);
-	#endif
-
-	return vec3(0.0, 0.0, -1.0);
-}
-
-vec3 cameraComputePosition(in const UboCameraData cameraData, in const vec2 texCoords, in const float depth, in const vec3 unnormaliedViewDir)
-{
-	#ifdef CAMERA_PERSPECTIVE
-		return depth * unnormaliedViewDir;
-	#endif
-
-	#ifdef CAMERA_ORTHOGRAPHIC
-		return vec3(vec2((texCoords.x - 0.5) * cameraData.aspect, texCoords.y - 0.5) * (2.0 * cameraData.tanHalfFov * depth), -depth);
-	#endif
-
-	return vec3(0.0, 0.0, 0.0);
-}

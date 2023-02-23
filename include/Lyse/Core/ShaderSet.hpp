@@ -18,15 +18,10 @@ namespace lys
 
 	struct GBufferShaderInterface
 	{
-		spl::GlslType u_projection = spl::GlslType::Undefined;
-		spl::GlslType u_view = spl::GlslType::Undefined;
-
-		spl::GlslType u_model = spl::GlslType::Undefined;
+		spl::GlslType u_normalMap = spl::GlslType::Undefined;
 
 		spl::GlslType u_color = spl::GlslType::Undefined;
 		spl::GlslType u_material = spl::GlslType::Undefined;
-
-		spl::GlslType u_normalMap = spl::GlslType::Undefined;
 	};
 
 	class ShaderSet

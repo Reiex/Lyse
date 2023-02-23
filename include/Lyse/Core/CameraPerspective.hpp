@@ -35,6 +35,7 @@ namespace lys
 			virtual constexpr float getNearDistance() const override final;
 			virtual constexpr float getFarDistance() const override final;
 			virtual constexpr const scp::f32mat4x4& getProjectionMatrix() const override final;
+			virtual constexpr const scp::f32mat4x4& getInverseProjectionMatrix() const override final;
 
 			virtual constexpr ~CameraPerspective() override final = default;
 
@@ -46,5 +47,6 @@ namespace lys
 			float _far;
 
 			mutable std::optional<scp::f32mat4x4> _projection;
+			mutable std::optional<scp::f32mat4x4> _invProjection;
 	};
 }

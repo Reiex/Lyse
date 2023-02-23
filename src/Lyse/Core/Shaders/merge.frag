@@ -7,7 +7,7 @@
 
 // Custom types
 
-struct UboLightData
+struct LightData
 {
 	vec3 color;
 	uint type;
@@ -15,10 +15,10 @@ struct UboLightData
 	vec4 param1;
 };
 
-struct UboLightsData
+struct LightsData
 {
 	uint count;
-	UboLightData lights[MAX_LIGHT_COUNT];
+	LightData lights[MAX_LIGHT_COUNT];
 };
 
 // Constants
@@ -33,12 +33,12 @@ in vec2 io_texCoords;
 
 layout (std140, row_major, binding = 0) uniform ubo_camera_layout
 {
-	UboCameraData ubo_camera;
+	CameraData ubo_camera;
 };
 
-layout (std140, binding = 1) uniform ubo_lights_layout
+layout (std140, row_major, binding = 1) uniform ubo_lights_layout
 {
-	UboLightsData ubo_lights;
+	LightsData ubo_lights;
 };
 
 // Uniforms
@@ -48,10 +48,15 @@ uniform sampler2D u_color;
 uniform sampler2D u_material;
 uniform sampler2D u_normal;
 
+uniform sampler2D u_shadow;
+uniform mat4 u_lightProj;
+uniform mat4 u_lightView;
+uniform float u_lightNear;
+uniform float u_lightFar;
+
 uniform sampler2D u_ssao;
 
 #ifdef BACKGROUND
-	uniform mat4 u_invView;
 
 	#ifdef BACKGROUND_PROJECTION
 		uniform sampler2D u_background;
@@ -60,7 +65,11 @@ uniform sampler2D u_ssao;
 	#ifdef BACKGROUND_CUBEMAP
 		uniform samplerCube u_background;
 	#endif
+
 #endif
+
+uniform float u_tanHalfFov;
+uniform vec2 u_blurOffset;
 
 // Fragment outputs
 
@@ -82,9 +91,9 @@ void main()
 {
 	// Retrieve all data from application and precedent shader passes
 	
-	const float depth = cameraComputeDepth(ubo_camera, u_depth, io_texCoords);
-	const vec3 viewDirUnnormalized = cameraComputeUnnormalizedViewDir(ubo_camera, io_texCoords, depth);
-	const vec3 position = cameraComputePosition(ubo_camera, io_texCoords, depth, viewDirUnnormalized);
+	const float depth = ubo_camera.near + texture(u_depth, io_texCoords).r * ubo_camera.far;
+	const vec3 viewDirUnnormalized = vec3(vec2((io_texCoords.x - 0.5) * ubo_camera.aspect, io_texCoords.y - 0.5) * (u_tanHalfFov * 2.0), -1.0);
+	const vec3 position = depth * viewDirUnnormalized;
 	const vec3 viewDir = normalize(viewDirUnnormalized);
 
 	const vec3 color = texture(u_color, io_texCoords).rgb;
@@ -110,7 +119,7 @@ void main()
 		#ifndef BACKGROUND
 			discard;
 		#else
-			const vec3 modelViewDir = (u_invView * vec4(viewDir, 0)).xyz;
+			const vec3 modelViewDir = (ubo_camera.invView * vec4(viewDir, 0)).xyz;
 		
 			#ifdef BACKGROUND_PROJECTION
 				rawColor = texture(u_background, viewDirToProjectionCoords(modelViewDir)).rgb;
@@ -136,6 +145,19 @@ void main()
 		vec3 specular = vec3(0.0, 0.0, 0.0);
 		for (uint i = 0; i < ubo_lights.count; ++i)
 		{
+			if (i == 0)
+			{
+				vec4 p = u_lightView * ubo_camera.invView * vec4(position, 1.0);
+				float d = -(p.z + u_lightNear) / (u_lightFar - u_lightNear);
+				p = u_lightProj * p;
+				p.xy /= p.w;
+			
+				if (d > texture(u_shadow, p.xy * 0.5 + 0.5).r + 0.001)
+				{
+					continue;
+				}
+			}
+
 			vec3 lightDir;
 			vec3 radiance;
 
@@ -215,15 +237,15 @@ void main()
 float computeSsao()
 {
 	return (
-		  texture(u_ssao, vec2(io_texCoords.x - ubo_camera.blurOffset.x, io_texCoords.y - ubo_camera.blurOffset.y)).r
-		+ texture(u_ssao, vec2(io_texCoords.x - ubo_camera.blurOffset.x, io_texCoords.y                          )).r
-		+ texture(u_ssao, vec2(io_texCoords.x - ubo_camera.blurOffset.x, io_texCoords.y + ubo_camera.blurOffset.y)).r
-		+ texture(u_ssao, vec2(io_texCoords.x,							 io_texCoords.y - ubo_camera.blurOffset.y)).r
-		+ texture(u_ssao, vec2(io_texCoords.x,                           io_texCoords.y                          )).r
-		+ texture(u_ssao, vec2(io_texCoords.x,							 io_texCoords.y + ubo_camera.blurOffset.y)).r
-		+ texture(u_ssao, vec2(io_texCoords.x + ubo_camera.blurOffset.x, io_texCoords.y - ubo_camera.blurOffset.y)).r
-		+ texture(u_ssao, vec2(io_texCoords.x + ubo_camera.blurOffset.x, io_texCoords.y                          )).r
-		+ texture(u_ssao, vec2(io_texCoords.x + ubo_camera.blurOffset.x, io_texCoords.y + ubo_camera.blurOffset.y)).r
+		  texture(u_ssao, vec2(io_texCoords.x - u_blurOffset.x, io_texCoords.y - u_blurOffset.y)).r
+		+ texture(u_ssao, vec2(io_texCoords.x - u_blurOffset.x, io_texCoords.y                 )).r
+		+ texture(u_ssao, vec2(io_texCoords.x - u_blurOffset.x, io_texCoords.y + u_blurOffset.y)).r
+		+ texture(u_ssao, vec2(io_texCoords.x,                  io_texCoords.y - u_blurOffset.y)).r
+		+ texture(u_ssao, vec2(io_texCoords.x,                  io_texCoords.y                 )).r
+		+ texture(u_ssao, vec2(io_texCoords.x,                  io_texCoords.y + u_blurOffset.y)).r
+		+ texture(u_ssao, vec2(io_texCoords.x + u_blurOffset.x, io_texCoords.y - u_blurOffset.y)).r
+		+ texture(u_ssao, vec2(io_texCoords.x + u_blurOffset.x, io_texCoords.y                 )).r
+		+ texture(u_ssao, vec2(io_texCoords.x + u_blurOffset.x, io_texCoords.y + u_blurOffset.y)).r
 	) * 0.111111;
 }
 

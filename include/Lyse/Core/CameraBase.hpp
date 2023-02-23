@@ -39,6 +39,7 @@ namespace lys
 			constexpr const scp::f32mat4x4& getViewMatrix() const;
 			constexpr const scp::f32mat4x4& getInverseViewMatrix() const;
 			virtual constexpr const scp::f32mat4x4& getProjectionMatrix() const = 0;
+			virtual constexpr const scp::f32mat4x4& getInverseProjectionMatrix() const = 0;
 
 		protected:
 

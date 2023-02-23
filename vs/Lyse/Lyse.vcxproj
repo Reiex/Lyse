@@ -67,29 +67,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ExcludedFromBuild>
     </EmbeddedResource>
-    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\merge.vert">
-      <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </ExcludedFromBuild>
-    </EmbeddedResource>
     <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_gBuffer.frag">
-      <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </ExcludedFromBuild>
-    </EmbeddedResource>
-    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_gBuffer.vert">
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </ExcludedFromBuild>
@@ -105,12 +83,26 @@
     <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\ssao.frag">
       <FileType>Document</FileType>
     </EmbeddedResource>
-    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\ssao.vert">
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\common.glsl">
       <FileType>Document</FileType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\common.glsl">
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\merge.vert">
+      <FileType>Document</FileType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_gBuffer.vert">
+      <FileType>Document</FileType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_shadowMapping.frag">
+      <FileType>Document</FileType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_shadowMapping.vert">
+      <FileType>Document</FileType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\ssao.vert">
       <FileType>Document</FileType>
     </EmbeddedResource>
   </ItemGroup>

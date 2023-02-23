@@ -37,6 +37,7 @@ namespace lys
 
 		_aspect = aspect;
 		_projection.reset();
+		_invProjection.reset();
 	}
 
 	constexpr void CameraOrthographic::setAspect(uint32_t width, uint32_t height)
@@ -45,6 +46,7 @@ namespace lys
 
 		_aspect = static_cast<float>(width) / static_cast<float>(height);
 		_projection.reset();
+		_invProjection.reset();
 	}
 
 	constexpr void CameraOrthographic::setFieldOfView(float fov)
@@ -53,6 +55,7 @@ namespace lys
 
 		_fov = fov;
 		_projection.reset();
+		_invProjection.reset();
 	}
 
 	constexpr void CameraOrthographic::setDepth(float depth)
@@ -61,6 +64,7 @@ namespace lys
 
 		_depth = depth;
 		_projection.reset();
+		_invProjection.reset();
 	}
 
 	constexpr CameraType CameraOrthographic::getType() const
@@ -92,10 +96,10 @@ namespace lys
 	{
 		if (!_projection.has_value())
 		{
-			const float height = 2.f * _depth * std::tan(_fov * 0.5f);
+			const float height = _depth * std::tan(_fov * 0.5f);
 			const float width = _aspect * height;
-			const float a = 2.f / width;
-			const float b = 2.f / height;
+			const float a = 1.f / width;
+			const float b = 1.f / height;
 			const float c = -2.f / _depth;
 
 			_projection.emplace({
@@ -107,5 +111,24 @@ namespace lys
 		}
 
 		return *_projection;
+	}
+
+	constexpr const scp::f32mat4x4& CameraOrthographic::getInverseProjectionMatrix() const
+	{
+		if (!_invProjection.has_value())
+		{
+			const float b = _depth * std::tan(_fov * 0.5f);
+			const float a = _aspect * b;
+			const float c = -_depth * 0.5f;
+
+			_invProjection.emplace({
+				a  , 0.f, 0.f, 0.f,
+				0.f, b  , 0.f, 0.f,
+				0.f, 0.f, c  , c  ,
+				0.f, 0.f, 0.f, 1.f
+				});
+		}
+
+		return *_invProjection;
 	}
 }

@@ -16,7 +16,8 @@ namespace lys
 		_fov(fov),
 		_near(near),
 		_far(far),
-		_projection()
+		_projection(),
+		_invProjection()
 	{
 		assert(aspect > 0.f);
 		assert(near > 0.f);
@@ -34,6 +35,7 @@ namespace lys
 
 		_aspect = aspect;
 		_projection.reset();
+		_invProjection.reset();
 	}
 
 	constexpr void CameraPerspective::setAspect(uint32_t width, uint32_t height)
@@ -42,6 +44,7 @@ namespace lys
 
 		_aspect = static_cast<float>(width) / static_cast<float>(height);
 		_projection.reset();
+		_invProjection.reset();
 	}
 
 	constexpr void CameraPerspective::setNearDistance(float near)
@@ -50,6 +53,7 @@ namespace lys
 
 		_near = near;
 		_projection.reset();
+		_invProjection.reset();
 	}
 
 	constexpr void CameraPerspective::setFarDistance(float far)
@@ -58,6 +62,7 @@ namespace lys
 
 		_far = far;
 		_projection.reset();
+		_invProjection.reset();
 	}
 
 	constexpr void CameraPerspective::setFieldOfView(float fov)
@@ -66,6 +71,7 @@ namespace lys
 
 		_fov = fov;
 		_projection.reset();
+		_invProjection.reset();
 	}
 
 	constexpr CameraType CameraPerspective::getType() const
@@ -113,5 +119,26 @@ namespace lys
 		}
 
 		return *_projection;
+	}
+
+	constexpr const scp::f32mat4x4& CameraPerspective::getInverseProjectionMatrix() const
+	{
+		if (!_invProjection.has_value())
+		{
+			const float b = std::tan(_fov * 0.5);
+			const float a = _aspect * b;
+			const float tmp = 1.f / (2.f * _near * _far);
+			const float c = (_near - _far) * tmp;
+			const float d = (_near + _far) * tmp;
+
+			_invProjection.emplace({
+				a  , 0.f, 0.f,  0.f,
+				0.f, b  , 0.f,  0.f,
+				0.f, 0.f, 0.f, -1.f,
+				0.f, 0.f, c  ,  d
+				});
+		}
+
+		return *_invProjection;
 	}
 }

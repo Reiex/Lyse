@@ -10,9 +10,6 @@
 namespace lys
 {
 	const std::unordered_map<std::string, intptr_t> ShaderSet::gBufferUniformToOffset = {
-		{ "u_projection",	offsetof(GBufferShaderInterface, u_projection) },
-		{ "u_view",			offsetof(GBufferShaderInterface, u_view) },
-		{ "u_model",		offsetof(GBufferShaderInterface, u_model) },
 		{ "u_color",		offsetof(GBufferShaderInterface, u_color) },
 		{ "u_material",		offsetof(GBufferShaderInterface, u_material) },
 		{ "u_normalMap",	offsetof(GBufferShaderInterface, u_normalMap) }
@@ -38,6 +35,6 @@ namespace lys
 			}
 		}
 
-		// TODO: Check uniform types and presence
+		// TODO: Check uniforms and uniform blocks... (types, etc...)
 	}
 }
