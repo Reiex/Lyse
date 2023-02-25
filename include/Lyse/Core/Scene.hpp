@@ -61,17 +61,22 @@ namespace lys
 
 
 			static constexpr uint32_t maxLightCount = 128;
+			static constexpr uint32_t maxShadowMapCount = 16;
 	
 		private:
 
 			void _loadShaders();
 
-			const void* _updateUboCamera() const;
-			const void* _updateUboLights() const;
-			const void* _updateUboDrawable(const void* pUboCameraData, const Drawable* drawable) const;
+			const void _updateAndBindUboLights(uint32_t index, std::vector<const CameraBase*>& shadowCameras) const;
+			const void _updateAndBindUboDrawable(uint32_t index, const CameraBase* camera, const Drawable* drawable) const;
+			const void _updateAndBindUboShadowCameras(uint32_t index, const std::vector<const CameraBase*>& shadowCameras) const;
 			void _insertInDrawSequence(void* pDrawSequence, const Drawable* drawable, ShaderType shaderType) const;
 
 			static void _setGBufferUniforms(const std::pair<const spl::ShaderProgram*, const GBufferShaderInterface*>& gBuffer, const Drawable* drawable);
+			static void _setShadowMappingUniforms(const std::pair<const spl::ShaderProgram*, const ShadowMappingShaderInterface*>& gBuffer, const Drawable* drawable);
+
+
+			static constexpr scp::u32vec2 _shadowMapResolution = { 2048, 2048 };
 
 
 			std::vector<spl::ShaderProgram*> _shaders;
@@ -82,12 +87,13 @@ namespace lys
 			spl::Framebuffer _ssaoFramebuffer;
 			spl::Framebuffer _mergeFramebuffer;
 
+			mutable spl::Buffer _uboShadowCameras;
+
 			scp::f32vec3 _clearColor;
 			const spl::RawTexture* _background;
 
 			scp::u32vec2 _resolution;
 			const CameraBase* _camera;
-			mutable spl::Buffer _uboCamera;
 			
 			std::unordered_set<const LightBase*> _lights;
 			mutable spl::Buffer _uboLights;

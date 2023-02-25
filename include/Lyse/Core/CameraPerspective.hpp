@@ -30,23 +30,13 @@ namespace lys
 			constexpr void setFarDistance(float far);
 
 			virtual constexpr CameraType getType() const override final;
-			virtual constexpr float getAspect() const override final;
-			virtual constexpr float getFieldOfView() const override final;
-			virtual constexpr float getNearDistance() const override final;
-			virtual constexpr float getFarDistance() const override final;
-			virtual constexpr const scp::f32mat4x4& getProjectionMatrix() const override final;
-			virtual constexpr const scp::f32mat4x4& getInverseProjectionMatrix() const override final;
 
 			virtual constexpr ~CameraPerspective() override final = default;
 
 		private:
 
-			float _aspect;
-			float _fov;
-			float _near;
-			float _far;
-
-			mutable std::optional<scp::f32mat4x4> _projection;
-			mutable std::optional<scp::f32mat4x4> _invProjection;
+			// TODO: I have a dream ! That maths functions have a constexpr implementation !
+			virtual inline void _updateProjectionMatrix() const override final;
+			virtual inline void _updateInverseProjectionMatrix() const override final;
 	};
 }

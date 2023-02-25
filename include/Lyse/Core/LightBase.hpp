@@ -18,14 +18,16 @@ namespace lys
 		Spot
 	};
 
-	class LightBase : protected Transformable
+	class LightBase
 	{
 		public:
 
+			constexpr void setCastShadows(bool castShadows);
 			constexpr void setColor(float r, float g, float b);
 			constexpr void setIntensity(float intensity);
 
 			virtual constexpr LightType getType() const = 0;
+			constexpr bool getCastShadows() const;
 			constexpr const scp::f32vec3& getColor() const;
 			constexpr float getIntensity() const;
 
@@ -38,10 +40,12 @@ namespace lys
 			constexpr LightBase& operator=(const LightBase& light) = default;
 			constexpr LightBase& operator=(LightBase&& light) = default;
 
-			virtual constexpr void _getParams(const scp::f32mat4x4 view, scp::f32vec4* params) const = 0;
+			virtual constexpr void _getUboParams(const CameraBase* camera, scp::f32vec4* params) const = 0;
+			virtual constexpr void _getShadowCameras(const CameraBase* camera, std::vector<const CameraBase*>& shadowCameras) const = 0;
 
-			virtual constexpr ~LightBase() override = default;
+			virtual constexpr ~LightBase() = default;
 
+			bool _castShadows;
 			scp::f32vec3 _color;
 			float _intensity;
 

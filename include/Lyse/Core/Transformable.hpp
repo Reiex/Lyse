@@ -66,17 +66,18 @@ namespace lys
 			constexpr void applyInverseTransformTo(float& x, float& y, float& z) const;
 
 
-			constexpr const scp::f32mat4x4& getTransformMatrix() const;
-			constexpr const scp::f32mat4x4& getInverseTransformMatrix() const;
-
 			constexpr const scp::f32vec3& getTranslation() const;
 			constexpr const scp::f32vec3& getPosition() const;
 			constexpr const scp::f32quat& getRotation() const;
 			constexpr const scp::f32vec3& getScale() const;
+			
+			virtual constexpr const scp::f32mat4x4& getTransformMatrix() const;
+			constexpr const scp::f32mat4x4& getInverseTransformMatrix() const;
+
 
 			constexpr virtual ~Transformable() = default;
 
-		private:
+		protected:
 
 			scp::f32vec3 _translation;
 			scp::f32quat _rotation;

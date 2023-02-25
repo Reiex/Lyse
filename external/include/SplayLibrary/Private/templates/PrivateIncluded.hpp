@@ -40,46 +40,6 @@ namespace spl
 			}
 		}
 
-		constexpr uint32_t bufferTargetContextIndex(BufferTarget target)
-		{
-			switch (target)
-			{
-				case BufferTarget::Array:
-					return 0;
-				case BufferTarget::CopyRead:
-					return 1;
-				case BufferTarget::CopyWrite:
-					return 2;
-				case BufferTarget::DispatchIndirect:
-					return 3;
-				case BufferTarget::DrawIndirect:
-					return 4;
-				case BufferTarget::ElementArray:
-					return 5;
-				case BufferTarget::Parameter:
-					return 6;
-				case BufferTarget::PixelPack:
-					return 7;
-				case BufferTarget::PixelUnpack:
-					return 8;
-				case BufferTarget::Query:
-					return 9;
-				case BufferTarget::Texture:
-					return 10;
-				case BufferTarget::AtomicCounter:
-					return 0;
-				case BufferTarget::ShaderStorage:
-					return 1;
-				case BufferTarget::TransformFeedback:
-					return 2;
-				case BufferTarget::Uniform:
-					return 3;
-				default:
-					assert(false);
-					return -1;
-			}
-		}
-
 
 		template<CGlslScalarType TScalar>
 		consteval GlslType glslScalarTypeToGlslType()

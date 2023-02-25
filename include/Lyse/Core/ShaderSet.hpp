@@ -13,7 +13,8 @@ namespace lys
 {
 	enum class ShaderType
 	{
-		GBuffer
+		GBuffer,
+		ShadowMapping
 	};
 
 	struct GBufferShaderInterface
@@ -24,11 +25,16 @@ namespace lys
 		spl::GlslType u_material = spl::GlslType::Undefined;
 	};
 
+	struct ShadowMappingShaderInterface
+	{
+		// Nothing
+	};
+
 	class ShaderSet
 	{
 		public:
 
-			ShaderSet(const spl::ShaderProgram* gBufferShader);
+			ShaderSet(const spl::ShaderProgram* gBufferShader, const spl::ShaderProgram* shadowMappingShader);
 			ShaderSet(const ShaderSet& set) = default;
 			ShaderSet(ShaderSet&& set) = default;
 
@@ -42,8 +48,10 @@ namespace lys
 			static const std::unordered_map<std::string, intptr_t> gBufferUniformToOffset;
 
 			const spl::ShaderProgram* _gBufferShader;
+			const spl::ShaderProgram* _shadowMappingShader;
 
 			GBufferShaderInterface _gBufferShaderInterface;
+			ShadowMappingShaderInterface _shadowMappingShaderInterface;
 
 		friend class Scene;
 	};

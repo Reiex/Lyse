@@ -11,14 +11,38 @@
 
 namespace lys
 {
-	constexpr LightPoint::LightPoint(float x, float y, float z) : LightBase()
+	constexpr LightPoint::LightPoint(float x, float y, float z) : LightBase(),
+		_position(x, y, z)
 	{
-		setPosition(x, y, z);
 	}
 
-	constexpr LightPoint::LightPoint(float x, float y, float z, float r, float g, float b, float intensity) : LightBase(r, g, b, intensity)
+	constexpr LightPoint::LightPoint(float x, float y, float z, float r, float g, float b, float intensity) : LightBase(r, g, b, intensity),
+		_position(x, y, z)
 	{
-		setPosition(x, y, z);
+	}
+
+	constexpr void LightPoint::setPosition(const scp::f32vec3& position)
+	{
+		_position = position;
+	}
+
+	constexpr void LightPoint::setPosition(float x, float y, float z)
+	{
+		_position.x = x;
+		_position.y = y;
+		_position.z = z;
+	}
+
+	constexpr void LightPoint::move(const scp::f32vec3& offset)
+	{
+		_position += offset;
+	}
+
+	constexpr void LightPoint::move(float dx, float dy, float dz)
+	{
+		_position.x += dx;
+		_position.y += dy;
+		_position.z += dz;
 	}
 
 	constexpr LightType LightPoint::getType() const
@@ -26,8 +50,18 @@ namespace lys
 		return LightType::Point;
 	}
 
-	constexpr void LightPoint::_getParams(const scp::f32mat4x4 view, scp::f32vec4* params) const
+	constexpr const scp::f32vec3& LightPoint::getPosition() const
 	{
-		params[0] = view * scp::f32vec4(getPosition(), 1.f);
+		return _position;
+	}
+
+	constexpr void LightPoint::_getUboParams(const CameraBase* camera, scp::f32vec4* params) const
+	{
+		params[0] = camera->getViewMatrix() * scp::f32vec4(getPosition(), 1.f);
+	}
+
+	constexpr void LightPoint::_getShadowCameras(const CameraBase* camera, std::vector<const CameraBase*>& shadowCameras) const
+	{
+		// TODO
 	}
 }

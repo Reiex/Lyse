@@ -5,22 +5,6 @@
 //! \date 2023
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Custom types
-
-struct LightData
-{
-	vec3 color;
-	uint type;
-	vec4 param0;
-	vec4 param1;
-};
-
-struct LightsData
-{
-	uint count;
-	LightData lights[MAX_LIGHT_COUNT];
-};
-
 // Constants
 
 const vec3 c_dielectricNormalFresnelReflectance = vec3(0.04);
@@ -41,6 +25,11 @@ layout (std140, row_major, binding = 1) uniform ubo_lights_layout
 	LightsData ubo_lights;
 };
 
+layout (std140, row_major, binding = 3) uniform ubo_shadow_cameras_layout
+{
+	ShadowCamerasData ubo_shadowCameras;
+};
+
 // Uniforms
 
 uniform sampler2D u_depth;
@@ -49,10 +38,6 @@ uniform sampler2D u_material;
 uniform sampler2D u_normal;
 
 uniform sampler2D u_shadow;
-uniform mat4 u_lightProj;
-uniform mat4 u_lightView;
-uniform float u_lightNear;
-uniform float u_lightFar;
 
 uniform sampler2D u_ssao;
 
@@ -145,17 +130,25 @@ void main()
 		vec3 specular = vec3(0.0, 0.0, 0.0);
 		for (uint i = 0; i < ubo_lights.count; ++i)
 		{
-			if (i == 0)
+			float occlusion = 0.0;
+			for (uint j = ubo_lights.lights[i].shadowMapStartIndex; j < ubo_lights.lights[i].shadowMapStopIndex; ++j)
 			{
-				vec4 p = u_lightView * ubo_camera.invView * vec4(position, 1.0);
-				float d = -(p.z + u_lightNear) / (u_lightFar - u_lightNear);
-				p = u_lightProj * p;
-				p.xy /= p.w;
-			
-				if (d > texture(u_shadow, p.xy * 0.5 + 0.5).r + 0.001)
+				vec4 shadowPosition = ubo_shadowCameras.cameras[j].view * ubo_camera.invView * vec4(position, 1.0);
+				const float shadowDepth = -(shadowPosition.z + ubo_shadowCameras.cameras[j].near) / (ubo_shadowCameras.cameras[j].far - ubo_shadowCameras.cameras[j].near);
+				shadowPosition = ubo_shadowCameras.cameras[j].projection * shadowPosition;
+				shadowPosition.xy /= shadowPosition.w;
+
+				if (clamp(shadowPosition.xy, vec2(-1.0), vec2(1.0)) == shadowPosition.xy)
 				{
-					continue;
+					float sampledShadowDepth = texture(u_shadow, shadowPosition.xy * 0.5 + 0.5).r;	// TODO : Here, sample the good shadow map !
+					occlusion = clamp((shadowDepth - sampledShadowDepth - 0.003) / (0.01 - 0.003), 0.0, 1.0);
+					break;
 				}
+			}
+
+			if (occlusion == 1.0)
+			{
+				continue;
 			}
 
 			vec3 lightDir;
@@ -203,7 +196,7 @@ void main()
 			}
 			
 			const float dotNormalLightDir = max(dot(normal, lightDir), c_epsilon);
-			radiance *= dotNormalLightDir;
+			radiance *= dotNormalLightDir * (1.0 - occlusion);
 
 			if (length(radiance) < 1e-3)
 			{

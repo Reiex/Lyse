@@ -14,7 +14,6 @@ namespace spl
 	namespace _spl
 	{
 		constexpr bool isIndexedBufferTarget(BufferTarget target);
-		constexpr uint32_t bufferTargetContextIndex(BufferTarget target);
 
 		template<CGlslScalarType TScalar> consteval GlslType glslScalarTypeToGlslType();
 		template<CGlslVecType TVec> consteval GlslType glslVecTypeToGlslType();

@@ -11,47 +11,6 @@
 
 namespace spl
 {
-	enum class DebugMessageSource
-	{
-		Api,
-		ShaderCompiler,
-		WindowSystem,
-		ThirdParty,
-		Application,
-		Other
-	};
-
-	enum class DebugMessageType
-	{
-		Error,
-		DeprecatedBehavior,
-		UndefinedBehavior,
-		Performance,
-		Portability,
-		Marker,
-		PushGroup,
-		PopGroup,
-		Other
-	};
-
-	enum class DebugMessageSeverity
-	{
-		High,
-		Medium,
-		Low,
-		Notification
-	};
-
-	struct DebugMessage
-	{
-		DebugMessageSource source;
-		DebugMessageType type;
-		uint32_t id;
-
-		DebugMessageSeverity severity;
-		std::string descr;
-	};
-
 	enum class ContextReleaseBehaviour
 	{
 		None,
@@ -335,6 +294,47 @@ namespace spl
 		// TODO: internal format dependent values
 	};
 
+	enum class DebugMessageSource
+	{
+		Api,
+		ShaderCompiler,
+		WindowSystem,
+		ThirdParty,
+		Application,
+		Other
+	};
+
+	enum class DebugMessageType
+	{
+		Error,
+		DeprecatedBehavior,
+		UndefinedBehavior,
+		Performance,
+		Portability,
+		Marker,
+		PushGroup,
+		PopGroup,
+		Other
+	};
+
+	enum class DebugMessageSeverity
+	{
+		High,
+		Medium,
+		Low,
+		Notification
+	};
+
+	struct DebugMessage
+	{
+		DebugMessageSource source;
+		DebugMessageType type;
+		uint32_t id;
+
+		DebugMessageSeverity severity;
+		std::string descr;
+	};
+
 	enum class FaceCulling
 	{
 		Disabled,
@@ -344,6 +344,40 @@ namespace spl
 		FrontCounterClockWise,
 		FrontAndBackClockWise,
 		FrontAndBackCounterClockWise
+	};
+
+	struct IndexedBufferBinding
+	{
+		const Buffer* buffer;
+		uintptr_t size;
+		uintptr_t offset;
+	};
+
+	struct ContextState
+	{
+		scp::f32vec4 clearColor;
+		double clearDepth;
+		int32_t clearStencil;
+		scp::i32vec4 viewport;
+		bool isSeamlessCubeMapFilteringEnabled;
+		bool isDepthTestEnabled;
+		FaceCulling faceCulling;
+
+		std::array<const Buffer*, 11> bufferBindings;
+		std::array<std::vector<IndexedBufferBinding>, 4> indexedBufferBindings;
+		std::vector<std::array<const RawTexture*, 11>> textureBindings;
+		std::array<const Framebuffer*, 2> framebufferBindings;
+		const ShaderProgram* shaderBinding;
+
+		static uint8_t bufferTargetToIndex(BufferTarget target);
+		static uint8_t indexedBufferTargetToIndex(BufferTarget target);
+		static uint8_t textureTargetToIndex(TextureTarget target);
+		static uint8_t framebufferTargetToIndex(FramebufferTarget target);
+
+		static BufferTarget indexToBufferTarget(uint8_t index);
+		static BufferTarget indexToIndexedBufferTarget(uint8_t index);
+		static TextureTarget indexToTextureTarget(uint8_t index);
+		static FramebufferTarget indexToFramebufferTarget(uint8_t index);
 	};
 
 	class Context
@@ -356,16 +390,18 @@ namespace spl
 			Context& operator=(const Context& context) = delete;
 			Context& operator=(Context&& context) = delete;
 
+			// OpenGL implementation dependent parameters
+
+			const ImplementationDependentValues& getImplementationDependentValues() const;
+
 			// Debugging
 
 			bool getIsDebugContext() const;
 			bool pollDebugMessage(DebugMessage*& message);
 
-			// OpenGL implementation dependent parameters
+			// OpenGL context state
 
-			const ImplementationDependentValues& getImplementationDependentValues() const;
-
-			// OpenGL context parameters
+			void setState(const ContextState& state);
 
 			void setClearColor(float r, float g, float b, float a);
 			void setClearDepth(double clearDepth);
@@ -383,12 +419,13 @@ namespace spl
 			bool getIsDepthTestEnabled() const;
 			FaceCulling getFaceCulling() const;
 
-			// OpenGL bindings
-
-			const Buffer* getBufferBinding(BufferTarget target, uint32_t index = -1) const;
+			const Buffer* getBufferBinding(BufferTarget target) const;
+			const IndexedBufferBinding& getIndexedBufferBinding(BufferTarget target, uint32_t index) const;
 			const RawTexture* getTextureBinding(TextureTarget target, uint32_t textureUnit) const;
 			const Framebuffer* getFramebufferBinding(FramebufferTarget target) const;
 			const ShaderProgram* getShaderBinding() const;
+
+			const ContextState& getState() const;
 
 			// Multi-context and window related functions
 
@@ -411,25 +448,13 @@ namespace spl
 			void _onFirstActivation();
 			void _loadImplementationDependentValues();
 
+			ImplementationDependentValues _implementationDependentValues;
+
 			bool _debugContext;
 			std::queue<DebugMessage*> _debugMessages;
 			DebugMessage* _lastDebugMessageSent;
 
-			ImplementationDependentValues _implementationDependentValues;
-
-			scp::f32vec4 _clearColor;
-			double _clearDepth;
-			int32_t _clearStencil;
-			scp::i32vec4 _viewport;
-			bool _isSeamlessCubeMapFilteringEnabled;
-			bool _isDepthTestEnabled;
-			FaceCulling _faceCulling;
-
-			std::array<const Buffer*, 11> _bufferBindings;
-			std::array<std::vector<const Buffer*>, 4> _indexedBufferBindings;
-			std::vector<std::array<const RawTexture*, 11>> _textureBindings;
-			std::array<const Framebuffer*, 2> _framebufferBindings;
-			const ShaderProgram* _shaderBinding;
+			ContextState _state;
 
 			Window* _window;
 			bool _hasBeenActivated;

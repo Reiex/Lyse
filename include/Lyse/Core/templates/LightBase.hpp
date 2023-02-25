@@ -11,12 +11,18 @@
 
 namespace lys
 {
-	constexpr LightBase::LightBase(float r, float g, float b, float intensity) : Transformable(),
+	constexpr LightBase::LightBase(float r, float g, float b, float intensity) :
+		_castShadows(true),
 		_color(1.f, 1.f, 1.f),
 		_intensity(1.f)
 	{
 		setColor(r, g, b);
 		setIntensity(intensity);
+	}
+
+	constexpr void LightBase::setCastShadows(bool castShadows)
+	{
+		_castShadows = castShadows;
 	}
 
 	constexpr void LightBase::setColor(float r, float g, float b)
@@ -35,6 +41,11 @@ namespace lys
 		assert(intensity >= 0.f);
 
 		_intensity = intensity;
+	}
+
+	constexpr bool LightBase::getCastShadows() const
+	{
+		return _castShadows;
 	}
 
 	constexpr const scp::f32vec3& LightBase::getColor() const

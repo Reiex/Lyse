@@ -7,50 +7,50 @@ int main()
 	spl::Context::setCurrentContext(context);
 	context->setClearColor(0.2f, 0.3f, 0.3f, 1.f);
 
-	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 10.f);
-	camera.setTranslation({ 0.f, 0.f, 3.f });
-	lys::Mesh<> mesh("examples/assets/meshes/suzanne_smooth.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
-	scp::f32vec3 lightDir = scp::normalize(scp::f32vec3(3.f, -1.f, -1.f));
-	lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, 1.f, 1.f, 1.f, 3.f);
-	lys::LightPoint light2(1.f, 2.f, 1.f, 1.f, 0.8f, 0.7f, 20.f);
-	lys::Scene scene(window.getSize().x, window.getSize().y);
-	scene.setCamera(&camera);
-	scene.addDrawable(&mesh);
-	scene.addLight(&light);
-	// scene.addLight(&light2);
-
 	// lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 10.f);
 	// camera.setTranslation({ 0.f, 0.f, 3.f });
-	// 
-	// spl::Texture2D colorMap				("examples/assets/images/color.png");
-	// spl::Texture2D moonColorMap			("examples/assets/images/moonColor.png");
-	// spl::Texture2D normalMap			("examples/assets/images/normal.png", spl::TextureInternalFormat::RGB_ni8);
-	// spl::Texture2D moonNormalMap		("examples/assets/images/moonNormal.png", spl::TextureInternalFormat::RGB_ni8);
-	// spl::Texture2D materialMap			("examples/assets/images/material.png");
-	// spl::Texture2D background			("examples/assets/images/background.png");
-	// 
-	// lys::Material material(&colorMap, &materialMap);
-	// lys::Mesh<> mesh("examples/assets/meshes/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
-	// mesh.setNormalMap(&normalMap);
-	// mesh.setMaterial(&material);
-	// 
-	// lys::Material moonMaterial(&moonColorMap, 0.1f, 0.0f, 1.f);
-	// lys::Mesh<> moonMesh("examples/assets/meshes/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
-	// moonMesh.setNormalMap(&moonNormalMap);
-	// moonMesh.setMaterial(&moonMaterial);
-	// moonMesh.setScale(0.1);
-	// moonMesh.rotate(0.f, 1.f, 0.f, std::numbers::pi);
-	// moonMesh.move(2.f, 1.f, 1.f);
-	// 
-	// scp::f32vec3 lightDir = scp::normalize(scp::f32vec3(-3.f, -1.f, -1.f));
-	// lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, 1.f, 1.f, 1.f, 10.f);
-	// 
+	// lys::Mesh<> mesh("examples/assets/meshes/suzanne_smooth.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
+	// scp::f32vec3 lightDir = scp::normalize(scp::f32vec3(3.f, -1.f, -1.f));
+	// lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, 1.f, 1.f, 1.f, 3.f);
+	// lys::LightPoint light2(1.f, 2.f, 1.f, 1.f, 0.8f, 0.7f, 20.f);
 	// lys::Scene scene(window.getSize().x, window.getSize().y);
 	// scene.setCamera(&camera);
-	// scene.setBackgroundEquirectangular(&background);
 	// scene.addDrawable(&mesh);
-	// scene.addDrawable(&moonMesh);
 	// scene.addLight(&light);
+	// scene.addLight(&light2);
+
+	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 10.f);
+	camera.setTranslation({ 0.f, 0.f, 3.f });
+	
+	spl::Texture2D colorMap				("examples/assets/images/color.png");
+	spl::Texture2D moonColorMap			("examples/assets/images/moonColor.png");
+	spl::Texture2D normalMap			("examples/assets/images/normal.png", spl::TextureInternalFormat::RGB_ni8);
+	spl::Texture2D moonNormalMap		("examples/assets/images/moonNormal.png", spl::TextureInternalFormat::RGB_ni8);
+	spl::Texture2D materialMap			("examples/assets/images/material.png");
+	spl::Texture2D background			("examples/assets/images/background.png");
+	
+	lys::Material material(&colorMap, &materialMap);
+	lys::Mesh<> mesh("examples/assets/meshes/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
+	mesh.setNormalMap(&normalMap);
+	mesh.setMaterial(&material);
+	
+	lys::Material moonMaterial(&moonColorMap, 0.1f, 0.0f, 1.f);
+	lys::Mesh<> moonMesh("examples/assets/meshes/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
+	moonMesh.setNormalMap(&moonNormalMap);
+	moonMesh.setMaterial(&moonMaterial);
+	moonMesh.setScale(0.1);
+	moonMesh.rotate(0.f, 1.f, 0.f, std::numbers::pi);
+	moonMesh.move(2.f, 1.f, 1.f);
+	
+	scp::f32vec3 lightDir = scp::normalize(scp::f32vec3(-3.f, -1.f, -1.f));
+	lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, 1.f, 1.f, 1.f, 10.f);
+	
+	lys::Scene scene(window.getSize().x, window.getSize().y);
+	scene.setCamera(&camera);
+	scene.setBackgroundEquirectangular(&background);
+	scene.addDrawable(&mesh);
+	scene.addDrawable(&moonMesh);
+	scene.addLight(&light);
 	
 	
 	static constexpr float screenVboData[] = { -1.f,  -1.f, 1.f, -1.f, -1.f, 1.f, 1.f, 1.f };
@@ -78,6 +78,7 @@ int main()
 					context->setViewport(0, 0, event.size.x, event.size.y);
 					camera.setAspect(event.size.x, event.size.y);
 					scene.resize(event.size.x, event.size.y);
+					spl::RawTexture::unbind(spl::TextureTarget::Texture2D, 0);
 					break;
 				}
 			}
@@ -91,8 +92,8 @@ int main()
 
 		if (window.isKeyPressed(spl::KeyboardKey::W)) camera.move(camera.getUpVector() * 0.01f);
 		if (window.isKeyPressed(spl::KeyboardKey::S)) camera.move(camera.getUpVector() * -0.01f);
-		if (window.isKeyPressed(spl::KeyboardKey::A)) camera.move(camera.getLeftVector() * 0.01f);
-		if (window.isKeyPressed(spl::KeyboardKey::D)) camera.move(camera.getLeftVector() * -0.01f);
+		if (window.isKeyPressed(spl::KeyboardKey::A)) camera.move(camera.getRightVector() * -0.01f);
+		if (window.isKeyPressed(spl::KeyboardKey::D)) camera.move(camera.getRightVector() * 0.01f);
 		if (window.isKeyPressed(spl::KeyboardKey::Space)) camera.move(camera.getFrontVector() * 0.01f);
 		if (window.isKeyPressed(spl::KeyboardKey::LeftShift)) camera.move(camera.getFrontVector() * -0.01f);
 

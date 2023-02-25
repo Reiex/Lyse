@@ -105,10 +105,6 @@ namespace spl
 	class DefaultFramebuffer;
 
 
-	enum class DebugMessageSource;
-	enum class DebugMessageType;
-	enum class DebugMessageSeverity;
-	struct DebugMessage;
 	enum class ContextReleaseBehaviour;
 	enum class ProvokingVertexConvention;
 	namespace ContextFlags { enum Flags; }
@@ -127,6 +123,13 @@ namespace spl
 		struct TransformFeedbackLimits;
 	}
 	struct ImplementationDependentValues;
+	enum class DebugMessageSource;
+	enum class DebugMessageType;
+	enum class DebugMessageSeverity;
+	struct DebugMessage;
+	enum class FaceCulling;
+	struct IndexedBufferBinding;
+	struct ContextState;
 	class Context;
 
 	enum class EventType;

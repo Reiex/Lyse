@@ -217,7 +217,7 @@ namespace lys
 		scp::f32quat v(0.f, vector.x, vector.y, vector.z);
 
 		scp::f32quat inv = _rotation;
-		inv.inverse();
+		inv.conjugate();
 
 		v = _rotation * v * inv;
 
@@ -231,7 +231,7 @@ namespace lys
 		scp::f32quat v(0.f, x, y, z);
 
 		scp::f32quat inv = _rotation;
-		inv.inverse();
+		inv.conjugate();
 
 		v = _rotation * v * inv;
 
@@ -332,6 +332,26 @@ namespace lys
 		applyInverseScaleTo(x, y, z);
 	}
 
+	constexpr const scp::f32vec3& Transformable::getTranslation() const
+	{
+		return _translation;
+	}
+
+	constexpr const scp::f32vec3& Transformable::getPosition() const
+	{
+		return _translation;
+	}
+
+	constexpr const scp::Quat<float>& Transformable::getRotation() const
+	{
+		return _rotation;
+	}
+
+	constexpr const scp::f32vec3& Transformable::getScale() const
+	{
+		return _scale;
+	}
+	
 	constexpr const scp::f32mat4x4& Transformable::getTransformMatrix() const
 	{
 		if (!_transform.has_value())
@@ -427,25 +447,5 @@ namespace lys
 		}
 
 		return *_invTransform;
-	}
-
-	constexpr const scp::f32vec3& Transformable::getTranslation() const
-	{
-		return _translation;
-	}
-
-	constexpr const scp::f32vec3& Transformable::getPosition() const
-	{
-		return _translation;
-	}
-
-	constexpr const scp::Quat<float>& Transformable::getRotation() const
-	{
-		return _rotation;
-	}
-
-	constexpr const scp::f32vec3& Transformable::getScale() const
-	{
-		return _scale;
 	}
 }

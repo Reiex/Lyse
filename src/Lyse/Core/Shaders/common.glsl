@@ -26,6 +26,22 @@ struct CameraData
 	mat4 invProjectionView;
 };
 
+struct LightData
+{
+	uint type;
+	uint shadowMapStartIndex;
+	uint shadowMapStopIndex;
+	vec3 color;
+	vec4 param0;
+	vec4 param1;
+};
+
+struct LightsData
+{
+	uint count;
+	LightData lights[MAX_LIGHT_COUNT];
+};
+
 struct DrawableData
 {
 	mat4 model;
@@ -34,6 +50,19 @@ struct DrawableData
 	mat4 invViewModel;
 	mat4 projectionViewModel;
 	mat4 invProjectionViewModel;
+};
+
+struct ShadowCameraData
+{
+	mat4 projection;
+	mat4 view;
+	float near;
+	float far;
+};
+
+struct ShadowCamerasData
+{
+	ShadowCameraData cameras[MAX_SHADOWMAP_COUNT];
 };
 
 // Constants

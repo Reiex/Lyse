@@ -15,9 +15,11 @@ namespace lys
 		{ "u_normalMap",	offsetof(GBufferShaderInterface, u_normalMap) }
 	};
 
-	ShaderSet::ShaderSet(const spl::ShaderProgram* gBufferShader) :
+	ShaderSet::ShaderSet(const spl::ShaderProgram* gBufferShader, const spl::ShaderProgram* shadowMappingShader) :
 		_gBufferShader(gBufferShader),
-		_gBufferShaderInterface()
+		_shadowMappingShader(shadowMappingShader),
+		_gBufferShaderInterface(),
+		_shadowMappingShaderInterface()
 	{
 		// TODO: Check outputs
 
@@ -36,5 +38,7 @@ namespace lys
 		}
 
 		// TODO: Check uniforms and uniform blocks... (types, etc...)
+
+		// TODO: One function per interface (gBuffer, shadowMapping... and do all of that for every interface)
 	}
 }
