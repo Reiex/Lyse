@@ -21,6 +21,11 @@ namespace spl
 		constexpr GLbitfield bufferStorageFlagsToGLbitfield(BufferStorageFlags::Flags flags);
 		constexpr GLbitfield bufferMapAccessFlagsToGLbitfield(BufferMapAccessFlags::Flags flags);
 
+		constexpr GLenum compareFuncToGLenum(CompareFunc func);
+		constexpr GLenum textureCompareModeToGLenum(TextureCompareMode mode);
+		constexpr GLenum textureFilteringToGLenum(TextureFiltering filtering);
+		constexpr GLenum textureWrappingToGLenum(TextureWrapping wrapping);
+
 		constexpr GLenum textureTargetToGLenum(TextureTarget target);
 		constexpr GLenum textureFormatToGLenum(TextureFormat format);
 		constexpr GLenum textureDataTypeToGLenum(TextureDataType dataType);

@@ -17,8 +17,7 @@
 
 #include <SplayLibrary/Core/templates/Buffer.hpp>
 
-#include <SplayLibrary/Core/Texture/templates/TextureBase.hpp>
-#include <SplayLibrary/Core/Texture/templates/Texture2D.hpp>
+#include <SplayLibrary/Core/templates/Texture.hpp>
 
 #include <SplayLibrary/Core/templates/ShaderProgram.hpp>
 

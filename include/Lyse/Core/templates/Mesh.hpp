@@ -89,8 +89,8 @@ namespace lys
 		_vbo.copyFrom(mesh._vbo);
 		_ebo.copyFrom(mesh._ebo);
 
-		_vao.bindArrayBuffer(_vbo, 0, 0, sizeof(TVertex));
-		_vao.bindElementBuffer(_ebo);
+		_vao.bindArrayBuffer(&_vbo, 0, sizeof(TVertex));
+		_vao.bindElementBuffer(&_ebo);
 
 		_normalMap = mesh._normalMap;
 
@@ -105,8 +105,8 @@ namespace lys
 		_vbo.moveFrom(mesh._vbo);
 		_ebo.moveFrom(mesh._ebo);
 
-		_vao.bindArrayBuffer(_vbo, 0, 0, sizeof(TVertex));
-		_vao.bindElementBuffer(_ebo);
+		_vao.bindArrayBuffer(&_vbo, 0, sizeof(TVertex));
+		_vao.bindElementBuffer(&_ebo);
 
 		_normalMap = mesh._normalMap;
 
@@ -118,7 +118,7 @@ namespace lys
 	void Mesh<TVertex>::createNewVertices(const TVertex* vertices, uint32_t count, TStorage storage)
 	{
 		_vbo.createNew(sizeof(TVertex) * count, storage, vertices);
-		_vao.bindArrayBuffer(_vbo, 0, 0, sizeof(TVertex));
+		_vao.bindArrayBuffer(&_vbo, 0, sizeof(TVertex));
 	}
 
 	template<CVertex TVertex>
@@ -126,7 +126,7 @@ namespace lys
 	void Mesh<TVertex>::createNewIndices(const uint32_t* indices, uint32_t count, TStorage storage)
 	{
 		_ebo.createNew(sizeof(uint32_t) * count, storage, indices);
-		_vao.bindElementBuffer(_ebo);
+		_vao.bindElementBuffer(&_ebo);
 	}
 
 	template<CVertex TVertex>

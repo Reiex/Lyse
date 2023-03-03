@@ -56,14 +56,13 @@ namespace spl
 		|| std::same_as<T, scp::f64mat3x2> || std::same_as<T, scp::f64mat3x3> || std::same_as<T, scp::f64mat3x4>
 		|| std::same_as<T, scp::f64mat4x2> || std::same_as<T, scp::f64mat4x3> || std::same_as<T, scp::f64mat4x4>;
 
-	// TODO: Rename float16_t in half_t, remove float32_t and float64_t and add half_t here...
-	// TODO: Find a way to create scp::f16vecx and add them here... (table 8.16 of opengl 4.6 spec)
-	template<typename T> concept CTextureInternalFormatType =
-		std::same_as<T, float> || std::same_as<T, int8_t> || std::same_as<T, int16_t> || std::same_as<T, int32_t> || std::same_as<T, uint8_t> || std::same_as<T, uint16_t> || std::same_as<T, uint32_t>
-		|| std::same_as<T, scp::f32vec2> || std::same_as<T, scp::i8vec2> || std::same_as<T, scp::i16vec2> || std::same_as<T, scp::i32vec2> || std::same_as<T, scp::u8vec2> || std::same_as<T, scp::u16vec2> || std::same_as<T, scp::u32vec2>
-		|| std::same_as<T, scp::f32vec3> || std::same_as<T, scp::i32vec3> || std::same_as<T, scp::u32vec3>
-		|| std::same_as<T, scp::f32vec4> || std::same_as<T, scp::i8vec4> || std::same_as<T, scp::i16vec4> || std::same_as<T, scp::i32vec4> || std::same_as<T, scp::u8vec4> || std::same_as<T, scp::u16vec4> || std::same_as<T, scp::u32vec4>;
+	template<typename T> concept CColorVecType =
+		std::same_as<T, int8_t> || std::same_as<T, uint8_t> || std::same_as<T, int16_t> || std::same_as<T, uint16_t> || std::same_as<T, int32_t> || std::same_as<T, uint32_t> || std::same_as<T, float>
+		|| std::same_as<T, scp::i8vec2> || std::same_as<T, scp::u8vec2> || std::same_as<T, scp::i16vec2> || std::same_as<T, scp::u16vec2> || std::same_as<T, scp::i32vec2> || std::same_as<T, scp::u32vec2> || std::same_as<T, scp::f32vec2>
+		|| std::same_as<T, scp::i8vec3> || std::same_as<T, scp::u8vec3> || std::same_as<T, scp::i16vec3> || std::same_as<T, scp::u16vec3> || std::same_as<T, scp::i32vec3> || std::same_as<T, scp::u32vec3> || std::same_as<T, scp::f32vec3>
+		|| std::same_as<T, scp::i8vec4> || std::same_as<T, scp::u8vec4> || std::same_as<T, scp::i16vec4> || std::same_as<T, scp::u16vec4> || std::same_as<T, scp::i32vec4> || std::same_as<T, scp::u32vec4> || std::same_as<T, scp::f32vec4>;
 
+	template<typename T> concept CBufferClearType = CColorVecType<T> && !std::same_as<T, scp::i8vec3> && !std::same_as<T, scp::u8vec3> && !std::same_as<T, scp::i16vec3> && !std::same_as<T, scp::u16vec3>;
 
 	enum class BufferTarget;
 	enum class BufferUsage;
@@ -72,14 +71,22 @@ namespace spl
 	class Buffer;
 
 
+	enum class CompareFunc;
+	enum class TextureCompareMode;
+	enum class TextureFiltering;
+	enum class TextureWrapping;
+	class Sampler;
+
 	enum class TextureTarget;
 	enum class TextureFormat;
 	enum class TextureDataType;
 	enum class TextureInternalFormat : uint64_t;
-	class RawTexture;
+	struct TextureCreationParams;
+	struct TextureUpdateParams;
+	class Texture;
+
 	class Renderbuffer;
 
-	class TextureBase;
 	class Texture2D;
 
 

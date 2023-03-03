@@ -19,10 +19,11 @@ namespace spl
 		template<CGlslVecType TVec> consteval GlslType glslVecTypeToGlslType();
 		template<CGlslMatType TMat> consteval GlslType glslMatTypeToGlslType();
 
-		template<CTextureInternalFormatType TValue> consteval TextureInternalFormat textureInternalFormatTypeToTextureInternalFormat();
+		template<TextureInternalFormat InternalFormat> struct TextureInternalFormatToColorVecType { using Type = void; };
+		template<CColorVecType TColorVec> struct ColorVecTypeToPixelType { using Type = void; };
+		template<CColorVecType TColorVec> consteval TextureInternalFormat colorVecTypeToTextureInternalFormat();
 		constexpr TextureFormat textureInternalFormatToTextureFormat(TextureInternalFormat internalFormat);
 		constexpr TextureDataType textureInternalFormatToTextureDataType(TextureInternalFormat internalFormat);
-		constexpr uint8_t textureInternalFormatToComponentCount(TextureInternalFormat internalFormat);
 	}
 }
 

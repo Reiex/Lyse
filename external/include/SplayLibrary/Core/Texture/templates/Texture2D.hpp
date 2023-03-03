@@ -12,38 +12,32 @@
 
 namespace spl
 {
-	template<djv::CPixel TPixel>
-	Texture2D::Texture2D(const djv::Image<TPixel>& image, TextureInternalFormat internalFormat) : Texture2D()
+	template<CColorVecType TColorVec>
+	Texture2D::Texture2D(uint32_t width, uint32_t height, const TColorVec* data, TextureInternalFormat internalFormat, uint32_t levels) : Texture2D()
 	{
-		createNew(image, internalFormat);
+		createNew<TColorVec>(width, height, data, internalFormat, levels);
 	}
 
-	template<djv::CPixel TPixel>
-	void Texture2D::createNew(const djv::Image<TPixel>& image, TextureInternalFormat internalFormat)
+	template<CColorVecType TColorVec> void createNew(uint32_t width, uint32_t height, const TColorVec* data, TextureInternalFormat internalFormat, uint32_t levels)
 	{
-		const scp::u32vec2 size(image.getWidth(), image.getHeight());
-		createNew(size, internalFormat);
-		update(image, scp::u32vec2(0, 0));
+		static constexpr TextureInternalFormat projectedFormat = _spl::colorVecTypeToTextureInternalFormat<TColorVec>();
 
-		_size = size;
-	}
+		TextureCreationParams creationParams;
+		creationParams.target = TextureTarget::Texture2D;
+		creationParams.internalFormat = internalFormat;
+		creationParams.width = width;
+		creationParams.height = height;
+		creationParams.levels = levels;
 
-	template<djv::CPixel TPixel>
-	void Texture2D::update(const djv::Image<TPixel>& image, const scp::u32vec2& offset)
-	{
-		RawTexture::UpdateParams params;
-		params.data = nullptr;
-		params.dataFormat = TextureFormat::Undefined;
-		params.dataType = TextureDataType::Undefined;
-		params.width = image.getWidth();
-		params.height = image.getHeight();
-		params.offsetX = offset.x;
-		params.offsetY = offset.y;
+		createNew(creationParams);
 
-		TextureBase::_createDejaVuImgBuffer(image, _texture.getCreationParams().internalFormat, (void*&) params.data, params.dataFormat, params.dataType);
+		TextureUpdateParams updateParams;
+		updateParams.data = data;
+		updateParams.dataFormat = _spl::textureInternalFormatToTextureFormat(internalFormat);
+		updateParams.dataType = _spl::textureInternalFormatToTextureDataType(projectedFormat);
+		updateParams.width = width;
+		updateParams.height = height;
 
-		_texture.update(params);
-
-		delete params.data;
+		update(updateParams);
 	}
 }

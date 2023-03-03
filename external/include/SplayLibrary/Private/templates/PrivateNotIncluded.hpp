@@ -106,6 +106,89 @@ namespace spl
 		}
 	
 
+		constexpr GLenum compareFuncToGLenum(CompareFunc func)
+		{
+			switch (func)
+			{
+				case CompareFunc::Never:
+					return GL_NEVER;
+				case CompareFunc::Less:
+					return GL_LESS;
+				case CompareFunc::Equal:
+					return GL_EQUAL;
+				case CompareFunc::LessEqual:
+					return GL_LEQUAL;
+				case CompareFunc::Greater:
+					return GL_GREATER;
+				case CompareFunc::NotEqual:
+					return GL_NOTEQUAL;
+				case CompareFunc::GreaterEqual:
+					return GL_GEQUAL;
+				case CompareFunc::Always:
+					return GL_ALWAYS;
+				default:
+					assert(false);
+					return 0;
+			}
+		}
+
+		constexpr GLenum textureCompareModeToGLenum(TextureCompareMode mode)
+		{
+			switch (mode)
+			{
+				case TextureCompareMode::None:
+					return GL_NONE;
+				case TextureCompareMode::RefToTexture:
+					return GL_COMPARE_REF_TO_TEXTURE;
+				default:
+					assert(false);
+					return 0;
+			}
+		}
+
+		constexpr GLenum textureFilteringToGLenum(TextureFiltering filtering)
+		{
+			switch (filtering)
+			{
+				case TextureFiltering::Nearest:
+					GL_NEAREST;
+				case TextureFiltering::Linear:
+					GL_LINEAR;
+				case TextureFiltering::NearestMipmapNearest:
+					GL_NEAREST_MIPMAP_NEAREST;
+				case TextureFiltering::LinearMipmapNearest:
+					GL_LINEAR_MIPMAP_NEAREST;
+				case TextureFiltering::NearestMipmapLinear:
+					GL_NEAREST_MIPMAP_LINEAR;
+				case TextureFiltering::LinearMipmapLinear:
+					GL_LINEAR_MIPMAP_LINEAR;
+				default:
+					assert(false);
+					return 0;
+			}
+		}
+
+		constexpr GLenum textureWrappingToGLenum(TextureWrapping wrapping)
+		{
+			switch (wrapping)
+			{
+				case TextureWrapping::Repeat:
+					return GL_REPEAT;
+				case TextureWrapping::MirroredRepeat:
+					return GL_MIRRORED_REPEAT;
+				case TextureWrapping::ClampToEdge:
+					return GL_CLAMP_TO_EDGE;
+				case TextureWrapping::ClampToBorder:
+					return GL_CLAMP_TO_BORDER;
+				case TextureWrapping::MirrorClampToEdge:
+					return GL_MIRROR_CLAMP_TO_EDGE;
+				default:
+					assert(false);
+					return 0;
+			}
+		}
+
+
 		constexpr GLenum textureTargetToGLenum(TextureTarget target)
 		{
 			switch (target)

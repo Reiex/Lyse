@@ -12,10 +12,10 @@
 
 namespace spl
 {
-	template<CTextureInternalFormatType TClearValue>
+	template<CBufferClearType TClearValue>
 	void Buffer::clear(const TClearValue& clearValue, uintptr_t size, uintptr_t offset)
 	{
-		constexpr TextureInternalFormat internalFormat = _spl::textureInternalFormatTypeToTextureInternalFormat<TClearValue>();
+		constexpr TextureInternalFormat internalFormat = _spl::colorVecTypeToTextureInternalFormat<TClearValue>();
 		constexpr TextureFormat format = _spl::textureInternalFormatToTextureFormat(internalFormat);
 		constexpr TextureDataType dataType = _spl::textureInternalFormatToTextureDataType(internalFormat);
 

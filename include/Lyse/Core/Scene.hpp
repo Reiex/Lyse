@@ -27,7 +27,7 @@ namespace lys
 
 			void setBackgroundFlatColor(float red, float green, float blue);
 			void setBackgroundEquirectangular(const spl::Texture2D* texture);
-			void setBackgroundCubemap(const spl::RawTexture* texture);	// TODO : Change that when there will a "TextureCubeMap" class in SPL
+			void setBackgroundCubemap(const spl::Texture* texture);	// TODO : Change that when there will a "TextureCubeMap" class in SPL
 
 			void setCamera(const CameraBase* camera);
 
@@ -41,18 +41,18 @@ namespace lys
 			void render() const;
 
 
-			const spl::Texture2D& getDepthTexture() const;
-			const spl::Texture2D& getStencilTexture() const;
-			const spl::Texture2D& getColorTexture() const;
-			const spl::Texture2D& getMaterialTexture() const;
-			const spl::Texture2D& getNormalTexture() const;
-			const spl::Texture2D& getTangentTexture() const;
+			const spl::Texture2D* getDepthTexture() const;
+			const spl::Texture2D* getStencilTexture() const;
+			const spl::Texture2D* getColorTexture() const;
+			const spl::Texture2D* getMaterialTexture() const;
+			const spl::Texture2D* getNormalTexture() const;
+			const spl::Texture2D* getTangentTexture() const;
 
-			const spl::Texture2D& getShadowMap() const;
+			const spl::Texture2D* getShadowMap() const;
 
-			const spl::Texture2D& getSsaoTexture() const;
+			const spl::Texture2D* getSsaoTexture() const;
 
-			const spl::Texture2D& getRenderTexture() const;
+			const spl::Texture2D* getRenderTexture() const;
 
 			bool isValid() const;
 
@@ -61,7 +61,7 @@ namespace lys
 
 
 			static constexpr uint32_t maxLightCount = 128;
-			static constexpr uint32_t maxShadowMapCount = 16;
+			static constexpr uint32_t maxShadowMapCount = 1;
 	
 		private:
 
@@ -90,7 +90,7 @@ namespace lys
 			mutable spl::Buffer _uboShadowCameras;
 
 			scp::f32vec3 _clearColor;
-			const spl::RawTexture* _background;
+			const spl::Texture* _background;
 
 			scp::u32vec2 _resolution;
 			const CameraBase* _camera;

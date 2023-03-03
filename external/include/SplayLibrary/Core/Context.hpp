@@ -348,35 +348,36 @@ namespace spl
 
 	struct IndexedBufferBinding
 	{
-		const Buffer* buffer;
-		uintptr_t size;
-		uintptr_t offset;
+		const Buffer* buffer = nullptr;
+		uintptr_t size = 4;
+		uintptr_t offset = 0;
 	};
 
 	struct ContextState
 	{
-		scp::f32vec4 clearColor;
-		double clearDepth;
-		int32_t clearStencil;
-		scp::i32vec4 viewport;
-		bool isSeamlessCubeMapFilteringEnabled;
-		bool isDepthTestEnabled;
-		FaceCulling faceCulling;
+		scp::f32vec4 clearColor = { 0.f, 0.f, 0.f, 0.f };
+		double clearDepth = 1.0;
+		int32_t clearStencil = 0;
+		scp::i32vec4 viewport = { 0, 0, 0, 0 };
+		bool isSeamlessCubeMapFilteringEnabled = false;
+		bool isDepthTestEnabled = false;
+		FaceCulling faceCulling = FaceCulling::Disabled;
 
-		std::array<const Buffer*, 11> bufferBindings;
-		std::array<std::vector<IndexedBufferBinding>, 4> indexedBufferBindings;
-		std::vector<std::array<const RawTexture*, 11>> textureBindings;
-		std::array<const Framebuffer*, 2> framebufferBindings;
-		const ShaderProgram* shaderBinding;
+		// TODO: Pixel storage modes
+
+		std::array<const Buffer*, 11> bufferBindings = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+		std::array<std::vector<IndexedBufferBinding>, 4> indexedBufferBindings = {};
+		std::vector<const Texture*> textureBindings = {};
+		std::vector<const Sampler*> samplerBindings = {};
+		std::array<const Framebuffer*, 2> framebufferBindings = { nullptr, nullptr };
+		const ShaderProgram* shaderBinding = nullptr;
 
 		static uint8_t bufferTargetToIndex(BufferTarget target);
 		static uint8_t indexedBufferTargetToIndex(BufferTarget target);
-		static uint8_t textureTargetToIndex(TextureTarget target);
 		static uint8_t framebufferTargetToIndex(FramebufferTarget target);
 
 		static BufferTarget indexToBufferTarget(uint8_t index);
 		static BufferTarget indexToIndexedBufferTarget(uint8_t index);
-		static TextureTarget indexToTextureTarget(uint8_t index);
 		static FramebufferTarget indexToFramebufferTarget(uint8_t index);
 	};
 
@@ -421,7 +422,8 @@ namespace spl
 
 			const Buffer* getBufferBinding(BufferTarget target) const;
 			const IndexedBufferBinding& getIndexedBufferBinding(BufferTarget target, uint32_t index) const;
-			const RawTexture* getTextureBinding(TextureTarget target, uint32_t textureUnit) const;
+			const Texture* getTextureBinding(uint32_t textureUnit) const;
+			const Sampler* getSamplerBinding(uint32_t textureUnit) const;
 			const Framebuffer* getFramebufferBinding(FramebufferTarget target) const;
 			const ShaderProgram* getShaderBinding() const;
 
@@ -448,6 +450,12 @@ namespace spl
 			void _onFirstActivation();
 			void _loadImplementationDependentValues();
 
+			void _unbindBuffer(const Buffer* buffer);
+			void _unbindTexture(const Texture* texture);
+			void _unbindSampler(const Sampler* sampler);
+			void _unbindFramebuffer(const Framebuffer* framebuffer);
+			void _unbindShaderProgram(const ShaderProgram* program);
+
 			ImplementationDependentValues _implementationDependentValues;
 
 			bool _debugContext;
@@ -465,8 +473,10 @@ namespace spl
 
 		friend class Window;
 		friend void stackDebugMessage(DebugMessage* message, Context* context);
+
 		friend class Buffer;
-		friend class RawTexture;
+		friend class Sampler;
+		friend class Texture;
 		friend class Framebuffer;
 		friend class ShaderProgram;
 	};

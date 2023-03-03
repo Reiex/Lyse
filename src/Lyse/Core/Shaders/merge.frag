@@ -134,14 +134,23 @@ void main()
 			for (uint j = ubo_lights.lights[i].shadowMapStartIndex; j < ubo_lights.lights[i].shadowMapStopIndex; ++j)
 			{
 				vec4 shadowPosition = ubo_shadowCameras.cameras[j].view * ubo_camera.invView * vec4(position, 1.0);
-				const float shadowDepth = -(shadowPosition.z + ubo_shadowCameras.cameras[j].near) / (ubo_shadowCameras.cameras[j].far - ubo_shadowCameras.cameras[j].near);
+				const float shadowDepth = (-shadowPosition.z - ubo_shadowCameras.cameras[j].near) / (ubo_shadowCameras.cameras[j].far - ubo_shadowCameras.cameras[j].near);
 				shadowPosition = ubo_shadowCameras.cameras[j].projection * shadowPosition;
 				shadowPosition.xy /= shadowPosition.w;
 
 				if (clamp(shadowPosition.xy, vec2(-1.0), vec2(1.0)) == shadowPosition.xy)
 				{
-					float sampledShadowDepth = texture(u_shadow, shadowPosition.xy * 0.5 + 0.5).r;	// TODO : Here, sample the good shadow map !
-					occlusion = clamp((shadowDepth - sampledShadowDepth - 0.003) / (0.01 - 0.003), 0.0, 1.0);
+					float sampledShadowDepth = 0.0;
+					for (int p = -1; p <= 1; ++p)
+					{
+						for (int q = -1; q <= 1; ++q)
+						{
+							vec2 pos = clamp((shadowPosition.xy + u_blurOffset * vec2(p, q)) * 0.5 + 0.5, vec2(0.0), vec2(1.0));
+							sampledShadowDepth += texture(u_shadow, pos).r;	// TODO : Here, sample the good shadow map !
+						}
+					}
+					
+					occlusion = clamp((shadowDepth - sampledShadowDepth * 0.11111) / 0.01, 0.0, 1.0);
 					break;
 				}
 			}

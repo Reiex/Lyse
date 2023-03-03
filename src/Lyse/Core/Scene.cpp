@@ -80,7 +80,7 @@ namespace lys
 		_loadShaders();
 		resize(width, height);
 
-		_shadowMappingFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::DepthAttachment, _shadowMapResolution, spl::TextureInternalFormat::Depth_nu16);
+		_shadowMappingFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::DepthAttachment, _shadowMapResolution.x, _shadowMapResolution.y, spl::TextureInternalFormat::Depth_nu32);
 
 		_screenVao.setAttributeFormat(0, spl::GlslType::FloatVec2, 0);
 		_screenVao.setAttributeEnabled(0, true);
@@ -89,7 +89,7 @@ namespace lys
 
 		static constexpr float screenVboData[] = { -1.f,  -1.f, 1.f, -1.f, -1.f, 1.f, 1.f, 1.f };
 		_screenVbo.createNew(sizeof(screenVboData), spl::BufferStorageFlags::None, screenVboData);
-		_screenVao.bindArrayBuffer(_screenVbo, 0, 0, sizeof(float) * 2);
+		_screenVao.bindArrayBuffer(&_screenVbo, 0, sizeof(float) * 2);
 	}
 
 	void Scene::resize(uint32_t width, uint32_t height)
@@ -97,16 +97,16 @@ namespace lys
 		_resolution.x = width;
 		_resolution.y = height;
 
-		/* Depth    */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::DepthAttachment, scp::u32vec2{ width, height }, spl::TextureInternalFormat::Depth_nu32);
+		/* Depth    */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::DepthAttachment, width, height, spl::TextureInternalFormat::Depth_nu32);
 		// TODO : Stencil
-		/* Color    */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_nu8);
-		/* Material */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment1, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_nu8);
-		/* Normal   */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment2, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_ni16);
-		/* Tangent  */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment3, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_ni16);
+		/* Color    */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, width, height, spl::TextureInternalFormat::RGB_nu8);
+		/* Material */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment1, width, height, spl::TextureInternalFormat::RGB_nu8);
+		/* Normal   */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment2, width, height, spl::TextureInternalFormat::RGB_ni16);
+		/* Tangent  */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment3, width, height, spl::TextureInternalFormat::RGB_ni16);
 
-		_ssaoFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, scp::u32vec2{ width, height }, spl::TextureInternalFormat::R_nu16);
+		_ssaoFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, width, height, spl::TextureInternalFormat::R_nu16);
 
-		_mergeFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, scp::u32vec2{ width, height }, spl::TextureInternalFormat::RGB_nu8);
+		_mergeFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, width, height, spl::TextureInternalFormat::RGB_nu8);
 	}
 
 	void Scene::setBackgroundFlatColor(float red, float green, float blue)
@@ -122,10 +122,10 @@ namespace lys
 
 	void Scene::setBackgroundEquirectangular(const spl::Texture2D* texture)
 	{
-		_background = &texture->getRawTexture();
+		_background = texture;
 	}
 
-	void Scene::setBackgroundCubemap(const spl::RawTexture* texture)
+	void Scene::setBackgroundCubemap(const spl::Texture* texture)
 	{
 		assert(texture->getCreationParams().target == spl::TextureTarget::CubeMap);
 		_background = texture;
@@ -180,7 +180,7 @@ namespace lys
 		spl::ContextState savedContextState = context->getState();
 
 		// Set context state for rendering
-
+		
 		context->setClearColor(0.f, 0.f, 0.f, 0.f);
 		context->setClearDepth(1.0);
 		context->setClearStencil(0);
@@ -188,23 +188,23 @@ namespace lys
 		context->setIsSeamlessCubeMapFilteringEnabled(true);
 		context->setIsDepthTestEnabled(true);
 		context->setFaceCulling(spl::FaceCulling::FrontClockWise);
-
+		
 		// Update and bind static UBOs
-
+		
 		std::vector<const CameraBase*> shadowCameras;
-
+		
 		// 0 :	CameraData
 		_updateAndBindUboLights(1, shadowCameras);
 		// 2 :	DrawableData
 		_updateAndBindUboShadowCameras(3, shadowCameras);
 		
 		// Draw G-Buffer
-
+		
 		_camera->updateAndBindUbo(0);
-
-		spl::Framebuffer::bind(_gBufferFramebuffer, spl::FramebufferTarget::DrawFramebuffer);
+		
+		spl::Framebuffer::bind(spl::FramebufferTarget::DrawFramebuffer, &_gBufferFramebuffer);
 		spl::Framebuffer::clear(true, true, false);
-
+		
 		std::multimap<std::pair<const spl::ShaderProgram*, const GBufferShaderInterface*>, const Drawable*> gBufferDrawSequence;
 		for (const Drawable* drawable : _drawables)
 		{
@@ -217,20 +217,21 @@ namespace lys
 			if (elt.first.first != currentShader)
 			{
 				currentShader = elt.first.first;
-				spl::ShaderProgram::bind(*currentShader);
+				spl::ShaderProgram::bind(currentShader);
 			}
-
+		
 			_updateAndBindUboDrawable(2, _camera, elt.second);
 			_setGBufferUniforms(elt.first, elt.second);
 			elt.second->_draw();
 		}
-
+		
 		// Draw shadow maps
-
+		
 		context->setViewport(0, 0, _shadowMapResolution.x, _shadowMapResolution.y);
-
-		spl::Framebuffer::bind(_shadowMappingFramebuffer, spl::FramebufferTarget::DrawFramebuffer);
-
+		context->setFaceCulling(spl::FaceCulling::BackClockWise);
+		
+		spl::Framebuffer::bind(spl::FramebufferTarget::DrawFramebuffer, &_shadowMappingFramebuffer);
+		
 		std::multimap<std::pair<const spl::ShaderProgram*, const ShadowMappingShaderInterface*>, const Drawable*> shadowMappingDrawSequence;
 		for (const Drawable* drawable : _drawables)
 		{
@@ -241,76 +242,77 @@ namespace lys
 		{
 			// TODO : Switch framebuffer attachment here for i-th layer
 			spl::Framebuffer::clear(false, true, false);
-
+		
 			shadowCamera->updateAndBindUbo(0);
-
+		
 			const spl::ShaderProgram* currentShader = nullptr;
 			for (const std::pair<std::pair<const spl::ShaderProgram*, const ShadowMappingShaderInterface*>, const Drawable*>& elt : shadowMappingDrawSequence)
 			{
 				if (elt.first.first != currentShader)
 				{
 					currentShader = elt.first.first;
-					spl::ShaderProgram::bind(*currentShader);
+					spl::ShaderProgram::bind(currentShader);
 				}
-
+		
 				_updateAndBindUboDrawable(2, shadowCamera, elt.second);
 				_setShadowMappingUniforms(elt.first, elt.second);
 				elt.second->_draw();
 			}
 		}
-
+		
 		context->setViewport(0, 0, _resolution.x, _resolution.y);
+		context->setFaceCulling(spl::FaceCulling::FrontClockWise);
 		_camera->updateAndBindUbo(0);
-
+		
 		// Compute SSAO
-
+		
 		context->setIsDepthTestEnabled(false);
-
-		spl::Framebuffer::bind(_ssaoFramebuffer, spl::FramebufferTarget::DrawFramebuffer);
+		
+		spl::Framebuffer::bind(spl::FramebufferTarget::DrawFramebuffer, &_ssaoFramebuffer);
 		spl::Framebuffer::clear(true, false, false);
-
+		
 		const spl::ShaderProgram* ssaoShader = _shaders[3];
-
-		spl::ShaderProgram::bind(*ssaoShader);
-
+		
+		spl::ShaderProgram::bind(ssaoShader);
+		
 		ssaoShader->setUniform("u_depth", 0, getDepthTexture());
 		ssaoShader->setUniform("u_normal", 1, getNormalTexture());
 		ssaoShader->setUniform("u_tangent", 2, getTangentTexture());
-
+		
 		ssaoShader->setUniform("u_sampleCount", uint32_t(16));
 		ssaoShader->setUniform("u_radius", 1.f);
-
+		
 		ssaoShader->setUniform("u_scaleStep", 1.f / (16 * 16));
 		ssaoShader->setUniform("u_tanHalfFov", std::tan(_camera->getFieldOfView() * 0.5f));
-
+		
 		_screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
-
+		
 		// Merge into final picture
-
+		
 		context->setClearColor(_clearColor.x, _clearColor.y, _clearColor.z, 1.f);
-
-		spl::Framebuffer::bind(_mergeFramebuffer, spl::FramebufferTarget::DrawFramebuffer);
+		
+		spl::Framebuffer::bind(spl::FramebufferTarget::DrawFramebuffer, &_mergeFramebuffer);
 		spl::Framebuffer::clear(true, false, false);
 		
 		const uint32_t mergeShaderIndex = _background ? (_background->getCreationParams().target == spl::TextureTarget::CubeMap ? 2 : 1) : 0;
 		const spl::ShaderProgram* mergeShader = _shaders[mergeShaderIndex];
-
-		spl::ShaderProgram::bind(*mergeShader);
-
+		
+		spl::ShaderProgram::bind(mergeShader);
+		
 		mergeShader->setUniform("u_depth", 0, getDepthTexture());
 		mergeShader->setUniform("u_color", 1, getColorTexture());
 		mergeShader->setUniform("u_material", 2, getMaterialTexture());
 		mergeShader->setUniform("u_normal", 3, getNormalTexture());
-
+		
 		mergeShader->setUniform("u_shadow", 4, getShadowMap());
-
+		
 		mergeShader->setUniform("u_ssao", 5, getSsaoTexture());
-
+		
 		if (_background)
 		{
-			mergeShader->setUniform("u_background", 6, *_background);
+			mergeShader->setUniform("u_background", 6, _background);
 		}
-
+		
 		mergeShader->setUniform("u_tanHalfFov", std::tan(_camera->getFieldOfView() * 0.5f));
 		mergeShader->setUniform("u_blurOffset", scp::f32vec2(2.f / _resolution.x, 2.f / _resolution.y));
 		
@@ -321,49 +323,49 @@ namespace lys
 		context->setState(savedContextState);
 	}
 
-	const spl::Texture2D& Scene::getDepthTexture() const
+	const spl::Texture2D* Scene::getDepthTexture() const
 	{
-		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::DepthAttachment));
+		return dynamic_cast<const spl::Texture2D*>(_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::DepthAttachment));
 	}
 
-	const spl::Texture2D& Scene::getStencilTexture() const
+	const spl::Texture2D* Scene::getStencilTexture() const
 	{
-		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::StencilAttachment));
+		return dynamic_cast<const spl::Texture2D*>(_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::StencilAttachment));
 	}
 
-	const spl::Texture2D& Scene::getColorTexture() const
+	const spl::Texture2D* Scene::getColorTexture() const
 	{
-		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
+		return dynamic_cast<const spl::Texture2D*>(_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
 	}
 
-	const spl::Texture2D& Scene::getMaterialTexture() const
+	const spl::Texture2D* Scene::getMaterialTexture() const
 	{
-		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment1));
+		return dynamic_cast<const spl::Texture2D*>(_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment1));
 	}
 
-	const spl::Texture2D& Scene::getNormalTexture() const
+	const spl::Texture2D* Scene::getNormalTexture() const
 	{
-		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment2));
+		return dynamic_cast<const spl::Texture2D*>(_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment2));
 	}
 
-	const spl::Texture2D& Scene::getTangentTexture() const
+	const spl::Texture2D* Scene::getTangentTexture() const
 	{
-		return dynamic_cast<const spl::Texture2D&>(*_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment3));
+		return dynamic_cast<const spl::Texture2D*>(_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment3));
 	}
 
-	const spl::Texture2D& Scene::getShadowMap() const
+	const spl::Texture2D* Scene::getShadowMap() const
 	{
-		return dynamic_cast<const spl::Texture2D&>(*_shadowMappingFramebuffer.getTextureAttachment(spl::FramebufferAttachment::DepthAttachment));
+		return dynamic_cast<const spl::Texture2D*>(_shadowMappingFramebuffer.getTextureAttachment(spl::FramebufferAttachment::DepthAttachment));
 	}
 
-	const spl::Texture2D& Scene::getSsaoTexture() const
+	const spl::Texture2D* Scene::getSsaoTexture() const
 	{
-		return dynamic_cast<const spl::Texture2D&>(*_ssaoFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
+		return dynamic_cast<const spl::Texture2D*>(_ssaoFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
 	}
 
-	const spl::Texture2D& Scene::getRenderTexture() const
+	const spl::Texture2D* Scene::getRenderTexture() const
 	{
-		return dynamic_cast<const spl::Texture2D&>(*_mergeFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
+		return dynamic_cast<const spl::Texture2D*>(_mergeFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
 	}
 
 	bool Scene::isValid() const
@@ -528,7 +530,7 @@ namespace lys
 
 		_uboLights.update(&uboLightsData, 4 * sizeof(float) + sizeof(UboLightData) * i);
 
-		spl::Buffer::bind(_uboLights, spl::BufferTarget::Uniform, index);
+		spl::Buffer::bind(spl::BufferTarget::Uniform, &_uboLights, index);
 	}
 
 	const void Scene::_updateAndBindUboDrawable(uint32_t index, const CameraBase* camera, const Drawable* drawable) const
@@ -544,7 +546,7 @@ namespace lys
 
 		_uboDrawable.update(&uboDrawableData, sizeof(UboDrawableData));
 
-		spl::Buffer::bind(_uboDrawable, spl::BufferTarget::Uniform, index);
+		spl::Buffer::bind(spl::BufferTarget::Uniform, &_uboDrawable, index);
 	}
 
 	const void Scene::_updateAndBindUboShadowCameras(uint32_t index, const std::vector<const CameraBase*>& shadowCameras) const
@@ -563,7 +565,7 @@ namespace lys
 
 		_uboShadowCameras.update(&uboShadowCamerasData, sizeof(UboShadowCameraData) * shadowCameras.size());
 
-		spl::Buffer::bind(_uboShadowCameras, spl::BufferTarget::Uniform, index);
+		spl::Buffer::bind(spl::BufferTarget::Uniform, &_uboShadowCameras, index);
 	}
 
 	void Scene::_insertInDrawSequence(void* pDrawSequence, const Drawable* drawable, ShaderType shaderType) const
@@ -656,7 +658,7 @@ namespace lys
 				if (gBuffer.second->u_normalMap == spl::GlslType::Sampler2d)
 				{
 					assert(mesh.getNormalMap());
-					gBuffer.first->setUniform("u_normalMap", 2, *mesh.getNormalMap());
+					gBuffer.first->setUniform("u_normalMap", 2, mesh.getNormalMap());
 				}
 
 				break;
@@ -673,7 +675,7 @@ namespace lys
 		if (gBuffer.second->u_color == spl::GlslType::Sampler2d)
 		{
 			assert(material->getColorTexture());
-			gBuffer.first->setUniform("u_color", 0, *material->getColorTexture());
+			gBuffer.first->setUniform("u_color", 0, material->getColorTexture());
 		}
 		else if (gBuffer.second->u_color == spl::GlslType::FloatVec4)
 		{
@@ -683,7 +685,7 @@ namespace lys
 		if (gBuffer.second->u_material == spl::GlslType::Sampler2d)
 		{
 			assert(material->getPropertiesTexture());
-			gBuffer.first->setUniform("u_material", 1, *material->getPropertiesTexture());
+			gBuffer.first->setUniform("u_material", 1, material->getPropertiesTexture());
 		}
 		else if (gBuffer.second->u_material == spl::GlslType::FloatVec3)
 		{

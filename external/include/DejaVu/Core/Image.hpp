@@ -187,20 +187,32 @@ namespace djv
 		template<CPixel T> friend class Image;
 	};
 
-
 	using Image_gs_u8 = Image<Pixel_gs_u8>;
 	using Image_gs_i8 = Image<Pixel_gs_i8>;
 	using Image_gs_u16 = Image<Pixel_gs_u16>;
 	using Image_gs_i16 = Image<Pixel_gs_i16>;
+	using Image_gs_u32 = Image<Pixel_gs_u32>;
+	using Image_gs_i32 = Image<Pixel_gs_i32>;
 	using Image_gs_f32 = Image<Pixel_gs_f32>;
+	using Image_rg_u8 = Image<Pixel_rg_u8>;
+	using Image_rg_i8 = Image<Pixel_rg_i8>;
+	using Image_rg_u16 = Image<Pixel_rg_u16>;
+	using Image_rg_i16 = Image<Pixel_rg_i16>;
+	using Image_rg_u32 = Image<Pixel_rg_u32>;
+	using Image_rg_i32 = Image<Pixel_rg_i32>;
+	using Image_rg_f32 = Image<Pixel_rg_f32>;
 	using Image_rgb_u8 = Image<Pixel_rgb_u8>;
 	using Image_rgb_i8 = Image<Pixel_rgb_i8>;
 	using Image_rgb_u16 = Image<Pixel_rgb_u16>;
 	using Image_rgb_i16 = Image<Pixel_rgb_i16>;
+	using Image_rgb_u32 = Image<Pixel_rgb_u32>;
+	using Image_rgb_i32 = Image<Pixel_rgb_i32>;
 	using Image_rgb_f32 = Image<Pixel_rgb_f32>;
 	using Image_rgba_u8 = Image<Pixel_rgba_u8>;
 	using Image_rgba_i8 = Image<Pixel_rgba_i8>;
 	using Image_rgba_u16 = Image<Pixel_rgba_u16>;
 	using Image_rgba_i16 = Image<Pixel_rgba_i16>;
+	using Image_rgba_u32 = Image<Pixel_rgba_u32>;
+	using Image_rgba_i32 = Image<Pixel_rgba_i32>;
 	using Image_rgba_f32 = Image<Pixel_rgba_f32>;
 }

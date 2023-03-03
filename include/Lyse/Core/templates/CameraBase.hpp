@@ -87,7 +87,7 @@ namespace lys
 			_uboNeedsUpdate = false;
 		}
 
-		spl::Buffer::bind(*_uboCamera, spl::BufferTarget::Uniform, bindingIndex);
+		spl::Buffer::bind(spl::BufferTarget::Uniform, &_uboCamera.value(), bindingIndex);
 	}
 
 	constexpr float CameraBase::getAspect() const

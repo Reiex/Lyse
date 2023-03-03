@@ -249,8 +249,7 @@ namespace spl
 			template<CGlslVecType TVec> void setUniform(const std::string& name, const TVec* vecs, uint32_t count) const;
 			template<CGlslMatType TMat> void setUniform(const std::string& name, const TMat& mat) const;
 			template<CGlslMatType TMat> void setUniform(const std::string& name, const TMat* mats, uint32_t count) const;
-			void setUniform(const std::string& name, uint32_t textureUnit, const RawTexture& texture) const;
-			void setUniform(const std::string& name, uint32_t textureUnit, const TextureBase& texture) const;
+			void setUniform(const std::string& name, uint32_t textureUnit, const Texture* texture) const;
 
 			void setUniformBlockBinding(uint32_t shaderBindingIndex, uint32_t bufferBindingIndex) const;
 			void setShaderStorageBlockBinding(uint32_t shaderBindingIndex, uint32_t bufferBindingIndex) const;
@@ -264,8 +263,7 @@ namespace spl
 			~ShaderProgram();
 
 
-			static void bind(const ShaderProgram& program);
-			static void unbind();
+			static void bind(const ShaderProgram* program);
 
 		private:
 

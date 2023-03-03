@@ -12,7 +12,7 @@
 namespace lys
 {
 	constexpr LightBase::LightBase(float r, float g, float b, float intensity) :
-		_castShadows(true),
+		_castShadows(false),
 		_color(1.f, 1.f, 1.f),
 		_intensity(1.f)
 	{

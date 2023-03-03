@@ -50,9 +50,9 @@ namespace spl
 
 			// TODO: Current vertex attribute values
 
-			void bindElementBuffer(const Buffer& buffer);
-			void bindArrayBuffer(const Buffer& buffer, uint32_t bindingIndex, uintptr_t offset, uint32_t stride);
-			void bindArrayBuffer(const Buffer* buffers, uint32_t count, uint32_t firstIndex, const uintptr_t* offsets, const uint32_t* strides);
+			void bindElementBuffer(const Buffer* buffer);
+			void bindArrayBuffer(const Buffer* buffer, uint32_t bindingIndex, uint32_t stride, uintptr_t offset = 0);
+			void bindArrayBuffer(const Buffer* const* buffers, uint32_t firstIndex, uint32_t count, const uint32_t* strides, const uintptr_t* offsets = nullptr);
 
 			void setAttributeFormat(uint32_t attributeIndex, GlslType type, uint32_t offsetInVertexStruct);
 			void setAttributeEnabled(uint32_t attributeIndex, bool enabled);

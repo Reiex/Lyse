@@ -103,6 +103,7 @@ namespace djv
 		};
 
 		using PrImage_gs_f32 = PrImage<Pixel_gs_f32>;
+		using PrImage_rg_f32 = PrImage<Pixel_rg_f32>;
 		using PrImage_rgb_f32 = PrImage<Pixel_rgb_f32>;
 		using PrImage_rgba_f32 = PrImage<Pixel_rgba_f32>;
 	}

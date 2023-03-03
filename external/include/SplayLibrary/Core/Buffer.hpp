@@ -13,6 +13,7 @@ namespace spl
 {
 	enum class BufferTarget
 	{
+		Undefined,
 		Array,
 		AtomicCounter,
 		CopyRead,
@@ -110,7 +111,7 @@ namespace spl
 
 			void update(const void* data, uintptr_t size = -1, uintptr_t dstOffset = 0);
 			void update(const Buffer& data, uintptr_t size = -1, uintptr_t dstOffset = 0, uintptr_t srcOffset = 0);
-			template<CTextureInternalFormatType TClearValue> void clear(const TClearValue& clearValue, uintptr_t size = -1, uintptr_t offset = 0);
+			template<CBufferClearType TClearValue> void clear(const TClearValue& clearValue, uintptr_t size = -1, uintptr_t offset = 0);
 
 			void map(BufferMapAccessFlags::Flags flags, uintptr_t size = -1, uintptr_t offset = 0);
 			void flush(uintptr_t size = -1, uintptr_t offset = 0);
@@ -130,8 +131,8 @@ namespace spl
 			const void* getMapPointer() const;
 			void* getMapPointer();
 			BufferMapAccessFlags::Flags getMapAccessFlags() const;
-			uintptr_t getMapOffset() const;
 			uintptr_t getMapSize() const;
+			uintptr_t getMapOffset() const;
 
 			bool isValid() const;
 			bool hasImmutableStorage() const;
@@ -141,9 +142,8 @@ namespace spl
 			~Buffer();
 
 
-			static void bind(const Buffer& buffer, BufferTarget target, uint32_t index = -1, uintptr_t size = -1, uintptr_t offset = 0);
-			static void bind(const Buffer* const* buffers, uint32_t count, BufferTarget target, uint32_t firstIndex, const uintptr_t* sizes = nullptr, const uintptr_t* offsets = nullptr);
-			static void unbind(BufferTarget target, uint32_t index = -1, uint32_t count = 1);
+			static void bind(BufferTarget target, const Buffer* buffer, uint32_t index = -1, uintptr_t size = -1, uintptr_t offset = 0);
+			static void bind(BufferTarget target, const Buffer* const* buffers, uint32_t firstIndex, uint32_t count, const uintptr_t* sizes = nullptr, const uintptr_t* offsets = nullptr);
 
 		private:
 
