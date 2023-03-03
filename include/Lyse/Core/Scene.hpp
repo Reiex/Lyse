@@ -48,7 +48,7 @@ namespace lys
 			const spl::Texture2D* getNormalTexture() const;
 			const spl::Texture2D* getTangentTexture() const;
 
-			const spl::Texture2D* getShadowMap() const;
+			const spl::Texture* getShadowMaps() const;
 
 			const spl::Texture2D* getSsaoTexture() const;
 
@@ -61,7 +61,7 @@ namespace lys
 
 
 			static constexpr uint32_t maxLightCount = 128;
-			static constexpr uint32_t maxShadowMapCount = 1;
+			static constexpr uint32_t maxShadowMapCount = 8;
 	
 		private:
 
@@ -87,6 +87,7 @@ namespace lys
 			spl::Framebuffer _ssaoFramebuffer;
 			spl::Framebuffer _mergeFramebuffer;
 
+			mutable spl::Texture _shadowMaps;
 			mutable spl::Buffer _uboShadowCameras;
 
 			scp::f32vec3 _clearColor;

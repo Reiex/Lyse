@@ -216,6 +216,10 @@ namespace spl
 		const Buffer* bufferData = nullptr;
 		uintptr_t bufferOffset = 0;
 
+		const Framebuffer* framebufferData = nullptr;
+		uint32_t xFramebufferOffset = 0;
+		uint32_t yFramebufferOffset = 0;
+
 		TextureFormat dataFormat = TextureFormat::Undefined;
 		TextureDataType dataType = TextureDataType::Undefined;
 
@@ -245,7 +249,6 @@ namespace spl
 
 			void createNew(const TextureCreationParams& params);
 			void update(const TextureUpdateParams& params);
-			// TODO: Update from framebuffer
 			void destroy();
 
 

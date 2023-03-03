@@ -45,7 +45,7 @@ int main()
 	
 	lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, lightColor.x, lightColor.y, lightColor.z, 10.f);
 	light.setCastShadows(true);
-	
+
 	lys::Scene scene(window.getSize().x, window.getSize().y);
 	scene.setCamera(&camera);
 	scene.setBackgroundEquirectangular(&background);

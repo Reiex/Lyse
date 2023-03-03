@@ -37,7 +37,7 @@ uniform sampler2D u_color;
 uniform sampler2D u_material;
 uniform sampler2D u_normal;
 
-uniform sampler2D u_shadow;
+uniform sampler2DArray u_shadow;
 
 uniform sampler2D u_ssao;
 
@@ -146,7 +146,7 @@ void main()
 						for (int q = -1; q <= 1; ++q)
 						{
 							vec2 pos = clamp((shadowPosition.xy + u_blurOffset * vec2(p, q)) * 0.5 + 0.5, vec2(0.0), vec2(1.0));
-							sampledShadowDepth += texture(u_shadow, pos).r;	// TODO : Here, sample the good shadow map !
+							sampledShadowDepth += texture(u_shadow, vec3(pos, j)).r;
 						}
 					}
 					

@@ -65,6 +65,7 @@ namespace lys
 		_shadowMappingFramebuffer(),
 		_ssaoFramebuffer(),
 		_mergeFramebuffer(),
+		_shadowMaps(),
 		_uboShadowCameras(sizeof(UboShadowCamerasData), spl::BufferStorageFlags::DynamicStorage),
 		_clearColor(0.f, 0.f, 0.f),
 		_background(nullptr),
@@ -80,7 +81,15 @@ namespace lys
 		_loadShaders();
 		resize(width, height);
 
-		_shadowMappingFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::DepthAttachment, _shadowMapResolution.x, _shadowMapResolution.y, spl::TextureInternalFormat::Depth_nu32);
+		_shadowMappingFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::DepthAttachment, _shadowMapResolution.x, _shadowMapResolution.y, spl::TextureInternalFormat::Depth_nu16);
+
+		spl::TextureCreationParams shadowMapCreationParams;
+		shadowMapCreationParams.target = spl::TextureTarget::Array2D;
+		shadowMapCreationParams.internalFormat = spl::TextureInternalFormat::Depth_nu16;
+		shadowMapCreationParams.width = _shadowMapResolution.x;
+		shadowMapCreationParams.height = _shadowMapResolution.y;
+		shadowMapCreationParams.depth = maxShadowMapCount;
+		_shadowMaps.createNew(shadowMapCreationParams);
 
 		_screenVao.setAttributeFormat(0, spl::GlslType::FloatVec2, 0);
 		_screenVao.setAttributeEnabled(0, true);
@@ -231,6 +240,7 @@ namespace lys
 		context->setFaceCulling(spl::FaceCulling::BackClockWise);
 		
 		spl::Framebuffer::bind(spl::FramebufferTarget::DrawFramebuffer, &_shadowMappingFramebuffer);
+		spl::Framebuffer::bind(spl::FramebufferTarget::ReadFramebuffer, &_shadowMappingFramebuffer);
 		
 		std::multimap<std::pair<const spl::ShaderProgram*, const ShadowMappingShaderInterface*>, const Drawable*> shadowMappingDrawSequence;
 		for (const Drawable* drawable : _drawables)
@@ -238,9 +248,13 @@ namespace lys
 			_insertInDrawSequence(&shadowMappingDrawSequence, drawable, ShaderType::ShadowMapping);
 		}
 		
+		spl::TextureUpdateParams shadowMapUpdateParams;
+		shadowMapUpdateParams.framebufferData = &_shadowMappingFramebuffer;
+		shadowMapUpdateParams.width = _shadowMapResolution.x;
+		shadowMapUpdateParams.height = _shadowMapResolution.y;
+
 		for (const CameraBase* shadowCamera : shadowCameras)
 		{
-			// TODO : Switch framebuffer attachment here for i-th layer
 			spl::Framebuffer::clear(false, true, false);
 		
 			shadowCamera->updateAndBindUbo(0);
@@ -258,6 +272,9 @@ namespace lys
 				_setShadowMappingUniforms(elt.first, elt.second);
 				elt.second->_draw();
 			}
+
+			_shadowMaps.update(shadowMapUpdateParams);
+			++shadowMapUpdateParams.zOffset;
 		}
 		
 		context->setViewport(0, 0, _resolution.x, _resolution.y);
@@ -304,7 +321,7 @@ namespace lys
 		mergeShader->setUniform("u_material", 2, getMaterialTexture());
 		mergeShader->setUniform("u_normal", 3, getNormalTexture());
 		
-		mergeShader->setUniform("u_shadow", 4, getShadowMap());
+		mergeShader->setUniform("u_shadow", 4, getShadowMaps());
 		
 		mergeShader->setUniform("u_ssao", 5, getSsaoTexture());
 		
@@ -353,9 +370,9 @@ namespace lys
 		return dynamic_cast<const spl::Texture2D*>(_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment3));
 	}
 
-	const spl::Texture2D* Scene::getShadowMap() const
+	const spl::Texture* Scene::getShadowMaps() const
 	{
-		return dynamic_cast<const spl::Texture2D*>(_shadowMappingFramebuffer.getTextureAttachment(spl::FramebufferAttachment::DepthAttachment));
+		return &_shadowMaps;
 	}
 
 	const spl::Texture2D* Scene::getSsaoTexture() const
