@@ -29,36 +29,12 @@ namespace lys
 
 	inline void CameraBase::lookAt(const scp::f32vec3& position, float dutchAngle)
 	{
-		if (distance(position, getTranslation()) == 0.f)
+		if (scp::distance(position, getTranslation()) == 0.f)
 		{
 			return;
 		}
 
-		scp::Quat<float> rot = { 1.f, 0.f, 0.f, 0.f };
-		setRotation(rot);
-
-		scp::f32vec3 dir = normalize(position - getTranslation());
-
-		scp::f32vec3 dirPlane = { dir.x, 0.f, dir.z };
-		if (scp::length(dirPlane) != 0.f)
-		{
-			const float angle = std::atan2(-dirPlane.x, -dirPlane.z);
-
-			rotate(getUpVector(), angle);
-		}
-
-		dirPlane = { 0.f, dir.y, dir.z };
-		if (scp::length(dirPlane) != 0.f)
-		{
-			const float angle = std::numbers::pi / 2 - std::acos(dot(dirPlane, { 0.f, 1.f, 0.f }));
-
-			rotate(getRightVector(), angle);
-		}
-
-		if (dutchAngle != 0.f)
-		{
-			rotate(getFrontVector(), dutchAngle);
-		}
+		setDirection(scp::normalize(position - getTranslation()), dutchAngle);
 	}
 
 	inline void CameraBase::updateAndBindUbo(uint32_t bindingIndex) const

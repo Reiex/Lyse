@@ -74,17 +74,17 @@ namespace lys
 		_invTransform.reset();
 	}
 
-	constexpr void Transformable::setDirection(const scp::f32vec3& direction)
+	constexpr void Transformable::setDirection(const scp::f32vec3& direction, float dutchAngle)
 	{
-		_rotation.setFromUnitVectorRotation(0.f, 0.f, -1.f, direction.x, direction.y, direction.z);
+		_rotation.setFromUnitVectorRotation(0.f, 0.f, -1.f, direction.x, direction.y, direction.z, dutchAngle);
 
 		_transform.reset();
 		_invTransform.reset();
 	}
 
-	constexpr void Transformable::setDirection(float x, float y, float z)
+	constexpr void Transformable::setDirection(float x, float y, float z, float dutchAngle)
 	{
-		_rotation.setFromUnitVectorRotation(0.f, 0.f, -1.f, x, y, z);
+		_rotation.setFromUnitVectorRotation(0.f, 0.f, -1.f, x, y, z, dutchAngle);
 
 		_transform.reset();
 		_invTransform.reset();

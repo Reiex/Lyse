@@ -214,26 +214,74 @@ namespace scp
 	}
 
 	template<typename TValue>
-	constexpr void Quat<TValue>::setFromUnitVectorRotation(const TValue& xFrom, const TValue& yFrom, const TValue& zFrom, const TValue& xTo, const TValue& yTo, const TValue& zTo)
+	constexpr void Quat<TValue>::setFromUnitVectorRotation(const TValue& xFrom, const TValue& yFrom, const TValue& zFrom, const TValue& xTo, const TValue& yTo, const TValue& zTo, float dutchAngle)
 	{
 		assert(std::abs(xFrom * xFrom + yFrom * yFrom + zFrom * zFrom - _one) < 1e-2f);
 		assert(std::abs(xTo * xTo + yTo * yTo + zTo * zTo - _one) < 1e-2f);
 
-		if (xFrom == -xTo && yFrom == -yTo && zFrom == -zTo)
+		const TValue halfAngle = dutchAngle / 2;
+		const TValue sinHalfAngle = std::sin(halfAngle);
+		const TValue cosHalfAngle = std::cos(halfAngle);
+
+		const TValue xN = yFrom * zTo - yTo * zFrom;
+		const TValue yN = zFrom * xTo - zTo * xFrom;
+		const TValue zN = xFrom * yTo - xTo * yFrom;
+		const TValue nLength = std::sqrt(xN * xN + yN * yN + zN * zN);
+
+		// if vFrom is colinear to vTo
+
+		if (nLength == _zero)
 		{
-			w = _zero;
-			x = _one;
-			y = _zero;
-			z = _zero;
+			// if vFrom == vTo
+
+			if (std::signbit(xFrom) == std::signbit(yFrom))
+			{
+				w = cosHalfAngle;
+				x = xFrom * sinHalfAngle;
+				y = yFrom * sinHalfAngle;
+				z = zFrom * sinHalfAngle;
+			}
+
+			// if vFrom == -vTo
+
+			else
+			{
+				// if vFrom == (1, 0, 0) and vTo == (-1, 0, 0)
+
+				if (xFrom == _one)
+				{
+					w = -yFrom * sinHalfAngle;
+					x = zFrom * sinHalfAngle;
+					y = cosHalfAngle;
+					z = -xFrom * sinHalfAngle;
+				}
+
+				// if vFrom is a random vector and vTo == -vFrom
+
+				else
+				{
+					TValue xAxis = _one - xFrom * xFrom;
+					TValue yAxis = -xFrom * yFrom;
+					TValue zAxis = -xFrom * zFrom;
+					const TValue length = std::sqrt(xAxis * xAxis + yAxis * yAxis + zAxis * zAxis);
+					xAxis /= length;
+					yAxis /= length;
+					zAxis /= length;
+
+					w = (xAxis * xFrom + yAxis * yFrom + zAxis * zFrom) * sinHalfAngle;
+					x = xAxis * cosHalfAngle + (yAxis * zFrom - zAxis * yFrom) * sinHalfAngle;
+					y = yAxis * cosHalfAngle + (zAxis * xFrom + xAxis * zFrom) * sinHalfAngle;
+					z = zAxis * cosHalfAngle + (xAxis * yFrom - yAxis * xFrom) * sinHalfAngle;
+				}
+			}
 		}
+
+		// if vFrom and vTo are not related
+
 		else
 		{
-			const TValue xN = yFrom * zTo - yTo * zFrom;
-			const TValue yN = zFrom * xTo - zTo * xFrom;
-			const TValue zN = xFrom * yTo - xTo * yFrom;
-			const TValue nLength = std::sqrt(xN * xN + yN * yN + zN * zN);
-
 			setFromRotationAxisAngle(xN / nLength, yN / nLength, zN / nLength, std::asin(nLength));
+			*this *= Quat<TValue>(cosHalfAngle, xFrom * sinHalfAngle, yFrom * sinHalfAngle, zFrom * sinHalfAngle);
 		}
 	}
 
