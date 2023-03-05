@@ -214,14 +214,10 @@ namespace scp
 	}
 
 	template<typename TValue>
-	constexpr void Quat<TValue>::setFromUnitVectorRotation(const TValue& xFrom, const TValue& yFrom, const TValue& zFrom, const TValue& xTo, const TValue& yTo, const TValue& zTo, float dutchAngle)
+	constexpr void Quat<TValue>::setFromUnitVectorRotation(const TValue& xFrom, const TValue& yFrom, const TValue& zFrom, const TValue& xTo, const TValue& yTo, const TValue& zTo)
 	{
 		assert(std::abs(xFrom * xFrom + yFrom * yFrom + zFrom * zFrom - _one) < 1e-2f);
 		assert(std::abs(xTo * xTo + yTo * yTo + zTo * zTo - _one) < 1e-2f);
-
-		const TValue halfAngle = dutchAngle / 2;
-		const TValue sinHalfAngle = std::sin(halfAngle);
-		const TValue cosHalfAngle = std::cos(halfAngle);
 
 		const TValue xN = yFrom * zTo - yTo * zFrom;
 		const TValue yN = zFrom * xTo - zTo * xFrom;
@@ -236,10 +232,10 @@ namespace scp
 
 			if (std::signbit(xFrom) == std::signbit(yFrom))
 			{
-				w = cosHalfAngle;
-				x = xFrom * sinHalfAngle;
-				y = yFrom * sinHalfAngle;
-				z = zFrom * sinHalfAngle;
+				w = _one;
+				x = _zero;
+				y = _zero;
+				z = _zero;
 			}
 
 			// if vFrom == -vTo
@@ -250,28 +246,24 @@ namespace scp
 
 				if (xFrom == _one)
 				{
-					w = -yFrom * sinHalfAngle;
-					x = zFrom * sinHalfAngle;
-					y = cosHalfAngle;
-					z = -xFrom * sinHalfAngle;
+					w = _zero;
+					x = _zero;
+					y = _one;
+					z = _zero;
 				}
 
 				// if vFrom is a random vector and vTo == -vFrom
 
 				else
 				{
-					TValue xAxis = _one - xFrom * xFrom;
-					TValue yAxis = -xFrom * yFrom;
-					TValue zAxis = -xFrom * zFrom;
-					const TValue length = std::sqrt(xAxis * xAxis + yAxis * yAxis + zAxis * zAxis);
-					xAxis /= length;
-					yAxis /= length;
-					zAxis /= length;
-
-					w = (xAxis * xFrom + yAxis * yFrom + zAxis * zFrom) * sinHalfAngle;
-					x = xAxis * cosHalfAngle + (yAxis * zFrom - zAxis * yFrom) * sinHalfAngle;
-					y = yAxis * cosHalfAngle + (zAxis * xFrom + xAxis * zFrom) * sinHalfAngle;
-					z = zAxis * cosHalfAngle + (xAxis * yFrom - yAxis * xFrom) * sinHalfAngle;
+					w = _zero;
+					x = _one - xFrom * xFrom;
+					y = -xFrom * yFrom;
+					z = -xFrom * zFrom;
+					const TValue invLength = _one / std::sqrt(x * x + y * y + z * z);
+					x *= invLength;
+					y *= invLength;
+					z *= invLength;
 				}
 			}
 		}
@@ -280,8 +272,15 @@ namespace scp
 
 		else
 		{
-			setFromRotationAxisAngle(xN / nLength, yN / nLength, zN / nLength, std::asin(nLength));
-			*this *= Quat<TValue>(cosHalfAngle, xFrom * sinHalfAngle, yFrom * sinHalfAngle, zFrom * sinHalfAngle);
+			TValue angle = std::asin(nLength);
+			const TValue dotFromTo = xFrom * xTo + yFrom * yTo + zFrom * zTo;
+			if (dotFromTo < _zero)
+			{
+				angle = std::numbers::pi - angle;
+			}
+
+			const TValue nInvLength = _one / nLength;
+			setFromRotationAxisAngle(xN * nInvLength, yN * nInvLength, zN * nInvLength, angle);
 		}
 	}
 

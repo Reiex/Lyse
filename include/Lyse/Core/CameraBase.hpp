@@ -22,7 +22,7 @@ namespace lys
 		public:
 
 			// TODO: I have a dream ! That maths functions have a constexpr implementation !
-			inline void lookAt(const scp::f32vec3& position, float dutchAngle = 0.f);
+			constexpr void lookAt(const scp::f32vec3& position, float dutchAngle = 0.f);
 
 
 			inline void updateAndBindUbo(uint32_t bindingIndex) const;

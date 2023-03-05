@@ -257,7 +257,7 @@ vec2 viewDirToProjectionCoords(in const vec3 viewDir)
 
 	vec2 hDir = normalize(viewDir.xz);
 	result.x = atan(hDir.y, hDir.x) * c_inv2pi;
-	result.y = -asin(viewDir.y) * c_invPi + 0.5;
+	result.y = asin(viewDir.y) * c_invPi + 0.5;
 
 	return result;
 }

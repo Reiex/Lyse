@@ -27,14 +27,37 @@ namespace lys
 	{
 	}
 
-	inline void CameraBase::lookAt(const scp::f32vec3& position, float dutchAngle)
+	constexpr void CameraBase::lookAt(const scp::f32vec3& position, float dutchAngle)
 	{
-		if (scp::distance(position, getTranslation()) == 0.f)
+		const scp::f32vec3& camPos = getTranslation();
+		const scp::f32vec3 dir = position - camPos;
+		const float dirLength = dir.x * dir.x + dir.y * dir.y + dir.z * dir.z;
+
+		if (dirLength == 0.f)
 		{
 			return;
 		}
 
-		setDirection(scp::normalize(position - getTranslation()), dutchAngle);
+		const float halfPitch = std::asin(dir.y / std::sqrt(dirLength)) * 0.5f;
+		const float sinHalfPitch = std::sin(halfPitch);
+		const float cosHalfPitch = std::cos(halfPitch);
+
+		const float halfYaw = std::atan2(-dir.x, -dir.z) * 0.5f;
+		const float sinHalfYaw = std::sin(halfYaw);
+		const float cosHalfYaw = std::cos(halfYaw);
+
+		const float halfDutch = dutchAngle * 0.5f;
+		const float sinHalfDutch = std::sin(halfDutch);
+		const float cosHalfDutch = std::cos(halfDutch);
+
+		const scp::f32quat q(
+			cosHalfYaw * cosHalfPitch * cosHalfDutch - sinHalfYaw * sinHalfPitch * sinHalfDutch,
+			cosHalfYaw * sinHalfPitch * cosHalfDutch + sinHalfYaw * cosHalfPitch * sinHalfDutch,
+			cosHalfYaw * sinHalfPitch * sinHalfDutch + sinHalfYaw * cosHalfPitch * cosHalfDutch,
+			cosHalfYaw * cosHalfPitch * sinHalfDutch - sinHalfYaw * sinHalfPitch * cosHalfDutch
+		);
+
+		setRotation(q);
 	}
 
 	inline void CameraBase::updateAndBindUbo(uint32_t bindingIndex) const
