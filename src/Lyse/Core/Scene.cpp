@@ -90,6 +90,9 @@ namespace lys
 		shadowMapCreationParams.height = _shadowMapResolution.y;
 		shadowMapCreationParams.depth = maxShadowMapCount;
 		_shadowMaps.createNew(shadowMapCreationParams);
+		_shadowMaps.setBorderColor(1.f, 1.f, 1.f, 1.f);
+		_shadowMaps.setWrappingS(spl::TextureWrapping::ClampToBorder);
+		_shadowMaps.setWrappingT(spl::TextureWrapping::ClampToBorder);
 
 		_screenVao.setAttributeFormat(0, spl::GlslType::FloatVec2, 0);
 		_screenVao.setAttributeEnabled(0, true);
@@ -331,7 +334,7 @@ namespace lys
 		}
 		
 		mergeShader->setUniform("u_tanHalfFov", std::tan(_camera->getFieldOfView() * 0.5f));
-		mergeShader->setUniform("u_blurOffset", scp::f32vec2(2.f / _resolution.x, 2.f / _resolution.y));
+		mergeShader->setUniform("u_blurOffset", scp::f32vec2(1.f / _resolution.x, 1.f / _resolution.y));
 		
 		_screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
 		

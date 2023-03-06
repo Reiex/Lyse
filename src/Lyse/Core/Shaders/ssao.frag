@@ -60,11 +60,11 @@ void main()
 	float occlusion = 0.0;
 	for (uint i = 1; i <= u_sampleCount; ++i)
 	{
+		// Initial vector is not uniform (cos, etc..) because more light comes from normal angle than from grazing angle
+		// Scale factor is not uniform because more light comes from near diffusors than far ones...
 		const float theta = random(seed) * c_2pi;
 		const float phi = random(seed) * c_halfPi;
 		const float cPhi = cos(phi);
-		// Initial vector is not uniform (cos, etc..) because more light comes from normal angle than from grazing angle
-		// Scale factor is not uniform because more light comes from near diffusors than far ones...
 		const vec3 randomVec = vec3(cos(theta) * cPhi, sin(theta) * cPhi, sin(phi)) * i * i * u_scaleStep;
 
 		const vec3 viewPos = position + tbn * randomVec;

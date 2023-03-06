@@ -67,7 +67,8 @@ struct ShadowCamerasData
 
 // Constants
 
-const float c_epsilon = 1e-5;
+const float c_epsilon = 0.00001;
+const float c_oneMinusEpsilon = 0.99999;
 const float c_halfPi = 1.57079632679;
 const float c_pi = 3.14159265359;
 const float c_2pi = 6.28318530718;

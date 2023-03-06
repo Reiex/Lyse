@@ -20,6 +20,8 @@ int main()
 	// scene.addDrawable(&mesh);
 	// scene.addLight(&light);
 
+	lys::Scene scene(window.getSize().x, window.getSize().y);
+
 	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 10.f);
 	camera.setTranslation({ 0.f, 0.f, 3.f });
 	
@@ -46,7 +48,6 @@ int main()
 	lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, lightColor.x, lightColor.y, lightColor.z, 10.f);
 	light.setCastShadows(true);
 
-	lys::Scene scene(window.getSize().x, window.getSize().y);
 	scene.setCamera(&camera);
 	scene.setBackgroundEquirectangular(&background);
 	scene.addDrawable(&mesh);

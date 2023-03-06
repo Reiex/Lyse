@@ -39,8 +39,8 @@ out VertexOutput
 void main()
 {
 	io_vertexOutput.position = (ubo_drawable.viewModel * va_position).xyz;
-	io_vertexOutput.normal = normalize(ubo_drawable.viewModel * va_normal).xyz;
-	io_vertexOutput.tangent = normalize(ubo_drawable.viewModel * va_tangent).xyz;
+	io_vertexOutput.normal = normalize(ubo_drawable.viewModel * va_normal).xyz;		// TODO: Change that ! Not OK for non-uniform scale !
+	io_vertexOutput.tangent = normalize(ubo_drawable.viewModel * va_tangent).xyz;	// TODO: Change that ! Not OK for non-uniform scale !
 	io_vertexOutput.texCoords = va_texCoords.xy;
 
 	gl_Position = ubo_camera.projection * vec4(io_vertexOutput.position, 1.0);
