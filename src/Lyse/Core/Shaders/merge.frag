@@ -100,87 +100,82 @@ void main()
 		#endif
 	}
 
-	// Else, compute fragment lighting
+	// Retrieve fragment information from precedent passes
 
-	else
+	const vec3 color = texture(u_color, io_texCoords).rgb;
+	const vec3 material = texture(u_material, io_texCoords).rgb;
+	const vec3 normal = normalize(texture(u_normal, io_texCoords).rgb);
+
+	// Pre-compute useful constants
+
+	const vec3 eyeDir = -viewDir;
+
+	const float metallic = material.y;
+	const float roughness = material.z;
+	const float roughnessSq = roughness * roughness;
+	const float roughnessSqSq = roughnessSq * roughnessSq;
+	const float geometryConstant = roughnessSq * 0.125;
+		
+	const vec3 normalFresnelReflectance = mix(c_dielectricNormalFresnelReflectance, color, metallic);	// TODO: Check that formula...
+
+	const float dotNormalViewDir = max(dot(normal, eyeDir), c_epsilon);
+	const float geometryView = geometryGGX(dotNormalViewDir, geometryConstant);
+		
+	// Compute ambiant lighting
+
+	const vec3 ambiant = color * (material.x * computeSsaoValue());
+
+	// Iterator over each light source for diffuse and specular lighting
+
+	vec3 diffuse = vec3(0.0);
+	vec3 specular = vec3(0.0);
+	for (uint i = 0; i < ubo_lights.count; ++i)
 	{
-		// Retrieve fragment information from precedent passes
+		// If fragment is totally in shadow, skip lighting, else apply an occlusion factor
 
-		const vec3 color = texture(u_color, io_texCoords).rgb;
-		const vec3 material = texture(u_material, io_texCoords).rgb;
-		const vec3 normal = normalize(texture(u_normal, io_texCoords).rgb);
+		float occlusion = computeShadowOcclusion(position, i);
 
-		// Pre-compute useful constants
-
-		const vec3 eyeDir = -viewDir;
-
-		const float metallic = material.y;
-		const float roughness = material.z;
-		const float roughnessSq = roughness * roughness;
-		const float roughnessSqSq = roughnessSq * roughnessSq;
-		const float geometryConstant = roughnessSq * 0.125;
-		
-		const vec3 normalFresnelReflectance = mix(c_dielectricNormalFresnelReflectance, color, metallic);	// TODO: Check that formula...
-
-		const float dotNormalViewDir = max(dot(normal, eyeDir), c_epsilon);
-		const float geometryView = geometryGGX(dotNormalViewDir, geometryConstant);
-		
-		// Compute ambiant lighting
-
-		const vec3 ambiant = color * (material.x * computeSsaoValue());
-
-		// Iterator over each light source for diffuse and specular lighting
-
-		vec3 diffuse = vec3(0.0);
-		vec3 specular = vec3(0.0);
-		for (uint i = 0; i < ubo_lights.count; ++i)
+		if (occlusion == 1.0)
 		{
-			// If fragment is totally in shadow, skip lighting, else apply an occlusion factor
-
-			float occlusion = computeShadowOcclusion(position, i);
-
-			if (occlusion == 1.0)
-			{
-				continue;
-			}
-
-			// Compute light direction and radiance depending on light type and parameters. If light is too low, skip lighting
-
-			vec3 lightDir, radiance;
-			computeLightDirAndRadiance(position, i, lightDir, radiance);
-
-			const float dotNormalLightDir = max(dot(normal, lightDir), c_epsilon);
-			radiance *= dotNormalLightDir * (1.0 - occlusion);
-
-			if (length(radiance) < c_epsilon)
-			{
-				continue;
-			}
-
-			// Finaly compute diffuse and specular lighting for this light source
-
-			const vec3 halfDir = normalize(lightDir + eyeDir);
-
-			const vec3 fresnelReflectance = fresnelSchlick(halfDir, lightDir, normalFresnelReflectance);
-			const float distribution = distributionGGX(normal, halfDir, roughnessSqSq);
-			const float geometryLight = geometryGGX(dotNormalLightDir, geometryConstant);
-
-			diffuse += radiance * (1.0 - fresnelReflectance);
-			specular += radiance * fresnelReflectance * distribution * geometryLight / dotNormalLightDir;
+			continue;
 		}
 
-		diffuse *= color * (1.0 - metallic) / c_pi;
-		specular *= geometryView / (4.0 * dotNormalViewDir);
+		// Compute light direction and radiance depending on light type and parameters. If light is too low, skip lighting
 
-		vec3 rawColor = ambiant + diffuse + specular;
+		vec3 lightDir, radiance;
+		computeLightDirAndRadiance(position, i, lightDir, radiance);
 
-		// Apply HDR and gamma correction to final fragment color
+		const float dotNormalLightDir = max(dot(normal, lightDir), c_epsilon);
+		radiance *= dotNormalLightDir * (1.0 - occlusion);
 
-		rawColor = rawColor / (rawColor + 0.5);
-		rawColor = pow(rawColor, vec3(1.0 / 1.2));
+		if (length(radiance) < c_epsilon)
+		{
+			continue;
+		}
 
-		fo_output = rawColor;
+		// Finaly compute diffuse and specular lighting for this light source
+
+		const vec3 halfDir = normalize(lightDir + eyeDir);
+
+		const vec3 fresnelReflectance = fresnelSchlick(halfDir, lightDir, normalFresnelReflectance);
+		const float distribution = distributionGGX(normal, halfDir, roughnessSqSq);
+		const float geometryLight = geometryGGX(dotNormalLightDir, geometryConstant);
+
+		diffuse += radiance * (1.0 - fresnelReflectance);
+		specular += radiance * fresnelReflectance * distribution * geometryLight / dotNormalLightDir;
 	}
+
+	diffuse *= color * (1.0 - metallic) / c_pi;
+	specular *= geometryView / (4.0 * dotNormalViewDir);
+
+	vec3 rawColor = ambiant + diffuse + specular;
+
+	// Apply HDR and gamma correction to final fragment color
+
+	rawColor = rawColor / (rawColor + 0.5);
+	rawColor = pow(rawColor, vec3(1.0 / 1.2));
+
+	fo_output = rawColor;
 }
 
 vec2 viewDirToBackgroundProjection(in const vec3 modelViewDir)
