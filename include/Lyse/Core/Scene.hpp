@@ -38,17 +38,16 @@ namespace lys
 			void removeDrawable(const Drawable* drawable);
 	
 
-			void render() const;
+			void render();
 
 
 			const spl::Texture2D* getDepthTexture() const;
-			const spl::Texture2D* getStencilTexture() const;
 			const spl::Texture2D* getColorTexture() const;
 			const spl::Texture2D* getMaterialTexture() const;
 			const spl::Texture2D* getNormalTexture() const;
 			const spl::Texture2D* getTangentTexture() const;
 
-			const spl::Texture* getShadowMaps() const;
+			const spl::Texture* getShadowTextures() const;
 
 			const spl::Texture2D* getSsaoTexture() const;
 
@@ -67,9 +66,9 @@ namespace lys
 
 			void _loadShaders();
 
-			const void _updateAndBindUboLights(uint32_t index, std::vector<const CameraBase*>& shadowCameras) const;
-			const void _updateAndBindUboDrawable(uint32_t index, const CameraBase* camera, const Drawable* drawable) const;
-			const void _updateAndBindUboShadowCameras(uint32_t index, const std::vector<const CameraBase*>& shadowCameras) const;
+			const void _updateAndBindUboLights(uint32_t index, std::vector<const CameraBase*>& shadowCameras);
+			const void _updateAndBindUboDrawable(uint32_t index, const CameraBase* camera, const Drawable* drawable);
+			const void _updateAndBindUboShadowCameras(uint32_t index, const std::vector<const CameraBase*>& shadowCameras);
 			void _insertInDrawSequence(void* pDrawSequence, const Drawable* drawable, ShaderType shaderType) const;
 
 			static void _setGBufferUniforms(const std::pair<const spl::ShaderProgram*, const GBufferShaderInterface*>& gBuffer, const Drawable* drawable);
@@ -82,13 +81,23 @@ namespace lys
 			std::vector<spl::ShaderProgram*> _shaders;
 			std::unordered_map<DrawableType, std::vector<ShaderSet>> _shaderMap;
 
+			spl::Texture2D _depthTexture;
+			spl::Texture2D _colorTexture;
+			spl::Texture2D _materialTexture;
+			spl::Texture2D _normalTexture;
+			spl::Texture2D _tangentTexture;
 			spl::Framebuffer _gBufferFramebuffer;
+
+			spl::Texture _shadowTextures;
 			spl::Framebuffer _shadowMappingFramebuffer;
+
+			spl::Texture2D _ssaoTexture;
 			spl::Framebuffer _ssaoFramebuffer;
+
+			spl::Texture2D _mergeTexture;
 			spl::Framebuffer _mergeFramebuffer;
 
-			mutable spl::Texture _shadowMaps;
-			mutable spl::Buffer _uboShadowCameras;
+			spl::Buffer _uboShadowCameras;
 
 			scp::f32vec3 _clearColor;
 			const spl::Texture* _background;
@@ -97,10 +106,10 @@ namespace lys
 			const CameraBase* _camera;
 			
 			std::unordered_set<const LightBase*> _lights;
-			mutable spl::Buffer _uboLights;
+			spl::Buffer _uboLights;
 
 			std::unordered_set<const Drawable*> _drawables;
-			mutable spl::Buffer _uboDrawable;
+			spl::Buffer _uboDrawable;
 
 			spl::VertexArray _screenVao;
 			spl::Buffer _screenVbo;

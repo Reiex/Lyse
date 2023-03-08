@@ -61,38 +61,56 @@ namespace lys
 	Scene::Scene(uint32_t width, uint32_t height) :
 		_shaders(),
 		_shaderMap(),
+
+		_depthTexture(),
+		_colorTexture(),
+		_materialTexture(),
+		_normalTexture(),
+		_tangentTexture(),
 		_gBufferFramebuffer(),
+
+		_shadowTextures(),
 		_shadowMappingFramebuffer(),
+
+		_ssaoTexture(),
 		_ssaoFramebuffer(),
+
+		_mergeTexture(),
 		_mergeFramebuffer(),
-		_shadowMaps(),
+
 		_uboShadowCameras(sizeof(UboShadowCamerasData), spl::BufferStorageFlags::DynamicStorage),
+
 		_clearColor(0.f, 0.f, 0.f),
 		_background(nullptr),
+
 		_resolution(width, height),
 		_camera(nullptr),
+
 		_lights(),
 		_uboLights(sizeof(UboLightsData), spl::BufferStorageFlags::DynamicStorage),
+
 		_drawables(),
 		_uboDrawable(sizeof(UboDrawableData), spl::BufferStorageFlags::DynamicStorage),
+
 		_screenVao(),
 		_screenVbo()
 	{
 		_loadShaders();
+
+
+		spl::TextureCreationParams shadowTextureCreationParams;
+		shadowTextureCreationParams.target = spl::TextureTarget::Array2D;
+		shadowTextureCreationParams.internalFormat = spl::TextureInternalFormat::Depth_nu16;
+		shadowTextureCreationParams.width = _shadowMapResolution.x;
+		shadowTextureCreationParams.height = _shadowMapResolution.y;
+		shadowTextureCreationParams.depth = maxShadowMapCount;
+		_shadowTextures.createNew(shadowTextureCreationParams);
+		_shadowTextures.setBorderColor(1.f, 1.f, 1.f, 1.f);
+		_shadowTextures.setWrappingS(spl::TextureWrapping::ClampToBorder);
+		_shadowTextures.setWrappingT(spl::TextureWrapping::ClampToBorder);
+
 		resize(width, height);
 
-		_shadowMappingFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::DepthAttachment, _shadowMapResolution.x, _shadowMapResolution.y, spl::TextureInternalFormat::Depth_nu16);
-
-		spl::TextureCreationParams shadowMapCreationParams;
-		shadowMapCreationParams.target = spl::TextureTarget::Array2D;
-		shadowMapCreationParams.internalFormat = spl::TextureInternalFormat::Depth_nu16;
-		shadowMapCreationParams.width = _shadowMapResolution.x;
-		shadowMapCreationParams.height = _shadowMapResolution.y;
-		shadowMapCreationParams.depth = maxShadowMapCount;
-		_shadowMaps.createNew(shadowMapCreationParams);
-		_shadowMaps.setBorderColor(1.f, 1.f, 1.f, 1.f);
-		_shadowMaps.setWrappingS(spl::TextureWrapping::ClampToBorder);
-		_shadowMaps.setWrappingT(spl::TextureWrapping::ClampToBorder);
 
 		_screenVao.setAttributeFormat(0, spl::GlslType::FloatVec2, 0);
 		_screenVao.setAttributeEnabled(0, true);
@@ -109,16 +127,22 @@ namespace lys
 		_resolution.x = width;
 		_resolution.y = height;
 
-		/* Depth    */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::DepthAttachment, width, height, spl::TextureInternalFormat::Depth_nu32);
-		// TODO : Stencil
-		/* Color    */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, width, height, spl::TextureInternalFormat::RGB_nu8);
-		/* Material */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment1, width, height, spl::TextureInternalFormat::RGB_nu8);
-		/* Normal   */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment2, width, height, spl::TextureInternalFormat::RGB_ni16);
-		/* Tangent  */ _gBufferFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment3, width, height, spl::TextureInternalFormat::RGB_ni16);
+		_depthTexture.createNew(_resolution.x, _resolution.y, spl::TextureInternalFormat::Depth_nu32);
+		_colorTexture.createNew(_resolution.x, _resolution.y, spl::TextureInternalFormat::RGB_nu16);
+		_materialTexture.createNew(_resolution.x, _resolution.y, spl::TextureInternalFormat::RGB_nu16);
+		_normalTexture.createNew(_resolution.x, _resolution.y, spl::TextureInternalFormat::RGB_ni16);
+		_tangentTexture.createNew(_resolution.x, _resolution.y, spl::TextureInternalFormat::RGB_ni16);
+		_gBufferFramebuffer.attachTexture(spl::FramebufferAttachment::DepthAttachment, 0, &_depthTexture);
+		_gBufferFramebuffer.attachTexture(spl::FramebufferAttachment::ColorAttachment, 0, &_colorTexture);
+		_gBufferFramebuffer.attachTexture(spl::FramebufferAttachment::ColorAttachment, 1, &_materialTexture);
+		_gBufferFramebuffer.attachTexture(spl::FramebufferAttachment::ColorAttachment, 2, &_normalTexture);
+		_gBufferFramebuffer.attachTexture(spl::FramebufferAttachment::ColorAttachment, 3, &_tangentTexture);
 
-		_ssaoFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, width, height, spl::TextureInternalFormat::R_nu16);
+		_ssaoTexture.createNew(_resolution.x, _resolution.y, spl::TextureInternalFormat::R_nu16);
+		_ssaoFramebuffer.attachTexture(spl::FramebufferAttachment::ColorAttachment, 0, &_ssaoTexture);
 
-		_mergeFramebuffer.createNewTextureAttachment<spl::Texture2D>(spl::FramebufferAttachment::ColorAttachment0, width, height, spl::TextureInternalFormat::RGB_nu8);
+		_mergeTexture.createNew(_resolution.x, _resolution.y, spl::TextureInternalFormat::RGB_nu16);
+		_mergeFramebuffer.attachTexture(spl::FramebufferAttachment::ColorAttachment, 0, &_mergeTexture);
 	}
 
 	void Scene::setBackgroundFlatColor(float red, float green, float blue)
@@ -182,7 +206,7 @@ namespace lys
 		_drawables.erase(drawable);
 	}
 
-	void Scene::render() const
+	void Scene::render()
 	{
 		assert(isValid());
 
@@ -256,6 +280,7 @@ namespace lys
 		shadowMapUpdateParams.width = _shadowMapResolution.x;
 		shadowMapUpdateParams.height = _shadowMapResolution.y;
 
+		uint32_t shadowIndex = 0;
 		for (const CameraBase* shadowCamera : shadowCameras)
 		{
 			spl::Framebuffer::clear(false, true, false);
@@ -276,8 +301,8 @@ namespace lys
 				elt.second->_draw();
 			}
 
-			_shadowMaps.update(shadowMapUpdateParams);
-			++shadowMapUpdateParams.zOffset;
+			_shadowMappingFramebuffer.attachTexture(spl::FramebufferAttachment::DepthAttachment, 0, &_shadowTextures, 0, shadowIndex);
+			++shadowIndex;
 		}
 		
 		context->setViewport(0, 0, _resolution.x, _resolution.y);
@@ -324,7 +349,7 @@ namespace lys
 		mergeShader->setUniform("u_material", 2, getMaterialTexture());
 		mergeShader->setUniform("u_normal", 3, getNormalTexture());
 		
-		mergeShader->setUniform("u_shadow", 4, getShadowMaps());
+		mergeShader->setUniform("u_shadow", 4, getShadowTextures());
 		
 		mergeShader->setUniform("u_ssao", 5, getSsaoTexture());
 		
@@ -345,47 +370,42 @@ namespace lys
 
 	const spl::Texture2D* Scene::getDepthTexture() const
 	{
-		return dynamic_cast<const spl::Texture2D*>(_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::DepthAttachment));
-	}
-
-	const spl::Texture2D* Scene::getStencilTexture() const
-	{
-		return dynamic_cast<const spl::Texture2D*>(_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::StencilAttachment));
+		return &_depthTexture;
 	}
 
 	const spl::Texture2D* Scene::getColorTexture() const
 	{
-		return dynamic_cast<const spl::Texture2D*>(_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
+		return &_colorTexture;
 	}
 
 	const spl::Texture2D* Scene::getMaterialTexture() const
 	{
-		return dynamic_cast<const spl::Texture2D*>(_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment1));
+		return &_materialTexture;
 	}
 
 	const spl::Texture2D* Scene::getNormalTexture() const
 	{
-		return dynamic_cast<const spl::Texture2D*>(_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment2));
+		return &_normalTexture;
 	}
 
 	const spl::Texture2D* Scene::getTangentTexture() const
 	{
-		return dynamic_cast<const spl::Texture2D*>(_gBufferFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment3));
+		return &_tangentTexture;
 	}
 
-	const spl::Texture* Scene::getShadowMaps() const
+	const spl::Texture* Scene::getShadowTextures() const
 	{
-		return &_shadowMaps;
+		return &_shadowTextures;
 	}
 
 	const spl::Texture2D* Scene::getSsaoTexture() const
 	{
-		return dynamic_cast<const spl::Texture2D*>(_ssaoFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
+		return &_ssaoTexture;
 	}
 
 	const spl::Texture2D* Scene::getRenderTexture() const
 	{
-		return dynamic_cast<const spl::Texture2D*>(_mergeFramebuffer.getTextureAttachment(spl::FramebufferAttachment::ColorAttachment0));
+		return &_mergeTexture;
 	}
 
 	bool Scene::isValid() const
@@ -524,7 +544,7 @@ namespace lys
 		};
 	}
 
-	const void Scene::_updateAndBindUboLights(uint32_t index, std::vector<const CameraBase*>& shadowCameras) const
+	const void Scene::_updateAndBindUboLights(uint32_t index, std::vector<const CameraBase*>& shadowCameras)
 	{
 		thread_local static UboLightsData uboLightsData;
 
@@ -553,7 +573,7 @@ namespace lys
 		spl::Buffer::bind(spl::BufferTarget::Uniform, &_uboLights, index);
 	}
 
-	const void Scene::_updateAndBindUboDrawable(uint32_t index, const CameraBase* camera, const Drawable* drawable) const
+	const void Scene::_updateAndBindUboDrawable(uint32_t index, const CameraBase* camera, const Drawable* drawable)
 	{
 		thread_local static UboDrawableData uboDrawableData;
 
@@ -569,7 +589,7 @@ namespace lys
 		spl::Buffer::bind(spl::BufferTarget::Uniform, &_uboDrawable, index);
 	}
 
-	const void Scene::_updateAndBindUboShadowCameras(uint32_t index, const std::vector<const CameraBase*>& shadowCameras) const
+	const void Scene::_updateAndBindUboShadowCameras(uint32_t index, const std::vector<const CameraBase*>& shadowCameras)
 	{
 		assert(shadowCameras.size() <= maxShadowMapCount);
 

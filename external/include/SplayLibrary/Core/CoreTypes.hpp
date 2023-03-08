@@ -77,6 +77,8 @@ namespace spl
 	enum class TextureWrapping;
 	class Sampler;
 
+	class FramebufferAttachable;
+
 	enum class TextureTarget;
 	enum class TextureFormat;
 	enum class TextureDataType;

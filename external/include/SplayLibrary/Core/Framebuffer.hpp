@@ -21,15 +21,7 @@ namespace spl
 	{
 		DepthAttachment,
 		StencilAttachment,
-		DepthStencilAttachment,
-		ColorAttachment0,	ColorAttachment1,	ColorAttachment2,	ColorAttachment3,
-		ColorAttachment4,	ColorAttachment5,	ColorAttachment6,	ColorAttachment7,
-		ColorAttachment8,	ColorAttachment9,	ColorAttachment10,	ColorAttachment11,
-		ColorAttachment12,	ColorAttachment13,	ColorAttachment14,	ColorAttachment15,
-		ColorAttachment16,	ColorAttachment17,	ColorAttachment18,	ColorAttachment19,
-		ColorAttachment20,	ColorAttachment21,	ColorAttachment22,	ColorAttachment23,
-		ColorAttachment24,	ColorAttachment25,	ColorAttachment26,	ColorAttachment27,
-		ColorAttachment28,	ColorAttachment29,	ColorAttachment30,	ColorAttachment31
+		ColorAttachment
 	};
 
 	class Framebuffer
@@ -43,12 +35,10 @@ namespace spl
 			Framebuffer& operator=(const Framebuffer& framebuffer) = delete;
 			Framebuffer& operator=(Framebuffer&& framebuffer) = delete;
 
-			template<typename TextureType, typename... Args> void createNewTextureAttachment(FramebufferAttachment attachment, Args&&... args);
-			virtual const Texture* getTextureAttachment(FramebufferAttachment attachment) const;
-			virtual void createNewRenderbufferAttachment(FramebufferAttachment attachment, TextureInternalFormat internalFormat, uint32_t width, uint32_t height, uint32_t samples = 0);
-			const Renderbuffer* getRenderbufferAttachment(FramebufferAttachment attachment) const;
-			void removeAttachment(FramebufferAttachment attachment);
+			void attachRenderbuffer(FramebufferAttachment attachment, uint32_t attachmentIndex, Renderbuffer* renderbuffer);
+			void attachTexture(FramebufferAttachment attachment, uint32_t attachmentIndex, Texture* texture, uint32_t layer = -1, uint32_t level = 0);
 
+			bool isValid() const;
 			uint32_t getHandle() const;
 
 			virtual ~Framebuffer();
@@ -63,11 +53,12 @@ namespace spl
 
 		private:
 
-			void _attachTexture(FramebufferAttachment attachment);
+			void _removeAttachment(const FramebufferAttachable* attachment);
 			void _updateDrawBuffers();
 
 			uint32_t _framebuffer;
-			std::unordered_map<FramebufferAttachment, Texture*> _textureAttachments;
-			std::unordered_map<FramebufferAttachment, Renderbuffer*> _renderbufferAttachments;
+			std::vector<FramebufferAttachable*> _attachments;
+
+		friend class FramebufferAttachable;
 	};
 }

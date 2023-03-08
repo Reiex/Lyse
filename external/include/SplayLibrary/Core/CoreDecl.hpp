@@ -18,6 +18,7 @@
 #include <SplayLibrary/Core/Buffer.hpp>
 
 #include <SplayLibrary/Core/Sampler.hpp>
+#include <SplayLibrary/Core/FramebufferAttachable.hpp>
 #include <SplayLibrary/Core/Texture.hpp>
 #include <SplayLibrary/Core/Renderbuffer.hpp>
 #include <SplayLibrary/Core/Texture/Texture2D.hpp>

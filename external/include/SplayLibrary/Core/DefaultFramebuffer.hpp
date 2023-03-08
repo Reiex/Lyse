@@ -26,14 +26,11 @@ namespace spl
 		private:
 
 			DefaultFramebuffer(Window* window);
+
+			using Framebuffer::attachRenderbuffer;
+			using Framebuffer::attachTexture;
 			
-			using Framebuffer::createNewTextureAttachment;
-			using Framebuffer::getTextureAttachment;
-			using Framebuffer::createNewRenderbufferAttachment;
-			using Framebuffer::getRenderbufferAttachment;
-			using Framebuffer::removeAttachment;
-			
-			~DefaultFramebuffer() = default;
+			virtual ~DefaultFramebuffer() override final = default;
 
 		friend class Window;
 	};

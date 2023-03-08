@@ -234,7 +234,7 @@ namespace spl
 		uint32_t level = 0;
 	};
 
-	class Texture
+	class Texture : public FramebufferAttachable
 	{
 		public:
 
@@ -249,6 +249,9 @@ namespace spl
 
 			void createNew(const TextureCreationParams& params);
 			void update(const TextureUpdateParams& params);
+			// TODO: glClearTexSubImage
+			// TODO: glInvalidateTexSubImage
+			// TODO: Texture views (new class that Texture inherits from ?)
 			void destroy();
 
 
@@ -284,7 +287,7 @@ namespace spl
 			TextureWrapping getWrappingR() const;
 
 
-			virtual ~Texture();
+			virtual ~Texture() override;
 
 
 			static void bind(const Texture* texture, uint32_t textureUnit);

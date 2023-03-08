@@ -212,7 +212,6 @@ namespace spl
 	{
 		public:
 
-			// TODO: Give the possibility to not retrieve all the shader resource/interface informations directly !
 			ShaderProgram();
 			ShaderProgram(const std::filesystem::path& glslCompute, ShaderProgramFlags::Flags flags = ShaderProgramFlags::None);
 			ShaderProgram(const std::filesystem::path& glslVertex, const std::filesystem::path& glslFragment, ShaderProgramFlags::Flags flags = ShaderProgramFlags::None);
@@ -250,6 +249,8 @@ namespace spl
 			template<CGlslMatType TMat> void setUniform(const std::string& name, const TMat& mat) const;
 			template<CGlslMatType TMat> void setUniform(const std::string& name, const TMat* mats, uint32_t count) const;
 			void setUniform(const std::string& name, uint32_t textureUnit, const Texture* texture) const;
+			// TODO: Image textures (and not just sampled textures)
+
 
 			void setUniformBlockBinding(uint32_t shaderBindingIndex, uint32_t bufferBindingIndex) const;
 			void setShaderStorageBlockBinding(uint32_t shaderBindingIndex, uint32_t bufferBindingIndex) const;

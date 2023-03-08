@@ -40,7 +40,7 @@ namespace spl
 		constexpr GLenum indexTypeToGLenum(IndexType indexType);
 
 		constexpr GLenum framebufferTargetToGLenum(FramebufferTarget target);
-		constexpr GLenum framebufferAttachmentToGLenum(FramebufferAttachment attachment);
+		constexpr GLenum attachmentIndexToGLenum(uint32_t index);
 
 		constexpr DebugMessageSource glToDebugMessageSource(GLenum source);
 		constexpr DebugMessageType glToDebugMessageType(GLenum type);

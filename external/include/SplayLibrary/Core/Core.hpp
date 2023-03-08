@@ -21,4 +21,3 @@
 
 #include <SplayLibrary/Core/templates/ShaderProgram.hpp>
 
-#include <SplayLibrary/Core/templates/Framebuffer.hpp>
