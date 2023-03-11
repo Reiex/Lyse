@@ -22,7 +22,6 @@ namespace lys
 		bool shadowMappingEnabled = true;
 		uint32_t shadowMapCount = 64;
 		scp::u32vec2 shadowMapResolution = { 2048, 2048 };
-		// shadowMapCascadeCount
 		spl::TextureInternalFormat shadowTextureFormat = spl::TextureInternalFormat::Depth_nu16;
 
 		bool ssaoEnabled = true;

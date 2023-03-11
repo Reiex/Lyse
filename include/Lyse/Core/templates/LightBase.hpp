@@ -12,7 +12,7 @@
 namespace lys
 {
 	constexpr LightBase::LightBase(float r, float g, float b, float intensity) :
-		_castShadows(false),
+		_shadowCascadeSize(0),
 		_color(1.f, 1.f, 1.f),
 		_intensity(1.f)
 	{
@@ -20,9 +20,9 @@ namespace lys
 		setIntensity(intensity);
 	}
 
-	constexpr void LightBase::setCastShadows(bool castShadows)
+	constexpr void LightBase::setShadowCascadeSize(uint32_t count)
 	{
-		_castShadows = castShadows;
+		_shadowCascadeSize = count;
 	}
 
 	constexpr void LightBase::setColor(float r, float g, float b)
@@ -43,9 +43,9 @@ namespace lys
 		_intensity = intensity;
 	}
 
-	constexpr bool LightBase::getCastShadows() const
+	constexpr uint32_t LightBase::getShadowCascadeSize() const
 	{
-		return _castShadows;
+		return _shadowCascadeSize;
 	}
 
 	constexpr const scp::f32vec3& LightBase::getColor() const

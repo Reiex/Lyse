@@ -8,7 +8,7 @@
 // Geometry layout
 
 layout (triangles) in;
-layout (triangle_strip, max_vertices = 3) out;
+layout (triangle_strip, max_vertices = SHADOWMAP_COUNT * 3) out;
 
 // Uniform blocks
 
@@ -47,7 +47,7 @@ void main()
 		gl_Position /= gl_Position.w;
 		gl_Position.z = a * position.z + b;
 		EmitVertex();
-
+		
 		EndPrimitive();
 	}
 }

@@ -250,9 +250,9 @@ float computeShadowOcclusion(in const vec3 position, in const uint i)
 			vec4 shadowPosition = ubo_shadowCameras.cameras[j].view * ubo_camera.invView * vec4(position, 1.0);
 			const float shadowDepth = (-shadowPosition.z - ubo_shadowCameras.cameras[j].near) / (ubo_shadowCameras.cameras[j].far - ubo_shadowCameras.cameras[j].near);
 			shadowPosition = ubo_shadowCameras.cameras[j].projection * shadowPosition;
-			shadowPosition.xy /= shadowPosition.w;
+			shadowPosition.xyz /= shadowPosition.w;
 
-			if (all(greaterThanEqual(shadowPosition.xy, vec2(-1.0))) && all(lessThanEqual(shadowPosition.xy, vec2(1.0))))
+			if (all(greaterThanEqual(shadowPosition.xyz, vec3(-1.0))) && all(lessThanEqual(shadowPosition.xyz, vec3(1.0))))
 			{
 				const float sampledShadowDepth = computeShadowMapValue(vec3(shadowPosition.xy * 0.5 + 0.5, j));
 				return shadowDepth > sampledShadowDepth ? 1.0 : 0.0;

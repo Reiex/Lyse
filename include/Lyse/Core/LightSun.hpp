@@ -36,6 +36,6 @@ namespace lys
 			virtual constexpr void _getUboParams(const CameraBase* camera, scp::f32vec4* params) const override final;
 			virtual inline void _getShadowCameras(const CameraBase* camera, std::vector<const CameraBase*>& shadowCameras) const override final;
 
-			mutable CameraOrthographic _camera;
+			mutable std::vector<CameraOrthographic> _cameras;
 	};
 }

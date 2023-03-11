@@ -23,7 +23,7 @@ int main()
 
 	lys::Scene scene(window.getSize().x, window.getSize().y);
 	
-	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.001f, 10.f);
+	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 20.f);
 	camera.setTranslation({ 0.f, 0.f, 3.f });
 	
 	spl::Texture2D colorMap				("examples/assets/images/color.png");
@@ -47,7 +47,7 @@ int main()
 	moonMesh.move(2.f, 1.f, 1.f);
 	
 	lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, lightColor.x, lightColor.y, lightColor.z, 10.f);
-	light.setCastShadows(true);
+	light.setShadowCascadeSize(4);
 	
 	scene.setCamera(&camera);
 	scene.setBackgroundEquirectangular(&background);

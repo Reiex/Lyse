@@ -621,7 +621,7 @@ namespace lys
 			uboLightsData.lights[i].type = static_cast<uint32_t>(light->getType());
 
 			uboLightsData.lights[i].shadowMapStartIndex = shadowCameras.size();
-			if (_params.shadowMappingEnabled && light->getCastShadows())
+			if (_params.shadowMappingEnabled && light->getShadowCascadeSize() != 0)
 			{
 				light->_getShadowCameras(_camera, shadowCameras);
 			}

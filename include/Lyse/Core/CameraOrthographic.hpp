@@ -16,7 +16,7 @@ namespace lys
 		public:
 
 			// fov != -1 means width and height only specifies an aspect and can be modified
-			inline CameraOrthographic(float width, float height, float depth);
+			inline CameraOrthographic(float width = 1.f, float height = 1.f, float depth = 1.f);
 			constexpr CameraOrthographic(const CameraOrthographic& camera) = default;
 			constexpr CameraOrthographic(CameraOrthographic&& camera) = default;
 

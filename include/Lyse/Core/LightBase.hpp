@@ -22,12 +22,12 @@ namespace lys
 	{
 		public:
 
-			constexpr void setCastShadows(bool castShadows);
+			constexpr void setShadowCascadeSize(uint32_t size);
 			constexpr void setColor(float r, float g, float b);
 			constexpr void setIntensity(float intensity);
 
 			virtual constexpr LightType getType() const = 0;
-			constexpr bool getCastShadows() const;
+			constexpr uint32_t getShadowCascadeSize() const;
 			constexpr const scp::f32vec3& getColor() const;
 			constexpr float getIntensity() const;
 
@@ -45,7 +45,8 @@ namespace lys
 
 			virtual constexpr ~LightBase() = default;
 
-			bool _castShadows;
+			uint32_t _shadowCascadeSize;
+
 			scp::f32vec3 _color;
 			float _intensity;
 
