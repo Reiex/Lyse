@@ -163,5 +163,8 @@
     <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\ssao.vert">
       <Filter>Shaders</Filter>
     </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_shadowMapping.geom">
+      <Filter>Shaders</Filter>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>

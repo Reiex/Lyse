@@ -5,10 +5,11 @@ int main()
 	constexpr scp::f32vec3 lightColor = { 1.f, 0.8f, 0.7f };
 	const scp::f32vec3 lightDir = scp::normalize(scp::f32vec3(-3.f, -1.f, -1.f));
 
-	spl::Window window(1000, 600, "Lyse Example", true);
+	spl::Window window(1024, 512, "Lyse Example", true);
 	spl::Context* context = window.getContext();
 	spl::Context::setCurrentContext(context);
 	context->setClearColor(0.2f, 0.3f, 0.3f, 1.f);
+
 
 	// lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 10.f);
 	// camera.setTranslation({ 0.f, 0.f, 3.f });
@@ -21,8 +22,8 @@ int main()
 	// scene.addLight(&light);
 
 	lys::Scene scene(window.getSize().x, window.getSize().y);
-
-	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 10.f);
+	
+	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.001f, 10.f);
 	camera.setTranslation({ 0.f, 0.f, 3.f });
 	
 	spl::Texture2D colorMap				("examples/assets/images/color.png");
@@ -47,7 +48,7 @@ int main()
 	
 	lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, lightColor.x, lightColor.y, lightColor.z, 10.f);
 	light.setCastShadows(true);
-
+	
 	scene.setCamera(&camera);
 	scene.setBackgroundEquirectangular(&background);
 	scene.addDrawable(&mesh);
@@ -103,7 +104,7 @@ int main()
 
 		scene.render();
 
-		screenShader.setUniform("u_scene", 0, scene.getRenderTexture());
+		screenShader.setUniform("u_scene", 0, &scene.getRenderTexture());
 		screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
 
 		window.display();

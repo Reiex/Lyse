@@ -14,19 +14,6 @@ namespace lys
 	namespace
 	{
 		#pragma pack(push, 1)
-		struct alignas(16) UboShadowCameraData
-		{
-			alignas(16) scp::f32mat4x4 projection;
-			alignas(16) scp::f32mat4x4 view;
-			alignas(4) float near;
-			alignas(4) float far;
-		};
-
-		struct alignas(16) UboShadowCamerasData
-		{
-			alignas(16) UboShadowCameraData cameras[Scene::maxShadowMapCount];
-		};
-
 		struct alignas(16) UboLightData
 		{
 			alignas(4) uint32_t type;
@@ -42,8 +29,7 @@ namespace lys
 		struct alignas(16) UboLightsData
 		{
 			alignas(4) uint32_t count;
-
-			alignas(16) UboLightData lights[Scene::maxLightCount];
+			alignas(16) UboLightData lights[SceneParameters::maxLightSlotCount];
 		};
 
 		struct alignas(16) UboDrawableData
@@ -55,12 +41,47 @@ namespace lys
 			alignas(16) scp::f32mat4x4 projectionViewModel;
 			alignas(16) scp::f32mat4x4 invProjectionViewModel;
 		};
+
+		struct alignas(16) UboShadowCameraData
+		{
+			alignas(16) scp::f32mat4x4 projection;
+			alignas(16) scp::f32mat4x4 view;
+			alignas(4) float near;
+			alignas(4) float far;
+		};
+
+		struct alignas(16) UboShadowCamerasData
+		{
+			alignas(4) uint32_t count;
+			alignas(16) UboShadowCameraData cameras[SceneParameters::maxShadowMapCount];
+		};
 		#pragma pack(pop)
 	}
 
-	Scene::Scene(uint32_t width, uint32_t height) :
+	Scene::Scene(uint32_t width, uint32_t height, const SceneParameters params) :
+		_screenVao(),
+		_screenVbo(),
+
+
+		_resolution(width, height),
+		_params(params),
+
+
 		_shaders(),
 		_shaderMap(),
+
+
+		_clearColor(0.f, 0.f, 0.f),
+		_background(nullptr),
+
+		_camera(nullptr),
+
+		_lights(),
+		_uboLights(),
+
+		_drawables(),
+		_uboDrawable(sizeof(UboDrawableData), spl::BufferStorageFlags::DynamicStorage),
+
 
 		_depthTexture(),
 		_colorTexture(),
@@ -69,48 +90,17 @@ namespace lys
 		_tangentTexture(),
 		_gBufferFramebuffer(),
 
-		_shadowTextures(),
+		_shadowTexture(),
 		_shadowMappingFramebuffer(),
+		_uboShadowCameras(),
 
 		_ssaoTexture(),
 		_ssaoFramebuffer(),
 
 		_mergeTexture(),
-		_mergeFramebuffer(),
-
-		_uboShadowCameras(sizeof(UboShadowCamerasData), spl::BufferStorageFlags::DynamicStorage),
-
-		_clearColor(0.f, 0.f, 0.f),
-		_background(nullptr),
-
-		_resolution(width, height),
-		_camera(nullptr),
-
-		_lights(),
-		_uboLights(sizeof(UboLightsData), spl::BufferStorageFlags::DynamicStorage),
-
-		_drawables(),
-		_uboDrawable(sizeof(UboDrawableData), spl::BufferStorageFlags::DynamicStorage),
-
-		_screenVao(),
-		_screenVbo()
+		_mergeFramebuffer()
 	{
-		_loadShaders();
-
-
-		spl::TextureCreationParams shadowTextureCreationParams;
-		shadowTextureCreationParams.target = spl::TextureTarget::Array2D;
-		shadowTextureCreationParams.internalFormat = spl::TextureInternalFormat::Depth_nu16;
-		shadowTextureCreationParams.width = _shadowMapResolution.x;
-		shadowTextureCreationParams.height = _shadowMapResolution.y;
-		shadowTextureCreationParams.depth = maxShadowMapCount;
-		_shadowTextures.createNew(shadowTextureCreationParams);
-		_shadowTextures.setBorderColor(1.f, 1.f, 1.f, 1.f);
-		_shadowTextures.setWrappingS(spl::TextureWrapping::ClampToBorder);
-		_shadowTextures.setWrappingT(spl::TextureWrapping::ClampToBorder);
-
-		resize(width, height);
-
+		// Create "screen" mesh
 
 		_screenVao.setAttributeFormat(0, spl::GlslType::FloatVec2, 0);
 		_screenVao.setAttributeEnabled(0, true);
@@ -120,28 +110,94 @@ namespace lys
 		static constexpr float screenVboData[] = { -1.f,  -1.f, 1.f, -1.f, -1.f, 1.f, 1.f, 1.f };
 		_screenVbo.createNew(sizeof(screenVboData), spl::BufferStorageFlags::None, screenVboData);
 		_screenVao.bindArrayBuffer(&_screenVbo, 0, sizeof(float) * 2);
+
+		// Check geometry pass parameters
+
+		// TODO: Check implementation dependent limits (UBOs, textures sizes, etc...)
+		assert(_resolution.x > 0 && _resolution.y > 0);
+		assert(spl::_spl::textureInternalFormatToTextureFormat(_params.depthTextureFormat) == spl::TextureFormat::DepthComponent);
+		assert(spl::_spl::textureInternalFormatToTextureFormat(_params.colorTextureFormat) == spl::TextureFormat::RGB);
+		assert(spl::_spl::textureInternalFormatToTextureFormat(_params.materialTextureFormat) == spl::TextureFormat::RGB);
+		assert(spl::_spl::textureInternalFormatToTextureFormat(_params.normalTextureFormat) == spl::TextureFormat::RGB);
+		assert(spl::_spl::textureInternalFormatToTextureFormat(_params.tangentTextureFormat) == spl::TextureFormat::RGB);
+
+		// Check shadow mapping parameters
+
+		if (_params.shadowMappingEnabled)
+		{
+			assert(_params.shadowMapCount > 0 && _params.shadowMapCount <= SceneParameters::maxShadowMapCount);
+			assert(_params.shadowMapResolution.x > 0 && _params.shadowMapResolution.y > 0);
+			assert(spl::_spl::textureInternalFormatToTextureFormat(_params.shadowTextureFormat) == spl::TextureFormat::DepthComponent);
+
+			spl::TextureCreationParams shadowTextureCreationParams;
+			shadowTextureCreationParams.target = spl::TextureTarget::Array2D;
+			shadowTextureCreationParams.internalFormat = _params.shadowTextureFormat;
+			shadowTextureCreationParams.width = _params.shadowMapResolution.x;
+			shadowTextureCreationParams.height = _params.shadowMapResolution.y;
+			shadowTextureCreationParams.depth = _params.shadowMapCount;
+			_shadowTexture.createNew(shadowTextureCreationParams);
+
+			_shadowTexture.setBorderColor(1.f, 1.f, 1.f, 1.f);
+			_shadowTexture.setWrappingS(spl::TextureWrapping::ClampToBorder);
+			_shadowTexture.setWrappingT(spl::TextureWrapping::ClampToBorder);
+
+			_uboShadowCameras.createNew(offsetof(UboShadowCamerasData, cameras) + sizeof(UboShadowCameraData) * _params.shadowMapCount, spl::BufferStorageFlags::DynamicStorage);
+
+			_shadowMappingFramebuffer.attachTexture(spl::FramebufferAttachment::DepthAttachment, 0, &_shadowTexture);
+		}
+		else
+		{
+			uint32_t data = 0;
+			_uboShadowCameras.createNew(offsetof(UboShadowCamerasData, cameras), spl::BufferStorageFlags::None, &data);
+		}
+
+		// Check ssao parameters
+
+		if (_params.ssaoEnabled)
+		{
+			assert(_params.ssaoSampleCount > 0);
+			assert(spl::_spl::textureInternalFormatToTextureFormat(_params.ssaoTextureFormat) == spl::TextureFormat::R);
+		}
+
+		// Check merging pass parameters
+
+		assert(_params.lightSlotCount < SceneParameters::maxLightSlotCount);
+		assert(spl::_spl::textureInternalFormatToTextureFormat(_params.renderTextureFormat) == spl::TextureFormat::RGB);
+
+		_uboLights.createNew(offsetof(UboLightsData, lights) + sizeof(UboLightData) * _params.lightSlotCount, spl::BufferStorageFlags::DynamicStorage);
+
+		// Compile shaders and create framebuffers with those parameters
+
+		_loadShaders();
+
+		resize(_resolution.x, _resolution.y);
 	}
 
 	void Scene::resize(uint32_t width, uint32_t height)
 	{
+		assert(width > 0 && height > 0);
+
 		_resolution.x = width;
 		_resolution.y = height;
 
-		_depthTexture.createNew(_resolution.x, _resolution.y, spl::TextureInternalFormat::Depth_nu32);
-		_colorTexture.createNew(_resolution.x, _resolution.y, spl::TextureInternalFormat::RGB_nu16);
-		_materialTexture.createNew(_resolution.x, _resolution.y, spl::TextureInternalFormat::RGB_nu16);
-		_normalTexture.createNew(_resolution.x, _resolution.y, spl::TextureInternalFormat::RGB_ni16);
-		_tangentTexture.createNew(_resolution.x, _resolution.y, spl::TextureInternalFormat::RGB_ni16);
+		_depthTexture.createNew(_resolution.x, _resolution.y, _params.depthTextureFormat);
+		_colorTexture.createNew(_resolution.x, _resolution.y, _params.colorTextureFormat);
+		_materialTexture.createNew(_resolution.x, _resolution.y, _params.materialTextureFormat);
+		_normalTexture.createNew(_resolution.x, _resolution.y, _params.normalTextureFormat);
+		_tangentTexture.createNew(_resolution.x, _resolution.y, _params.tangentTextureFormat);
 		_gBufferFramebuffer.attachTexture(spl::FramebufferAttachment::DepthAttachment, 0, &_depthTexture);
 		_gBufferFramebuffer.attachTexture(spl::FramebufferAttachment::ColorAttachment, 0, &_colorTexture);
 		_gBufferFramebuffer.attachTexture(spl::FramebufferAttachment::ColorAttachment, 1, &_materialTexture);
 		_gBufferFramebuffer.attachTexture(spl::FramebufferAttachment::ColorAttachment, 2, &_normalTexture);
 		_gBufferFramebuffer.attachTexture(spl::FramebufferAttachment::ColorAttachment, 3, &_tangentTexture);
 
-		_ssaoTexture.createNew(_resolution.x, _resolution.y, spl::TextureInternalFormat::R_nu16);
-		_ssaoFramebuffer.attachTexture(spl::FramebufferAttachment::ColorAttachment, 0, &_ssaoTexture);
+		if (_params.ssaoEnabled)
+		{
+			_ssaoTexture.createNew(_resolution.x, _resolution.y, _params.ssaoTextureFormat);
+			_ssaoFramebuffer.attachTexture(spl::FramebufferAttachment::ColorAttachment, 0, &_ssaoTexture);
+		}
 
-		_mergeTexture.createNew(_resolution.x, _resolution.y, spl::TextureInternalFormat::RGB_nu16);
+		_mergeTexture.createNew(_resolution.x, _resolution.y, _params.renderTextureFormat);
 		_mergeFramebuffer.attachTexture(spl::FramebufferAttachment::ColorAttachment, 0, &_mergeTexture);
 	}
 
@@ -208,8 +264,6 @@ namespace lys
 
 	void Scene::render()
 	{
-		assert(isValid());
-
 		// Save context context - `render` must not appear to modify context state from caller pov
 
 		spl::Context* context = spl::Context::getCurrentContext();
@@ -225,18 +279,16 @@ namespace lys
 		context->setIsDepthTestEnabled(true);
 		context->setFaceCulling(spl::FaceCulling::FrontClockWise);
 		
-		// Update and bind static UBOs
+		// Update and bind UBOs
 		
 		std::vector<const CameraBase*> shadowCameras;
-		
-		// 0 :	CameraData
+
+		_camera->updateAndBindUbo(0);
 		_updateAndBindUboLights(1, shadowCameras);
 		// 2 :	DrawableData
 		_updateAndBindUboShadowCameras(3, shadowCameras);
 		
 		// Draw G-Buffer
-		
-		_camera->updateAndBindUbo(0);
 		
 		spl::Framebuffer::bind(spl::FramebufferTarget::DrawFramebuffer, &_gBufferFramebuffer);
 		spl::Framebuffer::clear(true, true, false);
@@ -263,30 +315,20 @@ namespace lys
 		
 		// Draw shadow maps
 		
-		context->setViewport(0, 0, _shadowMapResolution.x, _shadowMapResolution.y);
-		context->setFaceCulling(spl::FaceCulling::BackClockWise);
-		
-		spl::Framebuffer::bind(spl::FramebufferTarget::DrawFramebuffer, &_shadowMappingFramebuffer);
-		spl::Framebuffer::bind(spl::FramebufferTarget::ReadFramebuffer, &_shadowMappingFramebuffer);
-		
-		std::multimap<std::pair<const spl::ShaderProgram*, const ShadowMappingShaderInterface*>, const Drawable*> shadowMappingDrawSequence;
-		for (const Drawable* drawable : _drawables)
+		if (_params.shadowMappingEnabled)
 		{
-			_insertInDrawSequence(&shadowMappingDrawSequence, drawable, ShaderType::ShadowMapping);
-		}
-		
-		spl::TextureUpdateParams shadowMapUpdateParams;
-		shadowMapUpdateParams.framebufferData = &_shadowMappingFramebuffer;
-		shadowMapUpdateParams.width = _shadowMapResolution.x;
-		shadowMapUpdateParams.height = _shadowMapResolution.y;
+			context->setViewport(0, 0, _params.shadowMapResolution.x, _params.shadowMapResolution.y);
+			context->setFaceCulling(spl::FaceCulling::BackClockWise);
 
-		uint32_t shadowIndex = 0;
-		for (const CameraBase* shadowCamera : shadowCameras)
-		{
+			spl::Framebuffer::bind(spl::FramebufferTarget::DrawFramebuffer, &_shadowMappingFramebuffer);
 			spl::Framebuffer::clear(false, true, false);
-		
-			shadowCamera->updateAndBindUbo(0);
-		
+
+			std::multimap<std::pair<const spl::ShaderProgram*, const ShadowMappingShaderInterface*>, const Drawable*> shadowMappingDrawSequence;
+			for (const Drawable* drawable : _drawables)
+			{
+				_insertInDrawSequence(&shadowMappingDrawSequence, drawable, ShaderType::ShadowMapping);
+			}
+
 			const spl::ShaderProgram* currentShader = nullptr;
 			for (const std::pair<std::pair<const spl::ShaderProgram*, const ShadowMappingShaderInterface*>, const Drawable*>& elt : shadowMappingDrawSequence)
 			{
@@ -295,45 +337,47 @@ namespace lys
 					currentShader = elt.first.first;
 					spl::ShaderProgram::bind(currentShader);
 				}
-		
-				_updateAndBindUboDrawable(2, shadowCamera, elt.second);
+
+				_updateAndBindUboDrawable(2, _camera, elt.second);
 				_setShadowMappingUniforms(elt.first, elt.second);
 				elt.second->_draw();
 			}
 
-			_shadowMappingFramebuffer.attachTexture(spl::FramebufferAttachment::DepthAttachment, 0, &_shadowTextures, 0, shadowIndex);
-			++shadowIndex;
+			context->setViewport(0, 0, _resolution.x, _resolution.y);
+			context->setFaceCulling(spl::FaceCulling::FrontClockWise);
 		}
-		
-		context->setViewport(0, 0, _resolution.x, _resolution.y);
-		context->setFaceCulling(spl::FaceCulling::FrontClockWise);
-		_camera->updateAndBindUbo(0);
 		
 		// Compute SSAO
 		
-		context->setIsDepthTestEnabled(false);
-		
-		spl::Framebuffer::bind(spl::FramebufferTarget::DrawFramebuffer, &_ssaoFramebuffer);
-		spl::Framebuffer::clear(true, false, false);
-		
-		const spl::ShaderProgram* ssaoShader = _shaders[3];
-		
-		spl::ShaderProgram::bind(ssaoShader);
-		
-		ssaoShader->setUniform("u_depth", 0, getDepthTexture());
-		ssaoShader->setUniform("u_normal", 1, getNormalTexture());
-		ssaoShader->setUniform("u_tangent", 2, getTangentTexture());
-		
-		ssaoShader->setUniform("u_sampleCount", uint32_t(16));
-		ssaoShader->setUniform("u_radius", 1.f);
-		
-		ssaoShader->setUniform("u_scaleStep", 1.f / (16 * 16));
-		ssaoShader->setUniform("u_tanHalfFov", std::tan(_camera->getFieldOfView() * 0.5f));
-		
-		_screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
+		if (_params.ssaoEnabled)
+		{
+			context->setIsDepthTestEnabled(false);
+
+			spl::Framebuffer::bind(spl::FramebufferTarget::DrawFramebuffer, &_ssaoFramebuffer);
+			spl::Framebuffer::clear(true, false, false);
+
+			const spl::ShaderProgram* ssaoShader = _shaders[3];
+
+			spl::ShaderProgram::bind(ssaoShader);
+
+			ssaoShader->setUniform("u_depth", 0, &getDepthTexture());
+			ssaoShader->setUniform("u_normal", 1, &getNormalTexture());
+			ssaoShader->setUniform("u_tangent", 2, &getTangentTexture());
+
+			ssaoShader->setUniform("u_sampleCount", _params.ssaoSampleCount);
+
+			ssaoShader->setUniform("u_scaleStep", 1.f / (_params.ssaoSampleCount * _params.ssaoSampleCount));
+			ssaoShader->setUniform("u_tanHalfFov", std::tan(_camera->getFieldOfView() * 0.5f));
+			ssaoShader->setUniform("u_twoTanHalfFov", 2.f * std::tan(_camera->getFieldOfView() * 0.5f));
+
+			_screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
+
+			context->setIsDepthTestEnabled(true);
+		}
 		
 		// Merge into final picture
-		
+
+		context->setIsDepthTestEnabled(false);
 		context->setClearColor(_clearColor.x, _clearColor.y, _clearColor.z, 1.f);
 		
 		spl::Framebuffer::bind(spl::FramebufferTarget::DrawFramebuffer, &_mergeFramebuffer);
@@ -344,22 +388,28 @@ namespace lys
 		
 		spl::ShaderProgram::bind(mergeShader);
 		
-		mergeShader->setUniform("u_depth", 0, getDepthTexture());
-		mergeShader->setUniform("u_color", 1, getColorTexture());
-		mergeShader->setUniform("u_material", 2, getMaterialTexture());
-		mergeShader->setUniform("u_normal", 3, getNormalTexture());
+		mergeShader->setUniform("u_depth", 0, &getDepthTexture());
+		mergeShader->setUniform("u_color", 1, &getColorTexture());
+		mergeShader->setUniform("u_material", 2, &getMaterialTexture());
+		mergeShader->setUniform("u_normal", 3, &getNormalTexture());
 		
-		mergeShader->setUniform("u_shadow", 4, getShadowTextures());
+		if (_params.shadowMappingEnabled)
+		{
+			mergeShader->setUniform("u_shadow", 4, &getShadowTexture());
+			mergeShader->setUniform("u_shadowBlurOffset", scp::f32vec2(1.f / _params.shadowMapResolution.x, 1.f / _params.shadowMapResolution.y));
+		}
 		
-		mergeShader->setUniform("u_ssao", 5, getSsaoTexture());
+		if (_params.ssaoEnabled)
+		{
+			mergeShader->setUniform("u_ssao", 5, &getSsaoTexture());
+		}
 		
 		if (_background)
 		{
 			mergeShader->setUniform("u_background", 6, _background);
 		}
 		
-		mergeShader->setUniform("u_tanHalfFov", std::tan(_camera->getFieldOfView() * 0.5f));
-		mergeShader->setUniform("u_blurOffset", scp::f32vec2(1.f / _resolution.x, 1.f / _resolution.y));
+		mergeShader->setUniform("u_twoTanHalfFov", 2.f * std::tan(_camera->getFieldOfView() * 0.5f));
 		
 		_screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
 		
@@ -368,49 +418,44 @@ namespace lys
 		context->setState(savedContextState);
 	}
 
-	const spl::Texture2D* Scene::getDepthTexture() const
+	const spl::Texture2D& Scene::getDepthTexture() const
 	{
-		return &_depthTexture;
+		return _depthTexture;
 	}
 
-	const spl::Texture2D* Scene::getColorTexture() const
+	const spl::Texture2D& Scene::getColorTexture() const
 	{
-		return &_colorTexture;
+		return _colorTexture;
 	}
 
-	const spl::Texture2D* Scene::getMaterialTexture() const
+	const spl::Texture2D& Scene::getMaterialTexture() const
 	{
-		return &_materialTexture;
+		return _materialTexture;
 	}
 
-	const spl::Texture2D* Scene::getNormalTexture() const
+	const spl::Texture2D& Scene::getNormalTexture() const
 	{
-		return &_normalTexture;
+		return _normalTexture;
 	}
 
-	const spl::Texture2D* Scene::getTangentTexture() const
+	const spl::Texture2D& Scene::getTangentTexture() const
 	{
-		return &_tangentTexture;
+		return _tangentTexture;
 	}
 
-	const spl::Texture* Scene::getShadowTextures() const
+	const spl::Texture& Scene::getShadowTexture() const
 	{
-		return &_shadowTextures;
+		return _shadowTexture;
 	}
 
-	const spl::Texture2D* Scene::getSsaoTexture() const
+	const spl::Texture2D& Scene::getSsaoTexture() const
 	{
-		return &_ssaoTexture;
+		return _ssaoTexture;
 	}
 
-	const spl::Texture2D* Scene::getRenderTexture() const
+	const spl::Texture2D& Scene::getRenderTexture() const
 	{
-		return &_mergeTexture;
-	}
-
-	bool Scene::isValid() const
-	{
-		return _camera != nullptr;
+		return _mergeTexture;
 	}
 
 	Scene::~Scene()
@@ -423,25 +468,35 @@ namespace lys
 
 	void Scene::_loadShaders()
 	{
-		static const std::string headerString = std::format(
+		std::string headerString = std::format(
 			"#version 460 core\n"
-			"#define MAX_LIGHT_COUNT {}\n"
-			"#define MAX_SHADOWMAP_COUNT {}\n",
+			"#define LIGHT_SLOT_COUNT {}\n"
+			"#define SHADOWMAP_COUNT {}\n",
 
-			Scene::maxLightCount,
-			Scene::maxShadowMapCount
+			_params.lightSlotCount,
+			_params.shadowMapCount
 		);
 
-		static const std::string_view header =					{ headerString.data(), headerString.size() };
-		static const std::string_view background =				"#define BACKGROUND\n";
-		static const std::string_view backgroundProjection =	"#define BACKGROUND_PROJECTION\n";
-		static const std::string_view backgroundCubemap =		"#define BACKGROUND_CUBEMAP\n";
-		static const std::string_view colorMap =				"#define COLOR_MAP\n";
-		static const std::string_view materialMap =				"#define MATERIAL_MAP\n";
-		static const std::string_view normalMap =				"#define NORMAL_MAP\n";
+		if (_params.shadowMappingEnabled)
+		{
+			headerString += "#define SHADOW_MAPPING\n";
+		}
+
+		if (_params.ssaoEnabled)
+		{
+			headerString += "#define SSAO\n";
+		}
+
+		const std::string_view header =					{ headerString.data(), headerString.size() };
+		const std::string_view background =				"#define BACKGROUND\n";
+		const std::string_view backgroundProjection =	"#define BACKGROUND_PROJECTION\n";
+		const std::string_view backgroundCubemap =		"#define BACKGROUND_CUBEMAP\n";
+		const std::string_view colorMap =				"#define COLOR_MAP\n";
+		const std::string_view materialMap =			"#define MATERIAL_MAP\n";
+		const std::string_view normalMap =				"#define NORMAL_MAP\n";
 
 
-		static const std::pair<spl::ShaderStage::Stage, std::vector<std::string_view>> sources[] = {
+		const std::pair<spl::ShaderStage::Stage, std::vector<std::string_view>> sources[] = {
 			{ spl::ShaderStage::Vertex,		{ header, 													common_glsl, merge_vert } },
 			{ spl::ShaderStage::Fragment,	{ header,  													common_glsl, merge_frag } },
 			{ spl::ShaderStage::Fragment,	{ header, background,	backgroundProjection,				common_glsl, merge_frag } },
@@ -449,6 +504,7 @@ namespace lys
 			{ spl::ShaderStage::Vertex,		{ header,													common_glsl, ssao_vert } },
 			{ spl::ShaderStage::Fragment,	{ header,													common_glsl, ssao_frag } },
 			{ spl::ShaderStage::Vertex,		{ header, 													common_glsl, mesh_shadowMapping_vert } },
+			{ spl::ShaderStage::Geometry,	{ header, 													common_glsl, mesh_shadowMapping_geom } },
 			{ spl::ShaderStage::Fragment,	{ header, 													common_glsl, mesh_shadowMapping_frag } },
 			{ spl::ShaderStage::Vertex,		{ header, 													common_glsl, mesh_gBuffer_vert } },
 			{ spl::ShaderStage::Fragment,	{ header, 													common_glsl, mesh_gBuffer_frag } },
@@ -479,31 +535,37 @@ namespace lys
 
 		std::array<const spl::ShaderModule*, 5> moduleArray;
 
-		moduleArray = { modules + 0, modules + 1, nullptr, nullptr, nullptr };	// 0
+		for (spl::ShaderProgram* shader : _shaders)
+		{
+			delete shader;
+		}
+		_shaders.clear();
+
+		moduleArray = { modules + 0, modules + 1, nullptr, nullptr, nullptr };		// 0
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 0, modules + 2, nullptr, nullptr, nullptr };	// 1
+		moduleArray = { modules + 0, modules + 2, nullptr, nullptr, nullptr };		// 1
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 0, modules + 3, nullptr, nullptr, nullptr };	// 2
+		moduleArray = { modules + 0, modules + 3, nullptr, nullptr, nullptr };		// 2
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 4, modules + 5, nullptr, nullptr, nullptr };	// 3
+		moduleArray = { modules + 4, modules + 5, nullptr, nullptr, nullptr };		// 3
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 6, modules + 7, nullptr, nullptr, nullptr };	// 4
+		moduleArray = { modules + 6, modules + 7, modules + 8, nullptr, nullptr };	// 4
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 8, modules + 9, nullptr, nullptr, nullptr };	// 5
+		moduleArray = { modules + 9, modules + 10, nullptr, nullptr, nullptr };		// 5
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 8, modules + 10, nullptr, nullptr, nullptr };	// 6
+		moduleArray = { modules + 9, modules + 11, nullptr, nullptr, nullptr };		// 6
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 8, modules + 11, nullptr, nullptr, nullptr };	// 7
+		moduleArray = { modules + 9, modules + 12, nullptr, nullptr, nullptr };		// 7
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 8, modules + 12, nullptr, nullptr, nullptr };	// 8
+		moduleArray = { modules + 9, modules + 13, nullptr, nullptr, nullptr };		// 8
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 8, modules + 13, nullptr, nullptr, nullptr };	// 9
+		moduleArray = { modules + 9, modules + 14, nullptr, nullptr, nullptr };		// 9
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 8, modules + 14, nullptr, nullptr, nullptr };	// 10
+		moduleArray = { modules + 9, modules + 15, nullptr, nullptr, nullptr };		// 10
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 8, modules + 15, nullptr, nullptr, nullptr };	// 11
+		moduleArray = { modules + 9, modules + 16, nullptr, nullptr, nullptr };		// 11
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 8, modules + 16, nullptr, nullptr, nullptr };	// 12
+		moduleArray = { modules + 9, modules + 17, nullptr, nullptr, nullptr };		// 12
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
 
 
@@ -546,6 +608,11 @@ namespace lys
 
 	const void Scene::_updateAndBindUboLights(uint32_t index, std::vector<const CameraBase*>& shadowCameras)
 	{
+		assert(_lights.size() < _params.lightSlotCount);
+
+		shadowCameras.clear();
+
+		// Might be too big for the stack
 		thread_local static UboLightsData uboLightsData;
 
 		uint32_t i = 0;
@@ -554,7 +621,7 @@ namespace lys
 			uboLightsData.lights[i].type = static_cast<uint32_t>(light->getType());
 
 			uboLightsData.lights[i].shadowMapStartIndex = shadowCameras.size();
-			if (light->getCastShadows())
+			if (_params.shadowMappingEnabled && light->getCastShadows())
 			{
 				light->_getShadowCameras(_camera, shadowCameras);
 			}
@@ -568,14 +635,14 @@ namespace lys
 		}
 		uboLightsData.count = i;
 
-		_uboLights.update(&uboLightsData, 4 * sizeof(float) + sizeof(UboLightData) * i);
+		_uboLights.update(&uboLightsData, offsetof(UboLightsData, lights) + sizeof(UboLightData) * i);
 
 		spl::Buffer::bind(spl::BufferTarget::Uniform, &_uboLights, index);
 	}
 
 	const void Scene::_updateAndBindUboDrawable(uint32_t index, const CameraBase* camera, const Drawable* drawable)
 	{
-		thread_local static UboDrawableData uboDrawableData;
+		UboDrawableData uboDrawableData;
 
 		uboDrawableData.model = drawable->getTransformMatrix();
 		uboDrawableData.invModel = drawable->getInverseTransformMatrix();
@@ -591,19 +658,24 @@ namespace lys
 
 	const void Scene::_updateAndBindUboShadowCameras(uint32_t index, const std::vector<const CameraBase*>& shadowCameras)
 	{
-		assert(shadowCameras.size() <= maxShadowMapCount);
+		assert(shadowCameras.size() <= _params.shadowMapCount);
 
-		thread_local static UboShadowCamerasData uboShadowCamerasData;
-
-		for (uint32_t i = 0; i < shadowCameras.size(); ++i)
+		if (_params.shadowMappingEnabled)
 		{
-			uboShadowCamerasData.cameras[i].projection = shadowCameras[i]->getProjectionMatrix();
-			uboShadowCamerasData.cameras[i].view = shadowCameras[i]->getViewMatrix();
-			uboShadowCamerasData.cameras[i].near = shadowCameras[i]->getNearDistance();
-			uboShadowCamerasData.cameras[i].far = shadowCameras[i]->getFarDistance();
-		}
+			// Might be too big for the stack
+			thread_local static UboShadowCamerasData uboShadowCamerasData;
 
-		_uboShadowCameras.update(&uboShadowCamerasData, sizeof(UboShadowCameraData) * shadowCameras.size());
+			for (uint32_t i = 0; i < shadowCameras.size(); ++i)
+			{
+				uboShadowCamerasData.cameras[i].projection = shadowCameras[i]->getProjectionMatrix();
+				uboShadowCamerasData.cameras[i].view = shadowCameras[i]->getViewMatrix();
+				uboShadowCamerasData.cameras[i].near = shadowCameras[i]->getNearDistance();
+				uboShadowCamerasData.cameras[i].far = shadowCameras[i]->getFarDistance();
+			}
+			uboShadowCamerasData.count = shadowCameras.size();
+
+			_uboShadowCameras.update(&uboShadowCamerasData, offsetof(UboShadowCamerasData, cameras) + sizeof(UboShadowCameraData) * shadowCameras.size());
+		}
 
 		spl::Buffer::bind(spl::BufferTarget::Uniform, &_uboShadowCameras, index);
 	}

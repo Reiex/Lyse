@@ -39,7 +39,7 @@ struct LightData
 struct LightsData
 {
 	uint count;
-	LightData lights[MAX_LIGHT_COUNT];
+	LightData lights[LIGHT_SLOT_COUNT];
 };
 
 struct DrawableData
@@ -62,7 +62,8 @@ struct ShadowCameraData
 
 struct ShadowCamerasData
 {
-	ShadowCameraData cameras[MAX_SHADOWMAP_COUNT];
+	uint count;
+	ShadowCameraData cameras[SHADOWMAP_COUNT];
 };
 
 // Constants

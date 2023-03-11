@@ -37,9 +37,14 @@ uniform sampler2D u_color;
 uniform sampler2D u_material;
 uniform sampler2D u_normal;
 
-uniform sampler2DArray u_shadow;
+#ifdef SHADOW_MAPPING
+	uniform sampler2DArray u_shadow;
+	uniform vec2 u_shadowBlurOffset;
+#endif
 
-uniform sampler2D u_ssao;
+#ifdef SSAO
+	uniform sampler2D u_ssao;
+#endif
 
 #ifdef BACKGROUND
 
@@ -53,8 +58,7 @@ uniform sampler2D u_ssao;
 
 #endif
 
-uniform float u_tanHalfFov;
-uniform vec2 u_blurOffset;
+uniform float u_twoTanHalfFov;
 
 // Fragment outputs
 
@@ -84,7 +88,7 @@ void main()
 	// Retrieve view-space depth, position and viewDir from fragment position and precedent passes
 	
 	const float depth = ubo_camera.near + texture(u_depth, io_texCoords).r * ubo_camera.far;
-	const vec3 viewDirUnnormalized = vec3(vec2((io_texCoords.x - 0.5) * ubo_camera.aspect, io_texCoords.y - 0.5) * (u_tanHalfFov * 2.0), -1.0);
+	const vec3 viewDirUnnormalized = vec3(vec2((io_texCoords.x - 0.5) * ubo_camera.aspect, io_texCoords.y - 0.5) * u_twoTanHalfFov, -1.0);
 	const vec3 position = depth * viewDirUnnormalized;
 	const vec3 viewDir = normalize(viewDirUnnormalized);
 
@@ -203,48 +207,58 @@ vec3 computeBackgroundColor(in const vec3 viewDir)
 
 float computeSsaoValue()
 {
-	vec4 tmp = textureGather(u_ssao, io_texCoords, 0);
-	float result = tmp.x + tmp.y + tmp.z + tmp.w;
-	tmp = textureGatherOffset(u_ssao, io_texCoords, ivec2(-1, -1), 0);
-	result += tmp.x + tmp.y + tmp.z + tmp.w;
-	tmp = textureGatherOffset(u_ssao, io_texCoords, ivec2(-1, 0), 0);
-	result += tmp.x + tmp.y + tmp.z + tmp.w;
-	tmp = textureGatherOffset(u_ssao, io_texCoords, ivec2(0, -1), 0);
-	result += tmp.x + tmp.y + tmp.z + tmp.w;
+	#ifdef SSAO
+		vec4 tmp = textureGather(u_ssao, io_texCoords, 0);
+		float result = tmp.x + tmp.y + tmp.z + tmp.w;
+		tmp = textureGatherOffset(u_ssao, io_texCoords, ivec2(-1, -1), 0);
+		result += tmp.x + tmp.y + tmp.z + tmp.w;
+		tmp = textureGatherOffset(u_ssao, io_texCoords, ivec2(-1, 0), 0);
+		result += tmp.x + tmp.y + tmp.z + tmp.w;
+		tmp = textureGatherOffset(u_ssao, io_texCoords, ivec2(0, -1), 0);
+		result += tmp.x + tmp.y + tmp.z + tmp.w;
 	
-	return result * 0.0625;
+		return result * 0.0625;
+	#else
+		return 1.0;
+	#endif
 }
 
 float computeShadowMapValue(in const vec3 texCoords)
 {
-	return (
-		  texture(u_shadow, vec3(texCoords.x - u_blurOffset.x, texCoords.y - u_blurOffset.y, texCoords.z)).r
-		+ texture(u_shadow, vec3(texCoords.x - u_blurOffset.x, texCoords.y                 , texCoords.z)).r
-		+ texture(u_shadow, vec3(texCoords.x - u_blurOffset.x, texCoords.y + u_blurOffset.y, texCoords.z)).r
-		+ texture(u_shadow, vec3(texCoords.x,                  texCoords.y - u_blurOffset.y, texCoords.z)).r
-		+ texture(u_shadow, vec3(texCoords.x,                  texCoords.y                 , texCoords.z)).r
-		+ texture(u_shadow, vec3(texCoords.x,                  texCoords.y + u_blurOffset.y, texCoords.z)).r
-		+ texture(u_shadow, vec3(texCoords.x + u_blurOffset.x, texCoords.y - u_blurOffset.y, texCoords.z)).r
-		+ texture(u_shadow, vec3(texCoords.x + u_blurOffset.x, texCoords.y                 , texCoords.z)).r
-		+ texture(u_shadow, vec3(texCoords.x + u_blurOffset.x, texCoords.y + u_blurOffset.y, texCoords.z)).r
-	) * 0.11111;
+	#ifdef SHADOW_MAPPING
+		return (
+			  texture(u_shadow, vec3(texCoords.x - u_shadowBlurOffset.x, texCoords.y - u_shadowBlurOffset.y, texCoords.z)).r
+			+ texture(u_shadow, vec3(texCoords.x - u_shadowBlurOffset.x, texCoords.y,                        texCoords.z)).r
+			+ texture(u_shadow, vec3(texCoords.x - u_shadowBlurOffset.x, texCoords.y + u_shadowBlurOffset.y, texCoords.z)).r
+			+ texture(u_shadow, vec3(texCoords.x,                        texCoords.y - u_shadowBlurOffset.y, texCoords.z)).r
+			+ texture(u_shadow, vec3(texCoords.x,                        texCoords.y,                        texCoords.z)).r
+			+ texture(u_shadow, vec3(texCoords.x,                        texCoords.y + u_shadowBlurOffset.y, texCoords.z)).r
+			+ texture(u_shadow, vec3(texCoords.x + u_shadowBlurOffset.x, texCoords.y - u_shadowBlurOffset.y, texCoords.z)).r
+			+ texture(u_shadow, vec3(texCoords.x + u_shadowBlurOffset.x, texCoords.y,                        texCoords.z)).r
+			+ texture(u_shadow, vec3(texCoords.x + u_shadowBlurOffset.x, texCoords.y + u_shadowBlurOffset.y, texCoords.z)).r
+		) * 0.11111;
+	#else
+		return 1.0;
+	#endif
 }
 
 float computeShadowOcclusion(in const vec3 position, in const uint i)
 {
-	for (uint j = ubo_lights.lights[i].shadowMapStartIndex; j < ubo_lights.lights[i].shadowMapStopIndex; ++j)
-	{
-		vec4 shadowPosition = ubo_shadowCameras.cameras[j].view * ubo_camera.invView * vec4(position, 1.0);
-		const float shadowDepth = (-shadowPosition.z - ubo_shadowCameras.cameras[j].near) / (ubo_shadowCameras.cameras[j].far - ubo_shadowCameras.cameras[j].near);
-		shadowPosition = ubo_shadowCameras.cameras[j].projection * shadowPosition;
-		shadowPosition.xy /= shadowPosition.w;
-
-		if (all(greaterThanEqual(shadowPosition.xy, vec2(-1.0))) && all(lessThanEqual(shadowPosition.xy, vec2(1.0))))
+	#ifdef SHADOW_MAPPING
+		for (uint j = ubo_lights.lights[i].shadowMapStartIndex; j < ubo_lights.lights[i].shadowMapStopIndex; ++j)
 		{
-			const float sampledShadowDepth = computeShadowMapValue(vec3(shadowPosition.xy * 0.5 + 0.5, j));
-			return shadowDepth > sampledShadowDepth ? 1.0 : 0.0;
+			vec4 shadowPosition = ubo_shadowCameras.cameras[j].view * ubo_camera.invView * vec4(position, 1.0);
+			const float shadowDepth = (-shadowPosition.z - ubo_shadowCameras.cameras[j].near) / (ubo_shadowCameras.cameras[j].far - ubo_shadowCameras.cameras[j].near);
+			shadowPosition = ubo_shadowCameras.cameras[j].projection * shadowPosition;
+			shadowPosition.xy /= shadowPosition.w;
+
+			if (all(greaterThanEqual(shadowPosition.xy, vec2(-1.0))) && all(lessThanEqual(shadowPosition.xy, vec2(1.0))))
+			{
+				const float sampledShadowDepth = computeShadowMapValue(vec3(shadowPosition.xy * 0.5 + 0.5, j));
+				return shadowDepth > sampledShadowDepth ? 1.0 : 0.0;
+			}
 		}
-	}
+	#endif
 
 	return 0.0;
 }

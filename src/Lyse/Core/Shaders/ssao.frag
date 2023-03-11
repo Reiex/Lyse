@@ -23,10 +23,10 @@ uniform sampler2D u_normal;
 uniform sampler2D u_tangent;
 
 uniform uint u_sampleCount;
-uniform float u_radius;
 
 uniform float u_scaleStep;
 uniform float u_tanHalfFov;
+uniform float u_twoTanHalfFov;
 
 // Fragment outputs
 
@@ -48,7 +48,7 @@ void main()
 	uint seed = hash(floatBitsToUint(io_texCoords));
 	
 	const float depth = ubo_camera.near + texture(u_depth, io_texCoords).r * ubo_camera.far;
-	const vec3 viewDirUnnormalized = vec3(vec2((io_texCoords.x - 0.5) * ubo_camera.aspect, io_texCoords.y - 0.5) * (u_tanHalfFov * 2.0), -1.0);
+	const vec3 viewDirUnnormalized = vec3(vec2((io_texCoords.x - 0.5) * ubo_camera.aspect, io_texCoords.y - 0.5) * u_twoTanHalfFov, -1.0);
 	const vec3 position = depth * viewDirUnnormalized;
 	const vec3 viewDir = normalize(viewDirUnnormalized);
 
@@ -56,6 +56,8 @@ void main()
 	const vec3 tangent = normalize(texture(u_tangent, io_texCoords).rgb);
 	const vec3 bitangent = cross(normal, tangent);
 	const mat3 tbn = mat3(tangent, bitangent, normal);
+
+	float radius = depth * u_tanHalfFov;
 	
 	float occlusion = 0.0;
 	for (uint i = 1; i <= u_sampleCount; ++i)
@@ -65,7 +67,8 @@ void main()
 		const float theta = random(seed) * c_2pi;
 		const float phi = random(seed) * c_halfPi;
 		const float cPhi = cos(phi);
-		const vec3 randomVec = vec3(cos(theta) * cPhi, sin(theta) * cPhi, sin(phi)) * i * i * u_scaleStep;
+		const float currentRadius = radius * i * i * u_scaleStep;
+		const vec3 randomVec = vec3(cos(theta) * cPhi, sin(theta) * cPhi, sin(phi)) * currentRadius;
 
 		const vec3 viewPos = position + tbn * randomVec;
 		vec4 ndcPos = ubo_camera.projection * vec4(viewPos, 1.0);
@@ -74,7 +77,7 @@ void main()
 		const float sampleDepth = ubo_camera.near + texture(u_depth, ndcPos.xy).r * ubo_camera.far;
 		if (-viewPos.z > sampleDepth)
 		{
-			occlusion += smoothstep(0.0, 1.0, -u_radius / (viewPos.z + sampleDepth));
+			occlusion += smoothstep(0.0, 1.0, -currentRadius / (viewPos.z + sampleDepth));
 		}
 	}
 

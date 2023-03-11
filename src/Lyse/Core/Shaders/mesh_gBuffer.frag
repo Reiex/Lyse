@@ -59,7 +59,7 @@ void main()
 		vec4 color = u_color;
 	#endif
 
-	if (color.a == 0.0)
+	if (color.a != 1.0)
 		discard;
 	
 	fo_color = color.rgb;
