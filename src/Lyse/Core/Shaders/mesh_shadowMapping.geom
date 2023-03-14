@@ -30,22 +30,19 @@ void main()
 		gl_Layer = i;
 		position = ubo_shadowCameras.cameras[i].view * gl_in[0].gl_Position;
 		gl_Position = ubo_shadowCameras.cameras[i].projection * position;
-		gl_Position /= gl_Position.w;
-		gl_Position.z = a * position.z + b;
+		gl_Position.z = gl_Position.w * (a * position.z + b);
 		EmitVertex();
 		
 		gl_Layer = i;
 		position = ubo_shadowCameras.cameras[i].view * gl_in[1].gl_Position;
 		gl_Position = ubo_shadowCameras.cameras[i].projection * position;
-		gl_Position /= gl_Position.w;
-		gl_Position.z = a * position.z + b;
+		gl_Position.z = gl_Position.w * (a * position.z + b);
 		EmitVertex();
 		
 		gl_Layer = i;
 		position = ubo_shadowCameras.cameras[i].view * gl_in[2].gl_Position;
 		gl_Position = ubo_shadowCameras.cameras[i].projection * position;
-		gl_Position /= gl_Position.w;
-		gl_Position.z = a * position.z + b;
+		gl_Position.z = gl_Position.w * (a * position.z + b);
 		EmitVertex();
 		
 		EndPrimitive();

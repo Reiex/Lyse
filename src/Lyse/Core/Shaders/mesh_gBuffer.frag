@@ -9,18 +9,10 @@
 
 in VertexOutput
 {
-	vec3 position;
 	vec3 normal;
 	vec3 tangent;
 	vec2 texCoords;
 } io_vertexOutput;
-
-// Uniform blocks
-
-layout (std140, row_major, binding = 0) uniform ubo_camera_layout
-{
-	CameraData ubo_camera;
-};
 
 // Uniforms
 
@@ -83,8 +75,4 @@ void main()
 		fo_normal = normalize(fo_tangent * normalMapValue.x + bitangent * normalMapValue.y + fo_normal * normalMapValue.z);
 		fo_tangent = normalize(fo_tangent - dot(fo_tangent, fo_normal) * fo_normal);
 	#endif
-
-	// Rectify depth
-
-	gl_FragDepth = -(io_vertexOutput.position.z + ubo_camera.near) / (ubo_camera.far - ubo_camera.near);
 } 

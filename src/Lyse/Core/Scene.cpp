@@ -396,7 +396,7 @@ namespace lys
 		if (_params.shadowMappingEnabled)
 		{
 			mergeShader->setUniform("u_shadow", 4, &getShadowTexture());
-			mergeShader->setUniform("u_shadowBlurOffset", scp::f32vec2(1.f / _params.shadowMapResolution.x, 1.f / _params.shadowMapResolution.y));
+			mergeShader->setUniform("u_shadowBlurOffset", scp::f32vec3(1.f / _params.shadowMapResolution.x, 1.f / _params.shadowMapResolution.y, 1e-4f));
 		}
 		
 		if (_params.ssaoEnabled)

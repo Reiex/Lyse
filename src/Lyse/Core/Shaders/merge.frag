@@ -39,7 +39,7 @@ uniform sampler2D u_normal;
 
 #ifdef SHADOW_MAPPING
 	uniform sampler2DArray u_shadow;
-	uniform vec2 u_shadowBlurOffset;
+	uniform vec3 u_shadowBlurOffset;
 #endif
 
 #ifdef SSAO
@@ -87,7 +87,8 @@ void main()
 {
 	// Retrieve view-space depth, position and viewDir from fragment position and precedent passes
 	
-	const float depth = ubo_camera.near + texture(u_depth, io_texCoords).r * ubo_camera.far;
+	const ivec2 windowCoord = ivec2(gl_FragCoord.xy);
+	const float depth = ubo_camera.near + texelFetch(u_depth, windowCoord, 0).r * ubo_camera.far;
 	const vec3 viewDirUnnormalized = vec3(vec2((io_texCoords.x - 0.5) * ubo_camera.aspect, io_texCoords.y - 0.5) * u_twoTanHalfFov, -1.0);
 	const vec3 position = depth * viewDirUnnormalized;
 	const vec3 viewDir = normalize(viewDirUnnormalized);
@@ -106,9 +107,9 @@ void main()
 
 	// Retrieve fragment information from precedent passes
 
-	const vec3 color = texture(u_color, io_texCoords).rgb;
-	const vec3 material = texture(u_material, io_texCoords).rgb;
-	const vec3 normal = normalize(texture(u_normal, io_texCoords).rgb);
+	const vec3 color = texelFetch(u_color, windowCoord, 0).rgb;
+	const vec3 material = texelFetch(u_material, windowCoord, 0).rgb;
+	const vec3 normal = texelFetch(u_normal, windowCoord, 0).rgb;
 
 	// Pre-compute useful constants
 
@@ -252,7 +253,7 @@ float computeShadowOcclusion(in const vec3 position, in const uint i)
 			shadowPosition = ubo_shadowCameras.cameras[j].projection * shadowPosition;
 			shadowPosition.xyz /= shadowPosition.w;
 
-			if (all(greaterThanEqual(shadowPosition.xyz, vec3(-1.0))) && all(lessThanEqual(shadowPosition.xyz, vec3(1.0))))
+			if (all(greaterThan(shadowPosition.xyz, u_shadowBlurOffset - vec3(1.0))) && all(lessThan(shadowPosition.xyz, vec3(1.0) - u_shadowBlurOffset)))
 			{
 				const float sampledShadowDepth = computeShadowMapValue(vec3(shadowPosition.xy * 0.5 + 0.5, j));
 				return shadowDepth > sampledShadowDepth ? 1.0 : 0.0;

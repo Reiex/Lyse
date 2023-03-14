@@ -28,7 +28,6 @@ layout (std140, row_major, binding = 2) uniform ubo_drawable_layout
 
 out VertexOutput
 {
-	vec3 position;
 	vec3 normal;
 	vec3 tangent;
 	vec2 texCoords;
@@ -38,10 +37,13 @@ out VertexOutput
 
 void main()
 {
-	io_vertexOutput.position = (ubo_drawable.viewModel * va_position).xyz;
 	io_vertexOutput.normal = normalize(ubo_drawable.viewModel * va_normal).xyz;		// TODO: Change that ! Not OK for non-uniform scale !
 	io_vertexOutput.tangent = normalize(ubo_drawable.viewModel * va_tangent).xyz;	// TODO: Change that ! Not OK for non-uniform scale !
 	io_vertexOutput.texCoords = va_texCoords.xy;
 
-	gl_Position = ubo_drawable.projectionViewModel * va_position;
+	gl_Position = ubo_drawable.viewModel * va_position;
+	float depth = gl_Position.z;
+	
+	gl_Position = ubo_camera.projection * gl_Position;
+	gl_Position.z = - gl_Position.w * (2.0 * depth + ubo_camera.near + ubo_camera.far) / (ubo_camera.far - ubo_camera.near);
 }

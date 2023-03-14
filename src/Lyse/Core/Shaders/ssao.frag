@@ -47,13 +47,14 @@ void main()
 {
 	uint seed = hash(floatBitsToUint(io_texCoords));
 	
-	const float depth = ubo_camera.near + texture(u_depth, io_texCoords).r * ubo_camera.far;
+	const ivec2 windowCoord = ivec2(gl_FragCoord.xy);
+	const float depth = ubo_camera.near + texelFetch(u_depth, windowCoord, 0).r * ubo_camera.far;
 	const vec3 viewDirUnnormalized = vec3(vec2((io_texCoords.x - 0.5) * ubo_camera.aspect, io_texCoords.y - 0.5) * u_twoTanHalfFov, -1.0);
 	const vec3 position = depth * viewDirUnnormalized;
 	const vec3 viewDir = normalize(viewDirUnnormalized);
 
-	const vec3 normal = normalize(texture(u_normal, io_texCoords).rgb);
-	const vec3 tangent = normalize(texture(u_tangent, io_texCoords).rgb);
+	const vec3 normal = texelFetch(u_normal, windowCoord, 0).rgb;
+	const vec3 tangent = texelFetch(u_tangent, windowCoord, 0).rgb;
 	const vec3 bitangent = cross(normal, tangent);
 	const mat3 tbn = mat3(tangent, bitangent, normal);
 
