@@ -20,9 +20,9 @@ namespace lys
 		spl::TextureInternalFormat tangentTextureFormat = spl::TextureInternalFormat::RGB_ni16;
 
 		bool shadowMappingEnabled = true;
-		uint32_t shadowMapCount = 64;
+		uint32_t shadowMapCount = 16;
 		scp::u32vec2 shadowMapResolution = { 2048, 2048 };
-		spl::TextureInternalFormat shadowTextureFormat = spl::TextureInternalFormat::Depth_nu16;
+		spl::TextureInternalFormat shadowTextureFormat = spl::TextureInternalFormat::Depth_nu24;
 
 		bool ssaoEnabled = true;
 		uint32_t ssaoSampleCount = 16;
@@ -92,7 +92,7 @@ namespace lys
 			void _insertInDrawSequence(void* pDrawSequence, const Drawable* drawable, ShaderType shaderType) const;
 
 			static void _setGBufferUniforms(const std::pair<const spl::ShaderProgram*, const GBufferShaderInterface*>& gBuffer, const Drawable* drawable);
-			static void _setShadowMappingUniforms(const std::pair<const spl::ShaderProgram*, const ShadowMappingShaderInterface*>& gBuffer, const Drawable* drawable);
+			static void _setShadowMappingUniforms(const std::pair<const spl::ShaderProgram*, const ShadowMappingShaderInterface*>& shadowMapping, const Drawable* drawable);
 
 
 			spl::VertexArray _screenVao;

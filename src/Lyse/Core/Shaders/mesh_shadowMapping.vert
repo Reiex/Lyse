@@ -19,9 +19,15 @@ layout (std140, row_major, binding = 2) uniform ubo_drawable_layout
 	DrawableData ubo_drawable;
 };
 
+// Outputs
+
+out vec2 io_vertTexCoords;
+
 // Function definitions
 
 void main()
 {
+	io_vertTexCoords = va_texCoords.xy;
+
 	gl_Position = ubo_drawable.model * va_position;
 }

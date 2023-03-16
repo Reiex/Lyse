@@ -25,10 +25,16 @@ namespace lys
 
 			void setShaderSet(const ShaderSet* shaderSet);
 			void setMaterial(const Material* material);
+			void setGeometryFaceCulling(spl::FaceCulling culling);
+			void setShadowFaceCulling(spl::FaceCulling culling);
+			void setShadowBias(float bias);
 
+			virtual DrawableType getType() const = 0;
 			const ShaderSet* getShaderSet() const;
 			const Material* getMaterial() const;
-			virtual DrawableType getType() const = 0;
+			spl::FaceCulling getGeometryFaceCulling() const;
+			spl::FaceCulling getShadowFaceCulling() const;
+			float getShadowBias() const;
 
 		protected:
 
@@ -46,6 +52,9 @@ namespace lys
 
 			const ShaderSet* _shaderSet;
 			const Material* _material;
+			spl::FaceCulling _geometryCulling;
+			spl::FaceCulling _shadowCulling;
+			float _shadowBias;
 
 		friend class Scene;
 	};

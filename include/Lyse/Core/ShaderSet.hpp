@@ -27,7 +27,9 @@ namespace lys
 
 	struct ShadowMappingShaderInterface
 	{
-		// Nothing
+		spl::GlslType u_color = spl::GlslType::Undefined;
+
+		spl::GlslType u_depthBias = spl::GlslType::Undefined;
 	};
 
 	class ShaderSet
@@ -46,6 +48,7 @@ namespace lys
 		private:
 
 			static const std::unordered_map<std::string, intptr_t> gBufferUniformToOffset;
+			static const std::unordered_map<std::string, intptr_t> shadowMappingUniformToOffset;
 
 			const spl::ShaderProgram* _gBufferShader;
 			const spl::ShaderProgram* _shadowMappingShader;

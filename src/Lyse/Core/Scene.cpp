@@ -277,8 +277,7 @@ namespace lys
 		context->setViewport(0, 0, _resolution.x, _resolution.y);
 		context->setIsSeamlessCubeMapFilteringEnabled(true);
 		context->setIsDepthTestEnabled(true);
-		context->setFaceCulling(spl::FaceCulling::FrontClockWise);
-		
+
 		// Update and bind UBOs
 		
 		std::vector<const CameraBase*> shadowCameras;
@@ -310,6 +309,7 @@ namespace lys
 		
 			_updateAndBindUboDrawable(2, _camera, elt.second);
 			_setGBufferUniforms(elt.first, elt.second);
+			context->setFaceCulling(elt.second->getGeometryFaceCulling());
 			elt.second->_draw();
 		}
 		
@@ -318,7 +318,6 @@ namespace lys
 		if (_params.shadowMappingEnabled)
 		{
 			context->setViewport(0, 0, _params.shadowMapResolution.x, _params.shadowMapResolution.y);
-			context->setFaceCulling(spl::FaceCulling::BackClockWise);
 
 			spl::Framebuffer::bind(spl::FramebufferTarget::DrawFramebuffer, &_shadowMappingFramebuffer);
 			spl::Framebuffer::clear(false, true, false);
@@ -340,14 +339,16 @@ namespace lys
 
 				_updateAndBindUboDrawable(2, _camera, elt.second);
 				_setShadowMappingUniforms(elt.first, elt.second);
+				context->setFaceCulling(elt.second->getShadowFaceCulling());
 				elt.second->_draw();
 			}
 
 			context->setViewport(0, 0, _resolution.x, _resolution.y);
-			context->setFaceCulling(spl::FaceCulling::FrontClockWise);
 		}
 		
 		// Compute SSAO
+
+		context->setFaceCulling(spl::FaceCulling::Disabled);
 		
 		if (_params.ssaoEnabled)
 		{
@@ -505,7 +506,8 @@ namespace lys
 			{ spl::ShaderStage::Fragment,	{ header,													common_glsl, ssao_frag } },
 			{ spl::ShaderStage::Vertex,		{ header, 													common_glsl, mesh_shadowMapping_vert } },
 			{ spl::ShaderStage::Geometry,	{ header, 													common_glsl, mesh_shadowMapping_geom } },
-			{ spl::ShaderStage::Fragment,	{ header, 													common_glsl, mesh_shadowMapping_frag } },
+			{ spl::ShaderStage::Fragment,	{ header,													common_glsl, mesh_shadowMapping_frag } },
+			{ spl::ShaderStage::Fragment,	{ header, colorMap,											common_glsl, mesh_shadowMapping_frag } },
 			{ spl::ShaderStage::Vertex,		{ header, 													common_glsl, mesh_gBuffer_vert } },
 			{ spl::ShaderStage::Fragment,	{ header, 													common_glsl, mesh_gBuffer_frag } },
 			{ spl::ShaderStage::Fragment,	{ header, colorMap,											common_glsl, mesh_gBuffer_frag } },
@@ -550,22 +552,24 @@ namespace lys
 		moduleArray = { modules + 4, modules + 5, nullptr, nullptr, nullptr };		// 3
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
 		moduleArray = { modules + 6, modules + 7, modules + 8, nullptr, nullptr };	// 4
+		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 3));
+		moduleArray = { modules + 6, modules + 7, modules + 9, nullptr, nullptr };	// 5
+		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 3));
+		moduleArray = { modules + 10, modules + 11, nullptr, nullptr, nullptr };	// 6
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 9, modules + 10, nullptr, nullptr, nullptr };		// 5
+		moduleArray = { modules + 10, modules + 12, nullptr, nullptr, nullptr };	// 7
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 9, modules + 11, nullptr, nullptr, nullptr };		// 6
+		moduleArray = { modules + 10, modules + 13, nullptr, nullptr, nullptr };	// 8
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 9, modules + 12, nullptr, nullptr, nullptr };		// 7
+		moduleArray = { modules + 10, modules + 14, nullptr, nullptr, nullptr };	// 9
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 9, modules + 13, nullptr, nullptr, nullptr };		// 8
+		moduleArray = { modules + 10, modules + 15, nullptr, nullptr, nullptr };	// 10
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 9, modules + 14, nullptr, nullptr, nullptr };		// 9
+		moduleArray = { modules + 10, modules + 16, nullptr, nullptr, nullptr };	// 11
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 9, modules + 15, nullptr, nullptr, nullptr };		// 10
+		moduleArray = { modules + 10, modules + 17, nullptr, nullptr, nullptr };	// 12
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 9, modules + 16, nullptr, nullptr, nullptr };		// 11
-		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
-		moduleArray = { modules + 9, modules + 17, nullptr, nullptr, nullptr };		// 12
+		moduleArray = { modules + 10, modules + 18, nullptr, nullptr, nullptr };	// 13
 		_shaders.push_back(new spl::ShaderProgram(moduleArray.data(), 2));
 
 
@@ -580,14 +584,14 @@ namespace lys
 				DrawableType::Mesh,
 				{
 					{
-						{ _shaders[5], _shaders[4] },	//
-						{ _shaders[6], _shaders[4] },	// colorMap
-						{ _shaders[7], _shaders[4] },	// 			  materialMap
-						{ _shaders[8], _shaders[4] },	// colorMap + materialMap
-						{ _shaders[9], _shaders[4] },	// 							normalMap
-						{ _shaders[10], _shaders[4] },	// colorMap					normalMap
-						{ _shaders[11], _shaders[4] },	// 			  materialMap + normalMap
-						{ _shaders[12], _shaders[4] }	// colorMap + materialMap + normalMap
+						{ _shaders[6], _shaders[4] },	//
+						{ _shaders[7], _shaders[5] },	// colorMap
+						{ _shaders[8], _shaders[4] },	// 			  materialMap
+						{ _shaders[9], _shaders[5] },	// colorMap + materialMap
+						{ _shaders[10], _shaders[4] },	// 							normalMap
+						{ _shaders[11], _shaders[5] },	// colorMap					normalMap
+						{ _shaders[12], _shaders[4] },	// 			  materialMap + normalMap
+						{ _shaders[13], _shaders[5] }	// colorMap + materialMap + normalMap
 					}
 				}
 			},
@@ -700,6 +704,12 @@ namespace lys
 			const ShaderSet* drawableShaderSet = drawable->getShaderSet();
 			const Material* material = drawable->getMaterial();
 
+			uint32_t index = (material->getColorTexture() != nullptr) | ((material->getPropertiesTexture() != nullptr) << 1);
+			if (drawableType == DrawableType::Mesh)
+			{
+				index |= (dynamic_cast<const Mesh<>*>(drawable)->getNormalMap() != nullptr) << 2;
+			}
+
 			switch (shaderType)
 			{
 				case ShaderType::GBuffer:
@@ -714,12 +724,6 @@ namespace lys
 					}
 					else
 					{
-						uint32_t index = (material->getColorTexture() != nullptr) | ((material->getPropertiesTexture() != nullptr) << 1);
-						if (drawableType == DrawableType::Mesh)
-						{
-							index |= (dynamic_cast<const Mesh<>*>(drawable)->getNormalMap() != nullptr) << 2;
-						}
-
 						key.first = _shaderMap.find(drawableType)->second[index]._gBufferShader;
 						key.second = &_shaderMap.find(drawableType)->second[index]._gBufferShaderInterface;
 					}
@@ -741,8 +745,8 @@ namespace lys
 					}
 					else
 					{
-						key.first = _shaderMap.find(drawableType)->second[4]._shadowMappingShader;
-						key.second = &_shaderMap.find(drawableType)->second[4]._shadowMappingShaderInterface;
+						key.first = _shaderMap.find(drawableType)->second[index]._shadowMappingShader;
+						key.second = &_shaderMap.find(drawableType)->second[index]._shadowMappingShaderInterface;
 					}
 
 					std::multimap<TKey, const Drawable*>& drawSequence = *reinterpret_cast<std::multimap<TKey, const Drawable*>*>(pDrawSequence);
@@ -805,8 +809,23 @@ namespace lys
 		}
 	}
 	
-	void Scene::_setShadowMappingUniforms(const std::pair<const spl::ShaderProgram*, const ShadowMappingShaderInterface*>& gBuffer, const Drawable* drawable)
+	void Scene::_setShadowMappingUniforms(const std::pair<const spl::ShaderProgram*, const ShadowMappingShaderInterface*>& shadowMapping, const Drawable* drawable)
 	{
+		const Material* material = drawable->getMaterial();
 
+		if (shadowMapping.second->u_color == spl::GlslType::Sampler2d)
+		{
+			assert(material->getColorTexture());
+			shadowMapping.first->setUniform("u_color", 0, material->getColorTexture());
+		}
+		else if (shadowMapping.second->u_color == spl::GlslType::FloatVec4)
+		{
+			shadowMapping.first->setUniform("u_color", material->getColor());
+		}
+
+		if (shadowMapping.second->u_depthBias == spl::GlslType::Float)
+		{
+			shadowMapping.first->setUniform("u_depthBias", drawable->getShadowBias());
+		}
 	}
 }
