@@ -987,5 +987,65 @@ namespace spl
 					| (((flags & GL_CONTEXT_COMPATIBILITY_PROFILE_BIT) != 0)	<< 1)
 				);
 		}
+	
+		constexpr GLenum blendEquationToGLenum(BlendEquation equation)
+		{
+			switch (equation)
+			{
+				case BlendEquation::Add:
+					return GL_FUNC_ADD;
+				case BlendEquation::Substract:
+					return GL_FUNC_SUBTRACT;
+				case BlendEquation::ReverseSubstract:
+					return GL_FUNC_REVERSE_SUBTRACT;
+				case BlendEquation::Min:
+					return GL_MIN;
+				case BlendEquation::Max:
+					return GL_MAX;
+				default:
+					assert(false);
+					return 0;
+			}
+		}
+
+		constexpr GLenum blendFuncToGLenum(BlendFunc func)
+		{
+			switch (func)
+			{
+				case BlendFunc::Zero:
+					return GL_ZERO;
+				case BlendFunc::One:
+					return GL_ONE;
+				case BlendFunc::SrcColor:
+					return GL_SRC_COLOR;
+				case BlendFunc::OneMinusSrcColor:
+					return GL_ONE_MINUS_SRC_COLOR;
+				case BlendFunc::DstColor:
+					return GL_DST_COLOR;
+				case BlendFunc::OneMinusDstColor:
+					return GL_ONE_MINUS_DST_COLOR;
+				case BlendFunc::SrcAlpha:
+					return GL_SRC_ALPHA;
+				case BlendFunc::OneMinusSrcAlpha:
+					return GL_ONE_MINUS_SRC_ALPHA;
+				case BlendFunc::DstAlpha:
+					return GL_DST_ALPHA;
+				case BlendFunc::OneMinusDstAlpha:
+					return GL_ONE_MINUS_DST_ALPHA;
+				case BlendFunc::ConstantColor:
+					return GL_CONSTANT_COLOR;
+				case BlendFunc::OneMinusConstantColor:
+					return GL_ONE_MINUS_CONSTANT_COLOR;
+				case BlendFunc::ConstantAlpha:
+					return GL_CONSTANT_ALPHA;
+				case BlendFunc::OneMinusConstantAlpha:
+					return GL_ONE_MINUS_CONSTANT_ALPHA;
+				case BlendFunc::SrcAlphaSaturate:
+					return GL_SRC_ALPHA_SATURATE;
+				default:
+					assert(false);
+					return 0;
+			}
+		}
 	}
 }

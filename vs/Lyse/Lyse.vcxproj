@@ -111,6 +111,14 @@
       <FileType>Document</FileType>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_transparency.frag">
+      <FileType>Document</FileType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_transparency.vert">
+      <FileType>Document</FileType>
+    </EmbeddedResource>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

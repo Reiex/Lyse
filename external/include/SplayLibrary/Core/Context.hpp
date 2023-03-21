@@ -335,15 +335,50 @@ namespace spl
 		std::string descr;
 	};
 
-	enum class FaceCulling
+	enum class FaceOrientation
+	{
+		Front,
+		Back,
+		FrontAndBack
+	};
+
+	enum class FaceCullingMode
 	{
 		Disabled,
-		BackClockWise,
-		BackCounterClockWise,
-		FrontClockWise,
-		FrontCounterClockWise,
-		FrontAndBackClockWise,
-		FrontAndBackCounterClockWise
+		ClockWise,
+		CounterClockWise
+	};
+
+	enum class BlendEquation
+	{
+		Add,
+		Substract,
+		ReverseSubstract,
+		Min,
+		Max
+	};
+
+	enum class BlendFunc
+	{
+		Zero,
+		One,
+		SrcColor,
+		OneMinusSrcColor,
+		DstColor,
+		OneMinusDstColor,
+		SrcAlpha,
+		OneMinusSrcAlpha,
+		DstAlpha,
+		OneMinusDstAlpha,
+		ConstantColor,
+		OneMinusConstantColor,
+		ConstantAlpha,
+		OneMinusConstantAlpha,
+		SrcAlphaSaturate,
+		// TODO: Src1Color,
+		// TODO: OneMinusSrc1Color,
+		// TODO: Src1Alpha,
+		// TODO: OneMinusSrc1Alpha
 	};
 
 	struct IndexedBufferBinding
@@ -355,13 +390,21 @@ namespace spl
 
 	struct ContextState
 	{
+		bool isSeamlessCubeMapFilteringEnabled = false;
+		scp::i32vec4 viewport = { 0, 0, 0, 0 };
 		scp::f32vec4 clearColor = { 0.f, 0.f, 0.f, 0.f };
 		double clearDepth = 1.0;
 		int32_t clearStencil = 0;
-		scp::i32vec4 viewport = { 0, 0, 0, 0 };
-		bool isSeamlessCubeMapFilteringEnabled = false;
+		FaceCullingMode faceCullingMode = FaceCullingMode::Disabled;
+		FaceOrientation faceCullingOrientation = FaceOrientation::Back;
+		bool isDepthWriteEnabled = true;
 		bool isDepthTestEnabled = false;
-		FaceCulling faceCulling = FaceCulling::Disabled;
+		CompareFunc depthTestFunc = CompareFunc::Less;
+		bool isStencilTestEnabled = false;
+		std::vector<bool> isBlendEnabled = {};
+		std::vector<std::array<BlendEquation, 2>> blendEquations = {};
+		std::vector<std::array<BlendFunc, 4>> blendFuncs = {};
+		scp::f32vec4 blendColor = { 0.f, 0.f, 0.f, 0.f };
 
 		// TODO: Pixel storage modes
 
@@ -404,21 +447,39 @@ namespace spl
 
 			void setState(const ContextState& state);
 
+			void setIsSeamlessCubeMapFilteringEnabled(bool isEnabled);
+			void setViewport(int32_t xOffset, int32_t yOffset, uint32_t width, uint32_t height);
 			void setClearColor(float r, float g, float b, float a);
 			void setClearDepth(double clearDepth);
 			void setClearStencil(int32_t clearStencil);
-			void setViewport(int32_t xOffset, int32_t yOffset, uint32_t width, uint32_t height);
-			void setIsSeamlessCubeMapFilteringEnabled(bool isEnabled);
+			void setFaceCullingMode(FaceCullingMode mode);
+			void setFaceCullingOrientation(FaceOrientation orientation);
+			void setIsDepthWriteEnabled(bool isEnabled);
 			void setIsDepthTestEnabled(bool isEnabled);
-			void setFaceCulling(FaceCulling faceCulling);
+			void setDepthTestFunc(CompareFunc func);
+			void setIsStencilTestEnabled(bool isEnabled);
+			// TODO: StencilFunc and StencilOp (be careful, multiple op and func depending on the face...)
+			void setIsBlendEnabled(uint32_t drawBufferIndex, bool isEnabled);
+			void setBlendEquations(uint32_t drawBufferIndex, BlendEquation colorEquation, BlendEquation alphaEquation);
+			void setBlendFuncs(uint32_t drawBufferIndex, BlendFunc srcColorFunc, BlendFunc srcAlphaFunc, BlendFunc dstColorFunc, BlendFunc dstAlphaFunc);
+			void setBlendColor(float r, float g, float b, float a);
 
+			bool getIsSeamlessCubeMapFilteringEnabled() const;
+			const scp::i32vec4& getViewport() const;
 			const scp::f32vec4& getClearColor() const;
 			double getClearDepth() const;
 			int32_t getClearStencil() const;
-			const scp::i32vec4& getViewport() const;
-			bool getIsSeamlessCubeMapFilteringEnabled() const;
+			FaceCullingMode getFaceCullingMode() const;
+			FaceOrientation getFaceCullingOrientation() const;
+			bool getIsDepthWriteEnabled() const;
 			bool getIsDepthTestEnabled() const;
-			FaceCulling getFaceCulling() const;
+			CompareFunc getDepthTestFunc() const;
+			bool getIsStencilTestEnabled() const;
+			// TODO: StencilFunc and StencilOp
+			bool getIsBlendEnabled(uint32_t drawBufferIndex) const;
+			const std::array<BlendEquation, 2>& getBlendEquations(uint32_t drawBufferIndex) const;
+			const std::array<BlendFunc, 4>& getBlendFuncs(uint32_t drawBufferIndex) const;
+			const scp::f32vec4& getBlendColor() const;
 
 			const Buffer* getBufferBinding(BufferTarget target) const;
 			const IndexedBufferBinding& getIndexedBufferBinding(BufferTarget target, uint32_t index) const;

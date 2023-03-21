@@ -49,6 +49,8 @@ namespace spl
 		constexpr ProvokingVertexConvention glToProvokingVertexConvention(GLenum convention);
 		constexpr ContextFlags::Flags glToContextFlags(GLbitfield flags);
 		constexpr ContextProfileMask::Flags glToContextProfileMask(GLbitfield flags);
+		constexpr GLenum blendEquationToGLenum(BlendEquation equation);
+		constexpr GLenum blendFuncToGLenum(BlendFunc func);
 	}
 }
 

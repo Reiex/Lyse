@@ -44,8 +44,8 @@ int main()
 	lys::Mesh<> cloudMesh("examples/assets/meshes/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
 	cloudMesh.setMaterial(&cloudMaterial);
 	cloudMesh.setScale(1.005);
-	cloudMesh.setGeometryFaceCulling(spl::FaceCulling::Disabled);
-	cloudMesh.setShadowFaceCulling(spl::FaceCulling::FrontAndBackClockWise);
+	cloudMesh.setGeometryFaceCullingMode(spl::FaceCullingMode::Disabled);
+	cloudMesh.setShadowFaceCullingOrientation(spl::FaceOrientation::FrontAndBack);
 	
 	lys::Material moonMaterial(&moonColorMap, 0.1f, 0.0f, 1.f);
 	lys::Mesh<> moonMesh("examples/assets/meshes/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);

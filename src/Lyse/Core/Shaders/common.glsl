@@ -63,13 +63,14 @@ struct ShadowCameraData
 struct ShadowCamerasData
 {
 	uint count;
-	ShadowCameraData cameras[SHADOWMAP_COUNT];
+	ShadowCameraData cameras[SHADOW_TEXTURE_COUNT];
 };
 
 // Constants
 
 const float c_epsilon = 0.00001;
 const float c_oneMinusEpsilon = 0.99999;
+
 const float c_halfPi = 1.57079632679;
 const float c_pi = 3.14159265359;
 const float c_2pi = 6.28318530718;

@@ -12,8 +12,10 @@ namespace lys
 	Drawable::Drawable() : Transformable(),
 		_shaderSet(nullptr),
 		_material(&Material::defaultMaterial),
-		_geometryCulling(spl::FaceCulling::FrontClockWise),
-		_shadowCulling(spl::FaceCulling::BackClockWise),
+		_geometryCullingMode(spl::FaceCullingMode::CounterClockWise),
+		_geometryCullingOrientation(spl::FaceOrientation::Back),
+		_shadowCullingMode(spl::FaceCullingMode::CounterClockWise),
+		_shadowCullingOrientation(spl::FaceOrientation::Front),
 		_shadowBias(0.f)
 	{
 	}
@@ -29,14 +31,24 @@ namespace lys
 		_material = material;
 	}
 
-	void Drawable::setGeometryFaceCulling(spl::FaceCulling culling)
+	void Drawable::setGeometryFaceCullingMode(spl::FaceCullingMode mode)
 	{
-		_geometryCulling = culling;
+		_geometryCullingMode = mode;
 	}
 
-	void Drawable::setShadowFaceCulling(spl::FaceCulling culling)
+	void Drawable::setGeometryFaceCullingOrientation(spl::FaceOrientation orientation)
 	{
-		_shadowCulling = culling;
+		_geometryCullingOrientation = orientation;
+	}
+
+	void Drawable::setShadowFaceCullingMode(spl::FaceCullingMode mode)
+	{
+		_shadowCullingMode = mode;
+	}
+
+	void Drawable::setShadowFaceCullingOrientation(spl::FaceOrientation orientation)
+	{
+		_shadowCullingOrientation = orientation;
 	}
 
 	void Drawable::setShadowBias(float bias)
@@ -54,14 +66,24 @@ namespace lys
 		return _material;
 	}
 
-	spl::FaceCulling Drawable::getGeometryFaceCulling() const
+	spl::FaceCullingMode Drawable::getGeometryFaceCullingMode() const
 	{
-		return _geometryCulling;
+		return _geometryCullingMode;
 	}
 
-	spl::FaceCulling Drawable::getShadowFaceCulling() const
+	spl::FaceOrientation Drawable::getGeometryFaceCullingOrientation() const
 	{
-		return _shadowCulling;
+		return _geometryCullingOrientation;
+	}
+
+	spl::FaceCullingMode Drawable::getShadowFaceCullingMode() const
+	{
+		return _shadowCullingMode;
+	}
+
+	spl::FaceOrientation Drawable::getShadowFaceCullingOrientation() const
+	{
+		return _shadowCullingOrientation;
 	}
 
 	float Drawable::getShadowBias() const

@@ -166,5 +166,11 @@
     <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_shadowMapping.geom">
       <Filter>Shaders</Filter>
     </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_transparency.vert">
+      <Filter>Shaders</Filter>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_transparency.frag">
+      <Filter>Shaders</Filter>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>

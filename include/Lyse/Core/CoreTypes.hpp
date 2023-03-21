@@ -33,7 +33,15 @@ namespace lys
 
 
 	enum class ShaderType;
-	struct GBufferShaderInterface;
+	namespace shaderInterface
+	{
+		struct SubInterfaceDrawable;
+		struct SubInterfaceGBufferResult;
+		struct SubInterfaceShadowResult;
+		struct InterfaceGBuffer;
+		struct InterfaceShadow;
+		struct InterfaceTransparency;
+	}
 	class ShaderSet;
 
 	class Material;

@@ -24,6 +24,10 @@ namespace lys
 		scp::u32vec2 shadowMapResolution = { 2048, 2048 };
 		spl::TextureInternalFormat shadowTextureFormat = spl::TextureInternalFormat::Depth_nu24;
 
+		bool transparencyEnabled = true;
+		spl::TextureInternalFormat transparencyColorTextureFormat = spl::TextureInternalFormat::RGBA_f32;
+		spl::TextureInternalFormat transparencyCounterTextureFormat = spl::TextureInternalFormat::R_f32;
+
 		bool ssaoEnabled = true;
 		uint32_t ssaoSampleCount = 16;
 		spl::TextureInternalFormat ssaoTextureFormat = spl::TextureInternalFormat::R_nu16;
@@ -53,7 +57,7 @@ namespace lys
 
 			void setBackgroundFlatColor(float red, float green, float blue);
 			void setBackgroundEquirectangular(const spl::Texture2D* texture);
-			void setBackgroundCubemap(const spl::Texture* texture);	// TODO : Change that when there will a "TextureCubeMap" class in SPL
+			void setBackgroundCubemap(const spl::Texture* texture);	// TODO : Change that when there is a "TextureCubeMap" class in SPL
 
 			void setCamera(const CameraBase* camera);
 
@@ -75,6 +79,9 @@ namespace lys
 
 			const spl::Texture& getShadowTexture() const;
 
+			const spl::Texture2D& getTransparencyColorTexture() const;
+			const spl::Texture2D& getTransparencyCounterTexture() const;
+
 			const spl::Texture2D& getSsaoTexture() const;
 
 			const spl::Texture2D& getRenderTexture() const;
@@ -91,9 +98,11 @@ namespace lys
 			const void _updateAndBindUboShadowCameras(uint32_t index, const std::vector<const CameraBase*>& shadowCameras);
 			void _insertInDrawSequence(void* pDrawSequence, const Drawable* drawable, ShaderType shaderType) const;
 
-			static void _setGBufferUniforms(const std::pair<const spl::ShaderProgram*, const GBufferShaderInterface*>& gBuffer, const Drawable* drawable);
-			static void _setShadowMappingUniforms(const std::pair<const spl::ShaderProgram*, const ShadowMappingShaderInterface*>& shadowMapping, const Drawable* drawable);
-
+			void _setDrawableUniforms(const spl::ShaderProgram* shader, const shaderInterface::SubInterfaceDrawable* interface, const Drawable* drawable);
+			void _setGBufferResultUniforms(const spl::ShaderProgram* shader, const shaderInterface::SubInterfaceGBufferResult* interface);
+			void _setShadowResultUniforms(const spl::ShaderProgram* shader, const shaderInterface::SubInterfaceShadowResult* interface);
+			void _setTransparencyResultUniforms(const spl::ShaderProgram* shader, const shaderInterface::SubInterfaceTransparencyResult* interface);
+			void _setSsaoResultUniforms(const spl::ShaderProgram* shader, const shaderInterface::SubInterfaceSsaoResult* interface);
 
 			spl::VertexArray _screenVao;
 			spl::Buffer _screenVbo;
@@ -129,6 +138,10 @@ namespace lys
 			spl::Texture _shadowTexture;
 			spl::Framebuffer _shadowMappingFramebuffer;
 			spl::Buffer _uboShadowCameras;
+
+			spl::Texture2D _transparencyColorTexture;
+			spl::Texture2D _transparencyCounterTexture;
+			spl::Framebuffer _transparencyFramebuffer;
 
 			spl::Texture2D _ssaoTexture;
 			spl::Framebuffer _ssaoFramebuffer;

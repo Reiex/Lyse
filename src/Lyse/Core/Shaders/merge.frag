@@ -32,30 +32,34 @@ layout (std140, row_major, binding = 3) uniform ubo_shadow_cameras_layout
 
 // Uniforms
 
-uniform sampler2D u_depth;
-uniform sampler2D u_color;
-uniform sampler2D u_material;
-uniform sampler2D u_normal;
+uniform sampler2D u_gBufferDepth;
+uniform sampler2D u_gBufferColor;
+uniform sampler2D u_gBufferMaterial;
+uniform sampler2D u_gBufferNormal;
 
-#ifdef SHADOW_MAPPING
-	uniform sampler2DArray u_shadow;
+#ifdef SHADOW
+	uniform sampler2DArray u_shadowTexture;
 	uniform vec3 u_shadowBlurOffset;
 #endif
 
-#ifdef SSAO
-	uniform sampler2D u_ssao;
+#ifdef TRANSPARENCY
+	uniform sampler2D u_transparencyColor;
+	uniform sampler2D u_transparencyCounter;
 #endif
 
-#ifdef BACKGROUND
+#ifdef SSAO
+	uniform sampler2D u_ssaoTexture;
+#endif
 
+#ifdef BACKGROUND_TEXTURE
 	#ifdef BACKGROUND_PROJECTION
 		uniform sampler2D u_background;
 	#endif
-
 	#ifdef BACKGROUND_CUBEMAP
 		uniform samplerCube u_background;
 	#endif
-
+#else
+	uniform vec3 u_background;
 #endif
 
 uniform float u_twoTanHalfFov;
@@ -88,92 +92,102 @@ void main()
 	// Retrieve view-space depth, position and viewDir from fragment position and precedent passes
 	
 	const ivec2 windowCoord = ivec2(gl_FragCoord.xy);
-	const float depth = ubo_camera.near + texelFetch(u_depth, windowCoord, 0).r * ubo_camera.far;
+	const float depth = ubo_camera.near + texelFetch(u_gBufferDepth, windowCoord, 0).r * ubo_camera.far;
 	const vec3 viewDirUnnormalized = vec3(vec2((io_texCoords.x - 0.5) * ubo_camera.aspect, io_texCoords.y - 0.5) * u_twoTanHalfFov, -1.0);
 	const vec3 position = depth * viewDirUnnormalized;
 	const vec3 viewDir = normalize(viewDirUnnormalized);
+
+	vec3 rawColor;
 
 	// If nothing has been drawn on the fragment, show the background
 
 	if (depth >= ubo_camera.far * c_oneMinusEpsilon)
 	{
-		#ifdef BACKGROUND
-			fo_output = computeBackgroundColor(viewDir);
-			return;
-		#else
-			discard;
-		#endif
+		rawColor = computeBackgroundColor(viewDir);
 	}
-
-	// Retrieve fragment information from precedent passes
-
-	const vec3 color = texelFetch(u_color, windowCoord, 0).rgb;
-	const vec3 material = texelFetch(u_material, windowCoord, 0).rgb;
-	const vec3 normal = texelFetch(u_normal, windowCoord, 0).rgb;
-
-	// Pre-compute useful constants
-
-	const vec3 eyeDir = -viewDir;
-
-	const float metallic = material.y;
-	const float roughness = material.z;
-	const float roughnessSq = roughness * roughness;
-	const float roughnessSqSq = roughnessSq * roughnessSq;
-	const float geometryConstant = roughnessSq * 0.125;
-		
-	const vec3 normalFresnelReflectance = mix(c_dielectricNormalFresnelReflectance, color, metallic);	// TODO: Check that formula...
-
-	const float dotNormalViewDir = max(dot(normal, eyeDir), c_epsilon);
-	const float geometryView = geometryGGX(dotNormalViewDir, geometryConstant);
-		
-	// Compute ambiant lighting
-
-	const vec3 ambiant = color * (material.x * computeSsaoValue());
-
-	// Iterator over each light source for diffuse and specular lighting
-
-	vec3 diffuse = vec3(0.0);
-	vec3 specular = vec3(0.0);
-	for (uint i = 0; i < ubo_lights.count; ++i)
+	else
 	{
-		// If fragment is totally in shadow, skip lighting, else apply an occlusion factor
+		// Retrieve fragment information from precedent passes
 
-		float occlusion = computeShadowOcclusion(position, i);
+		const vec3 color = texelFetch(u_gBufferColor, windowCoord, 0).rgb;
+		const vec3 material = texelFetch(u_gBufferMaterial, windowCoord, 0).rgb;
+		const vec3 normal = texelFetch(u_gBufferNormal, windowCoord, 0).rgb;
 
-		if (occlusion == 1.0)
+		// Pre-compute useful constants
+
+		const vec3 eyeDir = -viewDir;
+
+		const float metallic = material.y;
+		const float roughness = material.z;
+		const float roughnessSq = roughness * roughness;
+		const float roughnessSqSq = roughnessSq * roughnessSq;
+		const float geometryConstant = roughnessSq * 0.125;
+		
+		const vec3 normalFresnelReflectance = mix(c_dielectricNormalFresnelReflectance, color, metallic);	// TODO: Check that formula...
+
+		const float dotNormalViewDir = max(dot(normal, eyeDir), c_epsilon);
+		const float geometryView = geometryGGX(dotNormalViewDir, geometryConstant);
+		
+		// Compute ambiant lighting
+
+		const vec3 ambiant = color * (material.x * computeSsaoValue());
+
+		// Iterator over each light source for diffuse and specular lighting
+
+		vec3 diffuse = vec3(0.0);
+		vec3 specular = vec3(0.0);
+		for (uint i = 0; i < ubo_lights.count; ++i)
 		{
-			continue;
+			// If fragment is totally in shadow, skip lighting, else apply an occlusion factor
+
+			float occlusion = computeShadowOcclusion(position, i);
+
+			if (occlusion == 1.0)
+			{
+				continue;
+			}
+
+			// Compute light direction and radiance depending on light type and parameters. If light is too low, skip lighting
+
+			vec3 lightDir, radiance;
+			computeLightDirAndRadiance(position, i, lightDir, radiance);
+
+			const float dotNormalLightDir = max(dot(normal, lightDir), c_epsilon);
+			radiance *= dotNormalLightDir * (1.0 - occlusion);
+
+			if (length(radiance) < c_epsilon)
+			{
+				continue;
+			}
+
+			// Finaly compute diffuse and specular lighting for this light source
+
+			const vec3 halfDir = normalize(lightDir + eyeDir);
+
+			const vec3 fresnelReflectance = fresnelSchlick(halfDir, lightDir, normalFresnelReflectance);
+			const float distribution = distributionGGX(normal, halfDir, roughnessSqSq);
+			const float geometryLight = geometryGGX(dotNormalLightDir, geometryConstant);
+
+			diffuse += radiance * (1.0 - fresnelReflectance);
+			specular += radiance * fresnelReflectance * distribution * geometryLight / dotNormalLightDir;
 		}
 
-		// Compute light direction and radiance depending on light type and parameters. If light is too low, skip lighting
+		diffuse *= color * (1.0 - metallic) / c_pi;
+		specular *= geometryView / (4.0 * dotNormalViewDir);
 
-		vec3 lightDir, radiance;
-		computeLightDirAndRadiance(position, i, lightDir, radiance);
-
-		const float dotNormalLightDir = max(dot(normal, lightDir), c_epsilon);
-		radiance *= dotNormalLightDir * (1.0 - occlusion);
-
-		if (length(radiance) < c_epsilon)
-		{
-			continue;
-		}
-
-		// Finaly compute diffuse and specular lighting for this light source
-
-		const vec3 halfDir = normalize(lightDir + eyeDir);
-
-		const vec3 fresnelReflectance = fresnelSchlick(halfDir, lightDir, normalFresnelReflectance);
-		const float distribution = distributionGGX(normal, halfDir, roughnessSqSq);
-		const float geometryLight = geometryGGX(dotNormalLightDir, geometryConstant);
-
-		diffuse += radiance * (1.0 - fresnelReflectance);
-		specular += radiance * fresnelReflectance * distribution * geometryLight / dotNormalLightDir;
+		rawColor = ambiant + diffuse + specular;
 	}
 
-	diffuse *= color * (1.0 - metallic) / c_pi;
-	specular *= geometryView / (4.0 * dotNormalViewDir);
+	#ifdef TRANSPARENCY
+	
+		float n = texelFetch(u_transparencyCounter, windowCoord, 0).r;
+		if (n != 0.0)
+		{
+			vec4 transparencyColor = texelFetch(u_transparencyColor, windowCoord, 0);
+			rawColor = (transparencyColor.rgb / transparencyColor.a) * (1.0 - pow(1.0 - transparencyColor.a / n, n)) + rawColor * pow(1.0 - transparencyColor.a / n, n);
+		}
 
-	vec3 rawColor = ambiant + diffuse + specular;
+	#endif
 
 	// Apply HDR and gamma correction to final fragment color
 
@@ -191,7 +205,7 @@ vec2 viewDirToBackgroundProjection(in const vec3 modelViewDir)
 
 vec3 computeBackgroundColor(in const vec3 viewDir)
 {
-	#ifdef BACKGROUND
+	#ifdef BACKGROUND_TEXTURE
 		const vec3 modelViewDir = (ubo_camera.invView * vec4(viewDir, 0)).xyz;
 		
 		#ifdef BACKGROUND_PROJECTION
@@ -202,20 +216,20 @@ vec3 computeBackgroundColor(in const vec3 viewDir)
 			return texture(u_background, modelViewDir).rgb;
 		#endif
 	#else
-		return vec3(0.0);
+		return u_background;
 	#endif
 }
 
 float computeSsaoValue()
 {
 	#ifdef SSAO
-		vec4 tmp = textureGather(u_ssao, io_texCoords, 0);
+		vec4 tmp = textureGather(u_ssaoTexture, io_texCoords, 0);
 		float result = tmp.x + tmp.y + tmp.z + tmp.w;
-		tmp = textureGatherOffset(u_ssao, io_texCoords, ivec2(-1, -1), 0);
+		tmp = textureGatherOffset(u_ssaoTexture, io_texCoords, ivec2(-1, -1), 0);
 		result += tmp.x + tmp.y + tmp.z + tmp.w;
-		tmp = textureGatherOffset(u_ssao, io_texCoords, ivec2(-1, 0), 0);
+		tmp = textureGatherOffset(u_ssaoTexture, io_texCoords, ivec2(-1, 0), 0);
 		result += tmp.x + tmp.y + tmp.z + tmp.w;
-		tmp = textureGatherOffset(u_ssao, io_texCoords, ivec2(0, -1), 0);
+		tmp = textureGatherOffset(u_ssaoTexture, io_texCoords, ivec2(0, -1), 0);
 		result += tmp.x + tmp.y + tmp.z + tmp.w;
 	
 		return result * 0.0625;
@@ -226,17 +240,17 @@ float computeSsaoValue()
 
 float computeShadowMapValue(in const vec3 texCoords)
 {
-	#ifdef SHADOW_MAPPING
+	#ifdef SHADOW
 		return (
-			  texture(u_shadow, vec3(texCoords.x - u_shadowBlurOffset.x, texCoords.y - u_shadowBlurOffset.y, texCoords.z)).r
-			+ texture(u_shadow, vec3(texCoords.x - u_shadowBlurOffset.x, texCoords.y,                        texCoords.z)).r
-			+ texture(u_shadow, vec3(texCoords.x - u_shadowBlurOffset.x, texCoords.y + u_shadowBlurOffset.y, texCoords.z)).r
-			+ texture(u_shadow, vec3(texCoords.x,                        texCoords.y - u_shadowBlurOffset.y, texCoords.z)).r
-			+ texture(u_shadow, vec3(texCoords.x,                        texCoords.y,                        texCoords.z)).r
-			+ texture(u_shadow, vec3(texCoords.x,                        texCoords.y + u_shadowBlurOffset.y, texCoords.z)).r
-			+ texture(u_shadow, vec3(texCoords.x + u_shadowBlurOffset.x, texCoords.y - u_shadowBlurOffset.y, texCoords.z)).r
-			+ texture(u_shadow, vec3(texCoords.x + u_shadowBlurOffset.x, texCoords.y,                        texCoords.z)).r
-			+ texture(u_shadow, vec3(texCoords.x + u_shadowBlurOffset.x, texCoords.y + u_shadowBlurOffset.y, texCoords.z)).r
+			  texture(u_shadowTexture, vec3(texCoords.x - u_shadowBlurOffset.x, texCoords.y - u_shadowBlurOffset.y, texCoords.z)).r
+			+ texture(u_shadowTexture, vec3(texCoords.x - u_shadowBlurOffset.x, texCoords.y,                        texCoords.z)).r
+			+ texture(u_shadowTexture, vec3(texCoords.x - u_shadowBlurOffset.x, texCoords.y + u_shadowBlurOffset.y, texCoords.z)).r
+			+ texture(u_shadowTexture, vec3(texCoords.x,                        texCoords.y - u_shadowBlurOffset.y, texCoords.z)).r
+			+ texture(u_shadowTexture, vec3(texCoords.x,                        texCoords.y,                        texCoords.z)).r
+			+ texture(u_shadowTexture, vec3(texCoords.x,                        texCoords.y + u_shadowBlurOffset.y, texCoords.z)).r
+			+ texture(u_shadowTexture, vec3(texCoords.x + u_shadowBlurOffset.x, texCoords.y - u_shadowBlurOffset.y, texCoords.z)).r
+			+ texture(u_shadowTexture, vec3(texCoords.x + u_shadowBlurOffset.x, texCoords.y,                        texCoords.z)).r
+			+ texture(u_shadowTexture, vec3(texCoords.x + u_shadowBlurOffset.x, texCoords.y + u_shadowBlurOffset.y, texCoords.z)).r
 		) * 0.11111;
 	#else
 		return 1.0;
@@ -245,7 +259,7 @@ float computeShadowMapValue(in const vec3 texCoords)
 
 float computeShadowOcclusion(in const vec3 position, in const uint i)
 {
-	#ifdef SHADOW_MAPPING
+	#ifdef SHADOW
 		for (uint j = ubo_lights.lights[i].shadowMapStartIndex; j < ubo_lights.lights[i].shadowMapStopIndex; ++j)
 		{
 			vec4 shadowPosition = ubo_shadowCameras.cameras[j].view * ubo_camera.invView * vec4(position, 1.0);

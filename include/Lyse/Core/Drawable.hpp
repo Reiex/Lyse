@@ -25,15 +25,19 @@ namespace lys
 
 			void setShaderSet(const ShaderSet* shaderSet);
 			void setMaterial(const Material* material);
-			void setGeometryFaceCulling(spl::FaceCulling culling);
-			void setShadowFaceCulling(spl::FaceCulling culling);
+			void setGeometryFaceCullingMode(spl::FaceCullingMode mode);
+			void setGeometryFaceCullingOrientation(spl::FaceOrientation orientation);
+			void setShadowFaceCullingMode(spl::FaceCullingMode mode);
+			void setShadowFaceCullingOrientation(spl::FaceOrientation orientation);
 			void setShadowBias(float bias);
 
 			virtual DrawableType getType() const = 0;
 			const ShaderSet* getShaderSet() const;
 			const Material* getMaterial() const;
-			spl::FaceCulling getGeometryFaceCulling() const;
-			spl::FaceCulling getShadowFaceCulling() const;
+			spl::FaceCullingMode getGeometryFaceCullingMode() const;
+			spl::FaceOrientation getGeometryFaceCullingOrientation() const;
+			spl::FaceCullingMode getShadowFaceCullingMode() const;
+			spl::FaceOrientation getShadowFaceCullingOrientation() const;
 			float getShadowBias() const;
 
 		protected:
@@ -52,8 +56,10 @@ namespace lys
 
 			const ShaderSet* _shaderSet;
 			const Material* _material;
-			spl::FaceCulling _geometryCulling;
-			spl::FaceCulling _shadowCulling;
+			spl::FaceCullingMode _geometryCullingMode;
+			spl::FaceOrientation _geometryCullingOrientation;
+			spl::FaceCullingMode _shadowCullingMode;
+			spl::FaceOrientation _shadowCullingOrientation;
 			float _shadowBias;
 
 		friend class Scene;

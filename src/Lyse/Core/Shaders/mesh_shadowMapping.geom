@@ -8,7 +8,7 @@
 // Geometry layout
 
 layout (triangles) in;
-layout (triangle_strip, max_vertices = SHADOWMAP_COUNT * 3) out;
+layout (triangle_strip, max_vertices = SHADOW_TEXTURE_COUNT * 3) out;
 
 // Inputs
 
@@ -23,7 +23,7 @@ layout (std140, row_major, binding = 3) uniform ubo_shadow_cameras_layout
 
 // Uniforms
 
-uniform float u_depthBias;
+uniform float u_drawableDepthBias;
 
 // Outputs
 
@@ -37,7 +37,7 @@ void main()
 	for (int i = 0; i < ubo_shadowCameras.count; ++i)
 	{
 		float a = -2.0 / (ubo_shadowCameras.cameras[i].far - ubo_shadowCameras.cameras[i].near);
-		float b = 0.5 * (ubo_shadowCameras.cameras[i].far + ubo_shadowCameras.cameras[i].near) * a + u_depthBias;
+		float b = 0.5 * (ubo_shadowCameras.cameras[i].far + ubo_shadowCameras.cameras[i].near) * a + u_drawableDepthBias;
 
 		for (uint j = 0; j < 3; ++j)
 		{

@@ -136,7 +136,10 @@ namespace spl
 	enum class DebugMessageType;
 	enum class DebugMessageSeverity;
 	struct DebugMessage;
-	enum class FaceCulling;
+	enum class FaceOrientation;
+	enum class FaceCullingMode;
+	enum class BlendEquation;
+	enum class BlendFunc;
 	struct IndexedBufferBinding;
 	struct ContextState;
 	class Context;

@@ -16,20 +16,20 @@ in VertexOutput
 
 // Uniforms
 
-#ifdef COLOR_MAP
-	uniform sampler2D u_color;
+#ifdef COLOR_TEXTURE
+	uniform sampler2D u_drawableColor;
 #else
-	uniform vec4 u_color;
+	uniform vec4 u_drawableColor;
 #endif
 
-#ifdef MATERIAL_MAP
-	uniform sampler2D u_material;
+#ifdef MATERIAL_TEXTURE
+	uniform sampler2D u_drawableMaterial;
 #else
-	uniform vec3 u_material;
+	uniform vec3 u_drawableMaterial;
 #endif
 
-#ifdef NORMAL_MAP
-	uniform sampler2D u_normalMap;
+#ifdef NORMAL_TEXTURE
+	uniform sampler2D u_drawableNormal;
 #endif
 
 // Fragment outputs
@@ -45,13 +45,13 @@ void main()
 {
 	// Color
 
-	#ifdef COLOR_MAP
-		vec4 color = texture(u_color, io_vertexOutput.texCoords);
+	#ifdef COLOR_TEXTURE
+		vec4 color = texture(u_drawableColor, io_vertexOutput.texCoords);
 	#else
-		vec4 color = u_color;
+		vec4 color = u_drawableColor;
 	#endif
 
-	if (color.a < 0.2)
+	if (color.a != 1.0)
 	{
 		discard;
 	}
@@ -60,10 +60,10 @@ void main()
 
 	// Material
 
-	#ifdef MATERIAL_MAP
-		fo_material = texture(u_material, io_vertexOutput.texCoords).rgb;
+	#ifdef MATERIAL_TEXTURE
+		fo_material = texture(u_drawableMaterial, io_vertexOutput.texCoords).rgb;
 	#else
-		fo_material = u_material;
+		fo_material = u_drawableMaterial;
 	#endif
 
 	// Normal and tangent
@@ -71,9 +71,9 @@ void main()
 	fo_normal = normalize(io_vertexOutput.normal);
 	fo_tangent = normalize(io_vertexOutput.tangent);
 
-	#ifdef NORMAL_MAP
+	#ifdef NORMAL_TEXTURE
 		vec3 bitangent = cross(fo_normal, fo_tangent);
-		vec3 normalMapValue = normalize(texture(u_normalMap, io_vertexOutput.texCoords).rgb);
+		vec3 normalMapValue = normalize(texture(u_drawableNormal, io_vertexOutput.texCoords).rgb);
 		fo_normal = normalize(fo_tangent * normalMapValue.x + bitangent * normalMapValue.y + fo_normal * normalMapValue.z);
 		fo_tangent = normalize(fo_tangent - dot(fo_tangent, fo_normal) * fo_normal);
 	#endif

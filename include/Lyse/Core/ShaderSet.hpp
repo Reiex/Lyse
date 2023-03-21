@@ -14,29 +14,71 @@ namespace lys
 	enum class ShaderType
 	{
 		GBuffer,
-		ShadowMapping
+		ShadowMapping,
+		Transparency
 	};
 
-	struct GBufferShaderInterface
+	namespace shaderInterface
 	{
-		spl::GlslType u_normalMap = spl::GlslType::Undefined;
+		struct SubInterfaceDrawable
+		{
+			spl::GlslType color = spl::GlslType::Undefined;
+			spl::GlslType material = spl::GlslType::Undefined;
+			spl::GlslType shadowBias = spl::GlslType::Undefined;
 
-		spl::GlslType u_color = spl::GlslType::Undefined;
-		spl::GlslType u_material = spl::GlslType::Undefined;
-	};
+			spl::GlslType normal = spl::GlslType::Undefined;
+		};
 
-	struct ShadowMappingShaderInterface
-	{
-		spl::GlslType u_color = spl::GlslType::Undefined;
+		struct SubInterfaceGBufferResult
+		{
+			spl::GlslType depth = spl::GlslType::Undefined;
+			spl::GlslType color = spl::GlslType::Undefined;
+			spl::GlslType material = spl::GlslType::Undefined;
+			spl::GlslType normal = spl::GlslType::Undefined;
+			spl::GlslType tangent = spl::GlslType::Undefined;
+		};
 
-		spl::GlslType u_depthBias = spl::GlslType::Undefined;
-	};
+		struct SubInterfaceShadowResult
+		{
+			spl::GlslType texture = spl::GlslType::Undefined;
+			spl::GlslType blurOffset = spl::GlslType::Undefined;
+		};
+
+		struct SubInterfaceTransparencyResult
+		{
+			spl::GlslType color = spl::GlslType::Undefined;
+			spl::GlslType counter = spl::GlslType::Undefined;
+		};
+
+		struct SubInterfaceSsaoResult
+		{
+			spl::GlslType texture = spl::GlslType::Undefined;
+		};
+
+		struct InterfaceGBuffer
+		{
+			SubInterfaceDrawable u_drawable = {};
+		};
+
+		struct InterfaceShadow
+		{
+			SubInterfaceDrawable u_drawable = {};
+			SubInterfaceGBufferResult u_gBuffer = {};
+		};
+
+		struct InterfaceTransparency
+		{
+			SubInterfaceDrawable u_drawable = {};
+			SubInterfaceGBufferResult u_gBuffer = {};
+			SubInterfaceShadowResult u_shadow = {};
+		};
+	}
 
 	class ShaderSet
 	{
 		public:
 
-			ShaderSet(const spl::ShaderProgram* gBufferShader, const spl::ShaderProgram* shadowMappingShader);
+			ShaderSet(const spl::ShaderProgram* shaderGBuffer, const spl::ShaderProgram* shaderShadow, const spl::ShaderProgram* shaderTransparency);
 			ShaderSet(const ShaderSet& set) = default;
 			ShaderSet(ShaderSet&& set) = default;
 
@@ -47,14 +89,15 @@ namespace lys
 
 		private:
 
-			static const std::unordered_map<std::string, intptr_t> gBufferUniformToOffset;
-			static const std::unordered_map<std::string, intptr_t> shadowMappingUniformToOffset;
+			static void fillInterface(const spl::ShaderProgram* shader, const std::unordered_map<std::string, intptr_t>& offsets, void* pInterface);
 
-			const spl::ShaderProgram* _gBufferShader;
-			const spl::ShaderProgram* _shadowMappingShader;
+			const spl::ShaderProgram* _shaderGBuffer;
+			const spl::ShaderProgram* _shaderShadow;
+			const spl::ShaderProgram* _shaderTransparency;
 
-			GBufferShaderInterface _gBufferShaderInterface;
-			ShadowMappingShaderInterface _shadowMappingShaderInterface;
+			shaderInterface::InterfaceGBuffer _interfaceGBuffer;
+			shaderInterface::InterfaceShadow _interfaceShadow;
+			shaderInterface::InterfaceTransparency _interfaceTransparency;
 
 		friend class Scene;
 	};
