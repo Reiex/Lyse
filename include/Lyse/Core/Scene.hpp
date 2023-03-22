@@ -19,9 +19,9 @@ namespace lys
 		spl::TextureInternalFormat normalTextureFormat = spl::TextureInternalFormat::RGB_ni16;
 		spl::TextureInternalFormat tangentTextureFormat = spl::TextureInternalFormat::RGB_ni16;
 
-		bool shadowMappingEnabled = true;
-		uint32_t shadowMapCount = 16;
-		scp::u32vec2 shadowMapResolution = { 2048, 2048 };
+		bool shadowEnabled = true;
+		uint32_t shadowTextureCount = 16;
+		scp::u32vec2 shadowTextureResolution = { 2048, 2048 };
 		spl::TextureInternalFormat shadowTextureFormat = spl::TextureInternalFormat::Depth_nu24;
 
 		bool transparencyEnabled = true;
@@ -36,7 +36,7 @@ namespace lys
 		spl::TextureInternalFormat renderTextureFormat = spl::TextureInternalFormat::RGB_nu16;
 
 
-		static constexpr uint32_t maxShadowMapCount = 1024;
+		static constexpr uint32_t maxShadowTextureCount = 1024;
 		static constexpr uint32_t maxLightSlotCount = 1024;
 	};
 

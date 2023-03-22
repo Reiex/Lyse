@@ -172,5 +172,13 @@
     <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\mesh_transparency.frag">
       <Filter>Shaders</Filter>
     </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\lightingHeader.glsl">
+      <Filter>Shaders</Filter>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\Lyse\Core\Shaders\lighting.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

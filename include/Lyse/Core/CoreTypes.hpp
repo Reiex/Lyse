@@ -38,6 +38,8 @@ namespace lys
 		struct SubInterfaceDrawable;
 		struct SubInterfaceGBufferResult;
 		struct SubInterfaceShadowResult;
+		struct SubInterfaceTransparencyResult;
+		struct SubInterfaceSsaoResult;
 		struct InterfaceGBuffer;
 		struct InterfaceShadow;
 		struct InterfaceTransparency;
@@ -68,5 +70,6 @@ namespace lys
 	template<CVertex TVertex> class Mesh;
 
 
+	struct SceneParameters;
 	class Scene;
 }

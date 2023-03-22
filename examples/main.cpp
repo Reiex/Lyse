@@ -22,7 +22,8 @@ int main()
 	// scene.addDrawable(&mesh);
 	// scene.addLight(&light);
 
-	lys::Scene scene(window.getSize().x, window.getSize().y);
+	lys::SceneParameters sceneParams = {};
+	lys::Scene scene(window.getSize().x, window.getSize().y, sceneParams);
 	
 	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 20.f);
 	camera.setTranslation({ 0.f, 0.f, 3.f });
@@ -46,7 +47,7 @@ int main()
 	cloudMesh.setScale(1.005);
 	cloudMesh.setGeometryFaceCullingMode(spl::FaceCullingMode::Disabled);
 	cloudMesh.setShadowFaceCullingOrientation(spl::FaceOrientation::FrontAndBack);
-	
+
 	lys::Material moonMaterial(&moonColorMap, 0.1f, 0.0f, 1.f);
 	lys::Mesh<> moonMesh("examples/assets/meshes/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
 	moonMesh.setMaterial(&moonMaterial);

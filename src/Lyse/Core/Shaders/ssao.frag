@@ -82,7 +82,7 @@ void main()
 		}
 	}
 
-	fo_output = 1.0 - occlusion / u_sampleCount;
+	fo_output = occlusion / u_sampleCount;
 } 
 
 uint hash(in uint x)

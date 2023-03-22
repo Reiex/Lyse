@@ -2,7 +2,7 @@
 //! \file
 //! \author Reiex
 //! \copyright The MIT License (MIT)
-//! \date 2021-2023
+//! \date 2023
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <Lyse/Core/Core.hpp>
@@ -53,7 +53,7 @@ namespace lys
 		struct alignas(16) UboShadowCamerasData
 		{
 			alignas(4) uint32_t count;
-			alignas(16) UboShadowCameraData cameras[SceneParameters::maxShadowMapCount];
+			alignas(16) UboShadowCameraData cameras[SceneParameters::maxShadowTextureCount];
 		};
 		#pragma pack(pop)
 	}
@@ -127,25 +127,25 @@ namespace lys
 
 		// Check shadow mapping parameters
 
-		if (_params.shadowMappingEnabled)
+		if (_params.shadowEnabled)
 		{
-			assert(_params.shadowMapCount > 0 && _params.shadowMapCount <= SceneParameters::maxShadowMapCount);
-			assert(_params.shadowMapResolution.x > 0 && _params.shadowMapResolution.y > 0);
+			assert(_params.shadowTextureCount > 0 && _params.shadowTextureCount <= SceneParameters::maxShadowTextureCount);
+			assert(_params.shadowTextureResolution.x > 0 && _params.shadowTextureResolution.y > 0);
 			assert(spl::_spl::textureInternalFormatToTextureFormat(_params.shadowTextureFormat) == spl::TextureFormat::DepthComponent);
 
 			spl::TextureCreationParams shadowTextureCreationParams;
 			shadowTextureCreationParams.target = spl::TextureTarget::Array2D;
 			shadowTextureCreationParams.internalFormat = _params.shadowTextureFormat;
-			shadowTextureCreationParams.width = _params.shadowMapResolution.x;
-			shadowTextureCreationParams.height = _params.shadowMapResolution.y;
-			shadowTextureCreationParams.depth = _params.shadowMapCount;
+			shadowTextureCreationParams.width = _params.shadowTextureResolution.x;
+			shadowTextureCreationParams.height = _params.shadowTextureResolution.y;
+			shadowTextureCreationParams.depth = _params.shadowTextureCount;
 			_shadowTexture.createNew(shadowTextureCreationParams);
 
 			_shadowTexture.setBorderColor(1.f, 1.f, 1.f, 1.f);
 			_shadowTexture.setWrappingS(spl::TextureWrapping::ClampToBorder);
 			_shadowTexture.setWrappingT(spl::TextureWrapping::ClampToBorder);
 
-			_uboShadowCameras.createNew(offsetof(UboShadowCamerasData, cameras) + sizeof(UboShadowCameraData) * _params.shadowMapCount, spl::BufferStorageFlags::DynamicStorage);
+			_uboShadowCameras.createNew(offsetof(UboShadowCamerasData, cameras) + sizeof(UboShadowCameraData) * _params.shadowTextureCount, spl::BufferStorageFlags::DynamicStorage);
 
 			_shadowMappingFramebuffer.attachTexture(spl::FramebufferAttachment::DepthAttachment, 0, &_shadowTexture);
 		}
@@ -347,9 +347,9 @@ namespace lys
 		
 		// Draw shadow maps
 		
-		if (_params.shadowMappingEnabled)
+		if (_params.shadowEnabled)
 		{
-			context->setViewport(0, 0, _params.shadowMapResolution.x, _params.shadowMapResolution.y);
+			context->setViewport(0, 0, _params.shadowTextureResolution.x, _params.shadowTextureResolution.y);
 
 			spl::Framebuffer::bind(spl::FramebufferTarget::DrawFramebuffer, &_shadowMappingFramebuffer);
 			spl::Framebuffer::clear(false, true, false);
@@ -485,7 +485,7 @@ namespace lys
 		};
 		_setGBufferResultUniforms(mergeShader, &mergeGBufferResultInterface);
 		
-		if (_params.shadowMappingEnabled)
+		if (_params.shadowEnabled)
 		{
 			static constexpr shaderInterface::SubInterfaceShadowResult mergeShadowResultInterface = {
 				.texture = spl::GlslType::Sampler2dArray,
@@ -595,10 +595,10 @@ namespace lys
 			"#define SHADOW_TEXTURE_COUNT {}\n",
 
 			_params.lightSlotCount,
-			_params.shadowMapCount
+			_params.shadowTextureCount
 		);
 
-		if (_params.shadowMappingEnabled)
+		if (_params.shadowEnabled)
 		{
 			headerString += "#define SHADOW\n";
 		}
@@ -626,37 +626,37 @@ namespace lys
 
 			// Drawable independent
 
-			/* 00 */{ spl::ShaderStage::Vertex,		{ header, common_glsl, 													ssao_vert } },
-			/* 01 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, 													ssao_frag } },
-			/* 02 */{ spl::ShaderStage::Vertex,		{ header, common_glsl,  												merge_vert } },
-			/* 03 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,   												merge_frag } },
-			/* 04 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, background,	backgroundProjection,				merge_frag } },
-			/* 05 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, background,	backgroundCubemap,					merge_frag } },
+			/* 00 */{ spl::ShaderStage::Vertex,		{ header, common_glsl, 															ssao_vert } },
+			/* 01 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,  														ssao_frag } },
+			/* 02 */{ spl::ShaderStage::Vertex,		{ header, common_glsl,  														merge_vert } },
+			/* 03 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, lightingHeader_glsl,   									merge_frag, lighting_glsl } },
+			/* 04 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, lightingHeader_glsl, background,	backgroundProjection,	merge_frag, lighting_glsl } },
+			/* 05 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, lightingHeader_glsl, background,	backgroundCubemap,		merge_frag, lighting_glsl } },
 
 			// Drawable dependent - Mesh
 
-			/* 06 */{ spl::ShaderStage::Vertex,		{ header, common_glsl,  												mesh_gBuffer_vert } },
-			/* 07 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,  												mesh_gBuffer_frag } },
-			/* 08 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, colorMap,										mesh_gBuffer_frag } },
-			/* 09 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,  			materialMap,						mesh_gBuffer_frag } },
-			/* 10 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, colorMap,	materialMap,						mesh_gBuffer_frag } },
-			/* 11 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,  									normalMap,	mesh_gBuffer_frag } },
-			/* 12 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, colorMap,							normalMap,	mesh_gBuffer_frag } },
-			/* 13 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,  			materialMap,			normalMap,	mesh_gBuffer_frag } },
-			/* 14 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, colorMap,	materialMap,			normalMap,	mesh_gBuffer_frag } },
-			/* 15 */{ spl::ShaderStage::Vertex,		{ header, common_glsl,  												mesh_shadowMapping_vert } },
-			/* 16 */{ spl::ShaderStage::Geometry,	{ header, common_glsl,  												mesh_shadowMapping_geom } },
-			/* 17 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, 													mesh_shadowMapping_frag } },
-			/* 18 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, colorMap,										mesh_shadowMapping_frag } },
-			/* 19 */{ spl::ShaderStage::Vertex,		{ header, common_glsl,  												mesh_transparency_vert } },
-			/* 20 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,  												mesh_transparency_frag } },
-			/* 21 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, colorMap,										mesh_transparency_frag } },
-			/* 22 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,  			materialMap,						mesh_transparency_frag } },
-			/* 23 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, colorMap,	materialMap,						mesh_transparency_frag } },
-			/* 24 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,  									normalMap,	mesh_transparency_frag } },
-			/* 25 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, colorMap,							normalMap,	mesh_transparency_frag } },
-			/* 26 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,  			materialMap,			normalMap,	mesh_transparency_frag } },
-			/* 27 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, colorMap,	materialMap,			normalMap,	mesh_transparency_frag } },
+			/* 06 */{ spl::ShaderStage::Vertex,		{ header, common_glsl,						 										mesh_gBuffer_vert } },
+			/* 07 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,						 										mesh_gBuffer_frag } },
+			/* 08 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,						colorMap,								mesh_gBuffer_frag } },
+			/* 09 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,						 			materialMap,				mesh_gBuffer_frag } },
+			/* 10 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,						colorMap,	materialMap,				mesh_gBuffer_frag } },
+			/* 11 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,						 							normalMap,	mesh_gBuffer_frag } },
+			/* 12 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,						colorMap,					normalMap,	mesh_gBuffer_frag } },
+			/* 13 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,						 			materialMap,	normalMap,	mesh_gBuffer_frag } },
+			/* 14 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,						colorMap,	materialMap,	normalMap,	mesh_gBuffer_frag } },
+			/* 15 */{ spl::ShaderStage::Vertex,		{ header, common_glsl,						 										mesh_shadowMapping_vert } },
+			/* 16 */{ spl::ShaderStage::Geometry,	{ header, common_glsl,						 										mesh_shadowMapping_geom } },
+			/* 17 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,																mesh_shadowMapping_frag } },
+			/* 18 */{ spl::ShaderStage::Fragment,	{ header, common_glsl,						colorMap,								mesh_shadowMapping_frag } },
+			/* 19 */{ spl::ShaderStage::Vertex,		{ header, common_glsl,  															mesh_transparency_vert } },
+			/* 20 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, lightingHeader_glsl,  										mesh_transparency_frag, lighting_glsl } },
+			/* 21 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, lightingHeader_glsl, colorMap,								mesh_transparency_frag, lighting_glsl } },
+			/* 22 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, lightingHeader_glsl,  			materialMap,				mesh_transparency_frag, lighting_glsl } },
+			/* 23 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, lightingHeader_glsl, colorMap,	materialMap,				mesh_transparency_frag, lighting_glsl } },
+			/* 24 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, lightingHeader_glsl,  							normalMap,	mesh_transparency_frag, lighting_glsl } },
+			/* 25 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, lightingHeader_glsl, colorMap,					normalMap,	mesh_transparency_frag, lighting_glsl } },
+			/* 26 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, lightingHeader_glsl,  			materialMap,	normalMap,	mesh_transparency_frag, lighting_glsl } },
+			/* 27 */{ spl::ShaderStage::Fragment,	{ header, common_glsl, lightingHeader_glsl, colorMap,	materialMap,	normalMap,	mesh_transparency_frag, lighting_glsl } },
 		};
 
 		static constexpr uint32_t count = sizeof(sources) / sizeof(sources[0]);
@@ -786,7 +786,7 @@ namespace lys
 			uboLightsData.lights[i].type = static_cast<uint32_t>(light->getType());
 
 			uboLightsData.lights[i].shadowMapStartIndex = shadowCameras.size();
-			if (_params.shadowMappingEnabled && light->getShadowCascadeSize() != 0)
+			if (_params.shadowEnabled && light->getShadowCascadeSize() != 0)
 			{
 				light->_getShadowCameras(_camera, shadowCameras);
 			}
@@ -823,9 +823,9 @@ namespace lys
 
 	const void Scene::_updateAndBindUboShadowCameras(uint32_t index, const std::vector<const CameraBase*>& shadowCameras)
 	{
-		assert(shadowCameras.size() <= _params.shadowMapCount);
+		assert(shadowCameras.size() <= _params.shadowTextureCount);
 
-		if (_params.shadowMappingEnabled)
+		if (_params.shadowEnabled)
 		{
 			// Might be too big for the stack
 			thread_local static UboShadowCamerasData uboShadowCamerasData;
@@ -1032,7 +1032,7 @@ namespace lys
 
 		if (interface->blurOffset == spl::GlslType::FloatVec3)
 		{
-			shader->setUniform("u_shadowBlurOffset", scp::f32vec3(1.f / _params.shadowMapResolution.x, 1.f / _params.shadowMapResolution.y, 1e-4f));
+			shader->setUniform("u_shadowBlurOffset", scp::f32vec3(1.f / _params.shadowTextureResolution.x, 1.f / _params.shadowTextureResolution.y, 1e-4f));
 		}
 	}
 

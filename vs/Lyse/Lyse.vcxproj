@@ -119,6 +119,14 @@
       <FileType>Document</FileType>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\lighting.glsl">
+      <FileType>Document</FileType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\src\Lyse\Core\Shaders\lightingHeader.glsl">
+      <FileType>Document</FileType>
+    </EmbeddedResource>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
