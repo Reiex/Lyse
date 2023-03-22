@@ -464,6 +464,7 @@ namespace lys
 			ssaoShader->setUniform("u_scaleStep", 1.f / (_params.ssaoSampleCount * _params.ssaoSampleCount));
 			ssaoShader->setUniform("u_tanHalfFov", std::tan(_camera->getFieldOfView() * 0.5f));
 			ssaoShader->setUniform("u_twoTanHalfFov", 2.f * std::tan(_camera->getFieldOfView() * 0.5f));
+			ssaoShader->setUniform("u_resolution", _resolution);
 
 			_screenVao.drawArrays(spl::PrimitiveType::TriangleStrips, 0, 4);
 		}
@@ -489,7 +490,7 @@ namespace lys
 		{
 			static constexpr shaderInterface::SubInterfaceShadowResult mergeShadowResultInterface = {
 				.texture = spl::GlslType::Sampler2dArray,
-				.blurOffset = spl::GlslType::FloatVec3
+				.offset = spl::GlslType::FloatVec3
 			};
 			_setShadowResultUniforms(mergeShader, &mergeShadowResultInterface);
 		}
@@ -1030,9 +1031,9 @@ namespace lys
 			shader->setUniform("u_shadowTexture", 8, &getShadowTexture());
 		}
 
-		if (interface->blurOffset == spl::GlslType::FloatVec3)
+		if (interface->offset == spl::GlslType::FloatVec3)
 		{
-			shader->setUniform("u_shadowBlurOffset", scp::f32vec3(1.f / _params.shadowTextureResolution.x, 1.f / _params.shadowTextureResolution.y, 1e-4f));
+			shader->setUniform("u_shadowOffset", scp::f32vec3(1.f / _params.shadowTextureResolution.x, 1.f / _params.shadowTextureResolution.y, 1e-4f));
 		}
 	}
 

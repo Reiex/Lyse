@@ -51,6 +51,7 @@ void main()
 		vec4 color = u_drawableColor;
 	#endif
 
+	// If there is alpha transparency, then the fragment must be discarded. It will be handled by the transparency shader !
 	if (color.a != 1.0)
 	{
 		discard;

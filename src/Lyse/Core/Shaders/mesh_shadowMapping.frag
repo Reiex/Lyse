@@ -21,6 +21,8 @@ in vec2 io_texCoords;
 
 void main()
 {
+	// If the fragment has transparency, it doesn't cast any shadow (convenient approximation) thus it is discarded
+
 	#ifdef COLOR_TEXTURE
 		vec4 color = texture(u_drawableColor, io_texCoords);
 	#else

@@ -27,6 +27,7 @@ uniform uint u_sampleCount;
 uniform float u_scaleStep;
 uniform float u_tanHalfFov;
 uniform float u_twoTanHalfFov;
+uniform uvec2 u_resolution;
 
 // Fragment outputs
 
@@ -74,11 +75,12 @@ void main()
 		const vec3 viewPos = position + tbn * randomVec;
 		vec4 ndcPos = ubo_camera.projection * vec4(viewPos, 1.0);
 		ndcPos.xy = (clamp(ndcPos.xy / ndcPos.w, vec2(-1.0), vec2(1.0)) + 1.0) * 0.5;
+		const ivec2 texCoords = ivec2(ndcPos.x * u_resolution.x, ndcPos.y * u_resolution.y);
 
-		const float sampleDepth = ubo_camera.near + texture(u_gBufferDepth, ndcPos.xy).r * ubo_camera.far;
+		const float sampleDepth = ubo_camera.near + texelFetch(u_gBufferDepth, texCoords, 0).r * ubo_camera.far;
 		if (-viewPos.z > sampleDepth)
 		{
-			occlusion += smoothstep(0.0, 1.0, -currentRadius / (viewPos.z + sampleDepth));
+			occlusion += smoothstep(0.0, 1.0, -2.0 * currentRadius / (viewPos.z + sampleDepth));
 		}
 	}
 
@@ -95,9 +97,20 @@ uint hash(in uint x)
 	return x;
 }
 
-uint hash(in const uvec2 v) { return hash( v.x ^ hash(v.y)); }
-uint hash(in const uvec3 v) { return hash( v.x ^ hash(v.y) ^ hash(v.z)); }
-uint hash(in const uvec4 v) { return hash( v.x ^ hash(v.y) ^ hash(v.z) ^ hash(v.w)); }
+uint hash(in const uvec2 v)
+{
+	return hash( v.x ^ hash(v.y));
+}
+
+uint hash(in const uvec3 v)
+{
+	return hash( v.x ^ hash(v.y) ^ hash(v.z));
+}
+
+uint hash(in const uvec4 v)
+{
+	return hash( v.x ^ hash(v.y) ^ hash(v.z) ^ hash(v.w));
+}
 
 float random(inout uint seed)
 {

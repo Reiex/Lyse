@@ -41,7 +41,7 @@ namespace lys
 		struct SubInterfaceShadowResult
 		{
 			spl::GlslType texture = spl::GlslType::Undefined;
-			spl::GlslType blurOffset = spl::GlslType::Undefined;
+			spl::GlslType offset = spl::GlslType::Undefined;
 		};
 
 		struct SubInterfaceTransparencyResult

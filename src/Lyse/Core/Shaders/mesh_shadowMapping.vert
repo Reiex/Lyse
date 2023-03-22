@@ -29,5 +29,6 @@ void main()
 {
 	io_vertTexCoords = va_texCoords.xy;
 
+	// Careful ! It's not view-space but model-space ! View-space will only be computed in geometry shader.
 	gl_Position = ubo_drawable.model * va_position;
 }

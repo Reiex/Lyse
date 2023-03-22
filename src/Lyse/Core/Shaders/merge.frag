@@ -35,7 +35,7 @@ uniform sampler2D u_gBufferNormal;
 
 #ifdef SHADOW
 	uniform sampler2DArray u_shadowTexture;
-	uniform vec3 u_shadowBlurOffset;
+	uniform vec3 u_shadowOffset;
 #endif
 
 #ifdef TRANSPARENCY
@@ -85,24 +85,25 @@ void main()
 
 	vec3 rawColor;
 
-	// If nothing has been drawn on the fragment, show the background
+	// If no opaque fragment has been drawn, show the background
 
 	if (depth >= ubo_camera.far * c_oneMinusEpsilon)
 	{
 		rawColor = computeBackgroundColor(viewDir);
 	}
+	
+	// Else compute the opaque fragment lighting
+
 	else
 	{
-		// Retrieve fragment information from precedent passes
-
 		const vec3 color = texelFetch(u_gBufferColor, windowCoord, 0).rgb;
 		const vec3 material = texelFetch(u_gBufferMaterial, windowCoord, 0).rgb;
 		const vec3 normal = texelFetch(u_gBufferNormal, windowCoord, 0).rgb;
 
-		// Pre-compute useful constants
-
 		rawColor = cookTorrance(color, material, normal, position, computeSsao());
 	}
+
+	// Draw transparency fragments over the opaque fragment if there are
 
 	#ifdef TRANSPARENCY
 		float n = texelFetch(u_transparencyCounter, windowCoord, 0).r;
@@ -113,7 +114,7 @@ void main()
 		}
 	#endif
 
-	// Apply HDR and gamma correction to final fragment color
+	// Apply HDR and gamma correction to the final fragment color
 
 	rawColor = rawColor / (rawColor + 0.5);
 	rawColor = pow(rawColor, vec3(1.0 / 1.2));
@@ -148,15 +149,13 @@ float computeSsao()
 {
 	#ifdef SSAO
 		vec4 tmp = textureGather(u_ssaoTexture, io_texCoords, 0);
-		float result = tmp.x + tmp.y + tmp.z + tmp.w;
+		float occlusion = tmp.x + tmp.y + tmp.z + tmp.w;
 		tmp = textureGatherOffset(u_ssaoTexture, io_texCoords, ivec2(-1, -1), 0);
-		result += tmp.x + tmp.y + tmp.z + tmp.w;
+		occlusion += tmp.x + tmp.y + tmp.z + tmp.w;
 		tmp = textureGatherOffset(u_ssaoTexture, io_texCoords, ivec2(-1, 0), 0);
-		result += tmp.x + tmp.y + tmp.z + tmp.w;
+		occlusion += tmp.x + tmp.y + tmp.z + tmp.w;
 		tmp = textureGatherOffset(u_ssaoTexture, io_texCoords, ivec2(0, -1), 0);
-		result += tmp.x + tmp.y + tmp.z + tmp.w;
-	
-		return result * 0.0625;
+		return (occlusion + tmp.x + tmp.y + tmp.z + tmp.w) * 0.0625;
 	#else
 		return 1.0;
 	#endif

@@ -41,7 +41,7 @@ namespace lys
 			{ "u_gBufferNormal",		offsetof(shaderInterface::InterfaceTransparency, u_gBuffer.normal) },
 			{ "u_gBufferTangent",		offsetof(shaderInterface::InterfaceTransparency, u_gBuffer.tangent) },
 			{ "u_shadowTexture",		offsetof(shaderInterface::InterfaceTransparency, u_shadow.texture) },
-			{ "u_shadowBlurOffset",		offsetof(shaderInterface::InterfaceTransparency, u_shadow.blurOffset) }
+			{ "u_shadowOffset",			offsetof(shaderInterface::InterfaceTransparency, u_shadow.offset) }
 		};
 	}
 

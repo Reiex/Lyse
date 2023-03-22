@@ -10,31 +10,36 @@
 float computeShadowOcclusion(in const vec3 position, in const uint i)
 {
 	#ifdef SHADOW
+		// For each shadow texture associated with the i-th light
+
 		for (uint j = ubo_lights.lights[i].shadowMapStartIndex; j < ubo_lights.lights[i].shadowMapStopIndex; ++j)
 		{
+			// Compute fragment position in shadow-view-space coordinate system (linear depth and projected xyz)
+
 			vec4 shadowPosition = ubo_shadowCameras.cameras[j].view * ubo_camera.invView * vec4(position, 1.0);
-			const float shadowDepth = (-shadowPosition.z - ubo_shadowCameras.cameras[j].near) / (ubo_shadowCameras.cameras[j].far - ubo_shadowCameras.cameras[j].near);
+			const float depth = (-shadowPosition.z - ubo_shadowCameras.cameras[j].near) / (ubo_shadowCameras.cameras[j].far - ubo_shadowCameras.cameras[j].near);
 			shadowPosition = ubo_shadowCameras.cameras[j].projection * shadowPosition;
 			shadowPosition.xyz /= shadowPosition.w;
 
-			if (all(greaterThan(shadowPosition.xyz, u_shadowBlurOffset - vec3(1.0))) && all(lessThan(shadowPosition.xyz, vec3(1.0) - u_shadowBlurOffset)))
+			// If the fragment position is inside the "shadow frustum" compute and return occlusion
+
+			if (all(greaterThan(shadowPosition.xyz, u_shadowOffset - vec3(1.0))) && all(lessThan(shadowPosition.xyz, vec3(1.0) - u_shadowOffset)))
 			{
 				const vec3 texCoords = vec3(shadowPosition.xy * 0.5 + 0.5, j);
-				const float sampledShadowDepth = (
-					  texture(u_shadowTexture, vec3(texCoords.x - u_shadowBlurOffset.x, texCoords.y - u_shadowBlurOffset.y, texCoords.z)).r
-					+ texture(u_shadowTexture, vec3(texCoords.x - u_shadowBlurOffset.x, texCoords.y,                        texCoords.z)).r
-					+ texture(u_shadowTexture, vec3(texCoords.x - u_shadowBlurOffset.x, texCoords.y + u_shadowBlurOffset.y, texCoords.z)).r
-					+ texture(u_shadowTexture, vec3(texCoords.x,                        texCoords.y - u_shadowBlurOffset.y, texCoords.z)).r
-					+ texture(u_shadowTexture, vec3(texCoords.x,                        texCoords.y,                        texCoords.z)).r
-					+ texture(u_shadowTexture, vec3(texCoords.x,                        texCoords.y + u_shadowBlurOffset.y, texCoords.z)).r
-					+ texture(u_shadowTexture, vec3(texCoords.x + u_shadowBlurOffset.x, texCoords.y - u_shadowBlurOffset.y, texCoords.z)).r
-					+ texture(u_shadowTexture, vec3(texCoords.x + u_shadowBlurOffset.x, texCoords.y,                        texCoords.z)).r
-					+ texture(u_shadowTexture, vec3(texCoords.x + u_shadowBlurOffset.x, texCoords.y + u_shadowBlurOffset.y, texCoords.z)).r
-				) * 0.11111;
-				return shadowDepth > sampledShadowDepth ? 1.0 : 0.0;
+				
+				vec4 tmp = textureGather(u_shadowTexture, texCoords, 0);
+				float occlusion = float(depth > tmp.x) + float(depth > tmp.y) + float(depth > tmp.z) + float(depth > tmp.w);
+				tmp = textureGatherOffset(u_shadowTexture, texCoords, ivec2(-1, -1), 0);
+				occlusion += float(depth > tmp.x) + float(depth > tmp.y) + float(depth > tmp.z) + float(depth > tmp.w);
+				tmp = textureGatherOffset(u_shadowTexture, texCoords, ivec2(-1, 0), 0);
+				occlusion += float(depth > tmp.x) + float(depth > tmp.y) + float(depth > tmp.z) + float(depth > tmp.w);
+				tmp = textureGatherOffset(u_shadowTexture, texCoords, ivec2(0, -1), 0);
+				return (occlusion + float(depth > tmp.x) + float(depth > tmp.y) + float(depth > tmp.z) + float(depth > tmp.w)) * 0.0625;
 			}
 		}
 	#endif
+
+	// If shadow is disabled or fragment is not in any shadow frustum, there is simply no occlusion
 
 	return 0.0;
 }
@@ -124,7 +129,7 @@ vec3 cookTorrance(in const vec3 color, in const vec3 material, in const vec3 nor
 
 	const vec3 ambiant = color * (material.x * (1.0 - ssao));
 
-	// Iterator over each light source for diffuse and specular lighting
+	// Iterate over each light source for diffuse and specular lighting
 
 	vec3 diffuse = vec3(0.0);
 	vec3 specular = vec3(0.0);
@@ -139,7 +144,7 @@ vec3 cookTorrance(in const vec3 color, in const vec3 material, in const vec3 nor
 			continue;
 		}
 
-		// Compute light direction and radiance depending on light type and parameters. If light is too low, skip lighting
+		// Compute light direction and radiance depending on light type and parameters. If light is too weak, skip lighting
 
 		vec3 lightDir, radiance;
 		computeLightDirAndRadiance(position, i, lightDir, radiance);
@@ -163,6 +168,8 @@ vec3 cookTorrance(in const vec3 color, in const vec3 material, in const vec3 nor
 		diffuse += radiance * (1.0 - fresnelReflectance);
 		specular += radiance * fresnelReflectance * distribution * geometryLight / dotNormalLightDir;
 	}
+
+	// Correct diffuse and specular by some constants (computed at the end for optimization)
 
 	diffuse *= color * (1.0 - metallic) / c_pi;
 	specular *= geometryView / (4.0 * dotNormalViewDir);

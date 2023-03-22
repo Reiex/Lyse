@@ -52,7 +52,7 @@ layout (std140, row_major, binding = 3) uniform ubo_shadow_cameras_layout
 
 #ifdef SHADOW
 	uniform sampler2DArray u_shadowTexture;
-	uniform vec3 u_shadowBlurOffset;
+	uniform vec3 u_shadowOffset;
 #endif
 
 // Fragment outputs
@@ -64,7 +64,7 @@ layout (location = 1) out float fo_counter;
 
 void main()
 {
-	// Color
+	// Compute fragment color
 
 	#ifdef COLOR_TEXTURE
 		const vec4 color = texture(u_drawableColor, io_vertexOutput.texCoords);
@@ -72,12 +72,13 @@ void main()
 		const vec4 color = u_drawableColor;
 	#endif
 
+	// If there is no alpha transparency then the fragment was handled by the gBuffer shader, so it can be discarded.
 	if (color.a == 1.0 || color.a == 0.0)
 	{
 		discard;
 	}
 	
-	// Material
+	// Compute fragment material
 
 	#ifdef MATERIAL_TEXTURE
 		const vec3 material = texture(u_drawableMaterial, io_vertexOutput.texCoords).rgb;
@@ -85,7 +86,7 @@ void main()
 		const vec3 material = u_drawableMaterial;
 	#endif
 
-	// Normal
+	// Compute fragment normal
 
 	vec3 normal = normalize(io_vertexOutput.normal);
 
@@ -96,11 +97,9 @@ void main()
 		normal = normalize(tangent * normalMapValue.x + bitangent * normalMapValue.y + normal * normalMapValue.z);
 	#endif
 
-	// Pre-compute useful constants
+	// Compute fragment final color after lighting, and store it in transparency accumulator
 
-	const vec3 position = io_vertexOutput.position;
-
-	fo_color.rgb = cookTorrance(color.rgb, material, normal, position, 0.0) * color.a;
+	fo_color.rgb = cookTorrance(color.rgb, material, normal, io_vertexOutput.position, 0.0) * color.a;
 	fo_color.a = color.a;
 	fo_counter = 1.0;
 } 

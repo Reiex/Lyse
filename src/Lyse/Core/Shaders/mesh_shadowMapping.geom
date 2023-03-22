@@ -23,7 +23,7 @@ layout (std140, row_major, binding = 3) uniform ubo_shadow_cameras_layout
 
 // Uniforms
 
-uniform float u_drawableDepthBias;
+uniform float u_drawableShadowBias;
 
 // Outputs
 
@@ -33,11 +33,13 @@ out vec2 io_texCoords;
 
 void main()
 {
+	// For each shadow camera emit a corresponding triangle in the corresponding layer
+
 	vec4 position;
 	for (int i = 0; i < ubo_shadowCameras.count; ++i)
 	{
 		float a = -2.0 / (ubo_shadowCameras.cameras[i].far - ubo_shadowCameras.cameras[i].near);
-		float b = 0.5 * (ubo_shadowCameras.cameras[i].far + ubo_shadowCameras.cameras[i].near) * a + u_drawableDepthBias;
+		float b = 0.5 * (ubo_shadowCameras.cameras[i].far + ubo_shadowCameras.cameras[i].near) * a + u_drawableShadowBias;
 
 		for (uint j = 0; j < 3; ++j)
 		{

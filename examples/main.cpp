@@ -11,16 +11,24 @@ int main()
 	context->setClearColor(0.2f, 0.3f, 0.3f, 1.f);
 
 
+	// lys::SceneParameters sceneParams = {};
+	// lys::Scene scene(window.getSize().x, window.getSize().y, sceneParams);
+	// 
 	// lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 10.f);
 	// camera.setTranslation({ 0.f, 0.f, 3.f });
+	// 
 	// lys::Mesh<> mesh("examples/assets/meshes/suzanne.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
-	// lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, lightColor.x, lightColor.y, lightColor.z, 10.f);
-	// light.setShadowCascadeSize(4);
-	// // lys::LightPoint light(1.f, 2.f, 1.f, lightColor.x, lightColor.y, lightColor.z, 20.f);
-	// lys::Scene scene(window.getSize().x, window.getSize().y);
+	// mesh.setShadowFaceCullingMode(spl::FaceCullingMode::Disabled);
+	// mesh.setShadowBias(0.001f);
+	// 
+	// // lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, lightColor.x, lightColor.y, lightColor.z, 10.f);
+	// // light.setShadowCascadeSize(4);
+	// lys::LightPoint light(1.f, 2.f, 1.f, lightColor.x, lightColor.y, lightColor.z, 20.f);
+	// 
 	// scene.setCamera(&camera);
 	// scene.addDrawable(&mesh);
 	// scene.addLight(&light);
+
 
 	lys::SceneParameters sceneParams = {};
 	lys::Scene scene(window.getSize().x, window.getSize().y, sceneParams);
@@ -47,7 +55,7 @@ int main()
 	cloudMesh.setScale(1.005);
 	cloudMesh.setGeometryFaceCullingMode(spl::FaceCullingMode::Disabled);
 	cloudMesh.setShadowFaceCullingOrientation(spl::FaceOrientation::FrontAndBack);
-
+	
 	lys::Material moonMaterial(&moonColorMap, 0.1f, 0.0f, 1.f);
 	lys::Mesh<> moonMesh("examples/assets/meshes/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
 	moonMesh.setMaterial(&moonMaterial);
@@ -103,12 +111,13 @@ int main()
 			std::cout << "#\n" << message->descr << std::endl;
 		}
 
-		if (window.isKeyPressed(spl::KeyboardKey::W)) camera.move(camera.getUpVector() * 0.01f);
-		if (window.isKeyPressed(spl::KeyboardKey::S)) camera.move(camera.getUpVector() * -0.01f);
-		if (window.isKeyPressed(spl::KeyboardKey::A)) camera.move(camera.getRightVector() * -0.01f);
-		if (window.isKeyPressed(spl::KeyboardKey::D)) camera.move(camera.getRightVector() * 0.01f);
-		if (window.isKeyPressed(spl::KeyboardKey::Space)) camera.move(camera.getFrontVector() * 0.01f);
-		if (window.isKeyPressed(spl::KeyboardKey::LeftShift)) camera.move(camera.getFrontVector() * -0.01f);
+		const float speed = scp::length(camera.getPosition()) * 0.004f;
+		if (window.isKeyPressed(spl::KeyboardKey::W)) camera.move(camera.getUpVector() * speed);
+		if (window.isKeyPressed(spl::KeyboardKey::S)) camera.move(camera.getUpVector() * -speed);
+		if (window.isKeyPressed(spl::KeyboardKey::A)) camera.move(camera.getRightVector() * -speed);
+		if (window.isKeyPressed(spl::KeyboardKey::D)) camera.move(camera.getRightVector() * speed);
+		if (window.isKeyPressed(spl::KeyboardKey::Space)) camera.move(camera.getFrontVector() * speed);
+		if (window.isKeyPressed(spl::KeyboardKey::LeftShift)) camera.move(camera.getFrontVector() * -speed);
 
 		camera.lookAt({ 0.f, 0.f, 0.f });
 		mesh.rotate(0.f, 1.f, 0.f, 0.001f);

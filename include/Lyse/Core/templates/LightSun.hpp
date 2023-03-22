@@ -112,7 +112,7 @@ namespace lys
 			scp::f32vec3 position = {
 				(bbox[0] + bbox[1]) / 2.f,
 				(bbox[2] + bbox[3]) / 2.f,
-				bbox[5] + 10.f	// TODO : Better than that magic number
+				bbox[5] + 100.f	// TODO : Better than that magic number
 			};
 
 			scp::f32vec3 size = {
