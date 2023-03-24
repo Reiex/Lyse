@@ -143,7 +143,7 @@ namespace lys
 
 			_shadowTexture.setBorderColor(1.f, 1.f, 1.f, 1.f);
 			_shadowTexture.setCompareMode(spl::TextureCompareMode::RefToTexture);
-			_shadowTexture.setCompareFunc(spl::CompareFunc::Greater);
+			_shadowTexture.setCompareFunc(spl::CompareFunc::GreaterEqual);
 			_shadowTexture.setWrappingS(spl::TextureWrapping::ClampToBorder);
 			_shadowTexture.setWrappingT(spl::TextureWrapping::ClampToBorder);
 

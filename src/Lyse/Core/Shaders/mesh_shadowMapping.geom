@@ -42,7 +42,7 @@ void main()
 		const vec3 normal = normalize(cross(positions[1].xyz - positions[0].xyz, positions[2].xyz - positions[0].xyz));
 
 		const float a = -2.0 / (ubo_shadowCameras.cameras[i].far - ubo_shadowCameras.cameras[i].near);
-		const float b = 0.5 * (ubo_shadowCameras.cameras[i].far + ubo_shadowCameras.cameras[i].near) * a + 1e-4 / pow(normal.z, 2.0);
+		const float b = 0.5 * (ubo_shadowCameras.cameras[i].far + ubo_shadowCameras.cameras[i].near) * a + 2e-5 / pow(normal.z, 2.0);
 
 		for (uint j = 0; j < 3; ++j)
 		{

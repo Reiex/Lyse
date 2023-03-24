@@ -150,12 +150,14 @@ float computeSsao()
 	#ifdef SSAO
 		vec4 tmp = textureGather(u_ssaoTexture, io_texCoords, 0);
 		float occlusion = tmp.x + tmp.y + tmp.z + tmp.w;
-		tmp = textureGatherOffset(u_ssaoTexture, io_texCoords, ivec2(-1, -1), 0);
-		occlusion += tmp.x + tmp.y + tmp.z + tmp.w;
 		tmp = textureGatherOffset(u_ssaoTexture, io_texCoords, ivec2(-1, 0), 0);
 		occlusion += tmp.x + tmp.y + tmp.z + tmp.w;
 		tmp = textureGatherOffset(u_ssaoTexture, io_texCoords, ivec2(0, -1), 0);
-		return (occlusion + tmp.x + tmp.y + tmp.z + tmp.w) * 0.0625;
+		occlusion += tmp.x + tmp.y + tmp.z + tmp.w;
+		tmp = textureGatherOffset(u_ssaoTexture, io_texCoords, ivec2(0, 1), 0);
+		occlusion += tmp.x + tmp.y + tmp.z + tmp.w;
+		tmp = textureGatherOffset(u_ssaoTexture, io_texCoords, ivec2(1, 0), 0);
+		return (occlusion + tmp.x + tmp.y + tmp.z + tmp.w) * 0.05;
 	#else
 		return 1.0;
 	#endif
