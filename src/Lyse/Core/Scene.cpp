@@ -142,6 +142,8 @@ namespace lys
 			_shadowTexture.createNew(shadowTextureCreationParams);
 
 			_shadowTexture.setBorderColor(1.f, 1.f, 1.f, 1.f);
+			_shadowTexture.setCompareMode(spl::TextureCompareMode::RefToTexture);
+			_shadowTexture.setCompareFunc(spl::CompareFunc::Greater);
 			_shadowTexture.setWrappingS(spl::TextureWrapping::ClampToBorder);
 			_shadowTexture.setWrappingT(spl::TextureWrapping::ClampToBorder);
 
@@ -489,7 +491,7 @@ namespace lys
 		if (_params.shadowEnabled)
 		{
 			static constexpr shaderInterface::SubInterfaceShadowResult mergeShadowResultInterface = {
-				.texture = spl::GlslType::Sampler2dArray,
+				.texture = spl::GlslType::Sampler2dArrayShadow,
 				.offset = spl::GlslType::FloatVec3
 			};
 			_setShadowResultUniforms(mergeShader, &mergeShadowResultInterface);
@@ -970,11 +972,6 @@ namespace lys
 			shader->setUniform("u_drawableMaterial", material->getProperties());
 		}
 
-		if (interface->shadowBias == spl::GlslType::Float)
-		{
-			shader->setUniform("u_drawableShadowBias", drawable->getShadowBias());
-		}
-
 		switch (drawable->getType())
 		{
 			case DrawableType::Mesh:
@@ -1026,7 +1023,7 @@ namespace lys
 
 	void Scene::_setShadowResultUniforms(const spl::ShaderProgram* shader, const shaderInterface::SubInterfaceShadowResult* interface)
 	{
-		if (interface->texture == spl::GlslType::Sampler2dArray)
+		if (interface->texture == spl::GlslType::Sampler2dArrayShadow)
 		{
 			shader->setUniform("u_shadowTexture", 8, &getShadowTexture());
 		}

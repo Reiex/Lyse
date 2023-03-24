@@ -25,16 +25,8 @@ float computeShadowOcclusion(in const vec3 position, in const uint i)
 
 			if (all(greaterThan(shadowPosition.xyz, u_shadowOffset - vec3(1.0))) && all(lessThan(shadowPosition.xyz, vec3(1.0) - u_shadowOffset)))
 			{
-				const vec3 texCoords = vec3(shadowPosition.xy * 0.5 + 0.5, j);
-				
-				vec4 tmp = textureGather(u_shadowTexture, texCoords, 0);
-				float occlusion = float(depth > tmp.x) + float(depth > tmp.y) + float(depth > tmp.z) + float(depth > tmp.w);
-				tmp = textureGatherOffset(u_shadowTexture, texCoords, ivec2(-1, -1), 0);
-				occlusion += float(depth > tmp.x) + float(depth > tmp.y) + float(depth > tmp.z) + float(depth > tmp.w);
-				tmp = textureGatherOffset(u_shadowTexture, texCoords, ivec2(-1, 0), 0);
-				occlusion += float(depth > tmp.x) + float(depth > tmp.y) + float(depth > tmp.z) + float(depth > tmp.w);
-				tmp = textureGatherOffset(u_shadowTexture, texCoords, ivec2(0, -1), 0);
-				return (occlusion + float(depth > tmp.x) + float(depth > tmp.y) + float(depth > tmp.z) + float(depth > tmp.w)) * 0.0625;
+				const vec4 texCoords = vec4(shadowPosition.xy * 0.5 + 0.5, j, depth);
+				return texture(u_shadowTexture, texCoords);
 			}
 		}
 	#endif

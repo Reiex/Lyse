@@ -3,7 +3,7 @@
 int main()
 {
 	constexpr scp::f32vec3 lightColor = { 1.f, 0.8f, 0.7f };
-	const scp::f32vec3 lightDir = scp::normalize(scp::f32vec3(-3.f, -1.f, -1.f));
+	const scp::f32vec3 lightDir = scp::normalize(scp::f32vec3(-2.5f, -1.f, -1.f));
 
 	spl::Window window(1024, 512, "Lyse Example", true);
 	spl::Context* context = window.getContext();
@@ -19,7 +19,6 @@ int main()
 	// 
 	// lys::Mesh<> mesh("examples/assets/meshes/suzanne.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
 	// mesh.setShadowFaceCullingMode(spl::FaceCullingMode::Disabled);
-	// mesh.setShadowBias(0.001f);
 	// 
 	// // lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, lightColor.x, lightColor.y, lightColor.z, 10.f);
 	// // light.setShadowCascadeSize(4);

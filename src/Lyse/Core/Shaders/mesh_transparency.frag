@@ -51,7 +51,7 @@ layout (std140, row_major, binding = 3) uniform ubo_shadow_cameras_layout
 #endif
 
 #ifdef SHADOW
-	uniform sampler2DArray u_shadowTexture;
+	uniform sampler2DArrayShadow u_shadowTexture;
 	uniform vec3 u_shadowOffset;
 #endif
 

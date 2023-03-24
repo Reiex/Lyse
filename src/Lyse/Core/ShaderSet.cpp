@@ -14,14 +14,12 @@ namespace lys
 		const std::unordered_map<std::string, intptr_t> offsetsGBuffer = {
 			{ "u_drawableColor",		offsetof(shaderInterface::InterfaceGBuffer, u_drawable.color) },
 			{ "u_drawableMaterial",		offsetof(shaderInterface::InterfaceGBuffer, u_drawable.material) },
-			{ "u_drawableShadowBias",	offsetof(shaderInterface::InterfaceGBuffer, u_drawable.shadowBias) },
 			{ "u_drawableNormal",		offsetof(shaderInterface::InterfaceGBuffer, u_drawable.normal) }
 		};
 
 		const std::unordered_map<std::string, intptr_t> offsetsShadow = {
 			{ "u_drawableColor",		offsetof(shaderInterface::InterfaceShadow, u_drawable.color) },
 			{ "u_drawableMaterial",		offsetof(shaderInterface::InterfaceShadow, u_drawable.material) },
-			{ "u_drawableShadowBias",	offsetof(shaderInterface::InterfaceShadow, u_drawable.shadowBias) },
 			{ "u_drawableNormal",		offsetof(shaderInterface::InterfaceShadow, u_drawable.normal) },
 			{ "u_gBufferDepth",			offsetof(shaderInterface::InterfaceShadow, u_gBuffer.depth) },
 			{ "u_gBufferColor",			offsetof(shaderInterface::InterfaceShadow, u_gBuffer.color) },
@@ -33,7 +31,6 @@ namespace lys
 		const std::unordered_map<std::string, intptr_t> offsetsTransparency = {
 			{ "u_drawableColor",		offsetof(shaderInterface::InterfaceTransparency, u_drawable.color) },
 			{ "u_drawableMaterial",		offsetof(shaderInterface::InterfaceTransparency, u_drawable.material) },
-			{ "u_drawableShadowBias",	offsetof(shaderInterface::InterfaceTransparency, u_drawable.shadowBias) },
 			{ "u_drawableNormal",		offsetof(shaderInterface::InterfaceTransparency, u_drawable.normal) },
 			{ "u_gBufferDepth",			offsetof(shaderInterface::InterfaceTransparency, u_gBuffer.depth) },
 			{ "u_gBufferColor",			offsetof(shaderInterface::InterfaceTransparency, u_gBuffer.color) },

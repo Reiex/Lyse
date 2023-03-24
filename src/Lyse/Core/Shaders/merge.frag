@@ -34,7 +34,7 @@ uniform sampler2D u_gBufferMaterial;
 uniform sampler2D u_gBufferNormal;
 
 #ifdef SHADOW
-	uniform sampler2DArray u_shadowTexture;
+	uniform sampler2DArrayShadow u_shadowTexture;
 	uniform vec3 u_shadowOffset;
 #endif
 

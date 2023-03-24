@@ -15,8 +15,7 @@ namespace lys
 		_geometryCullingMode(spl::FaceCullingMode::CounterClockWise),
 		_geometryCullingOrientation(spl::FaceOrientation::Back),
 		_shadowCullingMode(spl::FaceCullingMode::CounterClockWise),
-		_shadowCullingOrientation(spl::FaceOrientation::Front),
-		_shadowBias(0.f)
+		_shadowCullingOrientation(spl::FaceOrientation::Front)
 	{
 	}
 
@@ -51,11 +50,6 @@ namespace lys
 		_shadowCullingOrientation = orientation;
 	}
 
-	void Drawable::setShadowBias(float bias)
-	{
-		_shadowBias = bias;
-	}
-
 	const ShaderSet* Drawable::getShaderSet() const
 	{
 		return _shaderSet;
@@ -84,10 +78,5 @@ namespace lys
 	spl::FaceOrientation Drawable::getShadowFaceCullingOrientation() const
 	{
 		return _shadowCullingOrientation;
-	}
-
-	float Drawable::getShadowBias() const
-	{
-		return _shadowBias;
 	}
 }

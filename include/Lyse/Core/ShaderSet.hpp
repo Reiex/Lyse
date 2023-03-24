@@ -24,7 +24,6 @@ namespace lys
 		{
 			spl::GlslType color = spl::GlslType::Undefined;
 			spl::GlslType material = spl::GlslType::Undefined;
-			spl::GlslType shadowBias = spl::GlslType::Undefined;
 
 			spl::GlslType normal = spl::GlslType::Undefined;
 		};
