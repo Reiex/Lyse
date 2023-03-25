@@ -9,6 +9,7 @@
 
 in VertexOutput
 {
+	float depth;
 	vec3 normal;
 	vec3 tangent;
 	vec2 texCoords;
@@ -43,6 +44,10 @@ layout (location = 3) out vec3 fo_tangent;
 
 void main()
 {
+	// Depth
+	
+	gl_FragDepth = io_vertexOutput.depth;
+
 	// Color
 
 	#ifdef COLOR_TEXTURE

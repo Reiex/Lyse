@@ -28,6 +28,7 @@ layout (std140, row_major, binding = 2) uniform ubo_drawable_layout
 
 out VertexOutput
 {
+	float depth;
 	vec3 normal;
 	vec3 tangent;
 	vec2 texCoords;
@@ -40,12 +41,11 @@ void main()
 	// Compute everything in view-space
 	
 	gl_Position = ubo_drawable.viewModel * va_position;
+
+	io_vertexOutput.depth = 1.0 - (ubo_camera.far + gl_Position.z) / (ubo_camera.far - ubo_camera.near);
 	io_vertexOutput.normal = normalize(ubo_drawable.viewModel * va_normal).xyz;		// TODO: Change that ! Not OK for non-uniform scale !
 	io_vertexOutput.tangent = normalize(ubo_drawable.viewModel * va_tangent).xyz;	// TODO: Change that ! Not OK for non-uniform scale !
 	io_vertexOutput.texCoords = va_texCoords.xy;
 
-	// The depth transmitted to the GL shall be linear - The texture is using float anyway in depth texture format, so no precision is lost at near distance
-	const float depth = gl_Position.z;
 	gl_Position = ubo_camera.projection * gl_Position;
-	gl_Position.z = - gl_Position.w * (2.0 * depth + ubo_camera.near + ubo_camera.far) / (ubo_camera.far - ubo_camera.near);
 }

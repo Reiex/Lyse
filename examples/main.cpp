@@ -20,9 +20,9 @@ int main()
 	// lys::Mesh<> mesh("examples/assets/meshes/suzanne.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
 	// mesh.setShadowFaceCullingMode(spl::FaceCullingMode::Disabled);
 	// 
-	// // lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, lightColor.x, lightColor.y, lightColor.z, 10.f);
-	// // light.setShadowCascadeSize(4);
-	// lys::LightPoint light(1.f, 2.f, 1.f, lightColor.x, lightColor.y, lightColor.z, 20.f);
+	// lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, lightColor.x, lightColor.y, lightColor.z, 10.f);
+	// light.setShadowCascadeSize(4);
+	// // lys::LightPoint light(1.f, 2.f, 1.f, lightColor.x, lightColor.y, lightColor.z, 20.f);
 	// 
 	// scene.setCamera(&camera);
 	// scene.addDrawable(&mesh);

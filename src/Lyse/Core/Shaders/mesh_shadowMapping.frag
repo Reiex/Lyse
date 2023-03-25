@@ -7,7 +7,12 @@
 
 // Inputs
 
-in vec2 io_texCoords;
+in GeometryOutput
+{
+	vec2 texCoords;
+	vec3 normal;
+	float depth;
+} io_geometryOutput;
 
 // Uniforms
 
@@ -24,7 +29,7 @@ void main()
 	// If the fragment has transparency, it doesn't cast any shadow (convenient approximation) thus it is discarded
 
 	#ifdef COLOR_TEXTURE
-		vec4 color = texture(u_drawableColor, io_texCoords);
+		vec4 color = texture(u_drawableColor, io_geometryOutput.texCoords);
 	#else
 		vec4 color = u_drawableColor;
 	#endif
@@ -33,4 +38,6 @@ void main()
 	{
 		discard;
 	}
+
+	gl_FragDepth = io_geometryOutput.depth + 2e-4 / abs(normalize(io_geometryOutput.normal).z);
 }

@@ -22,7 +22,7 @@ namespace lys
 		bool shadowEnabled = true;
 		uint32_t shadowTextureCount = 16;
 		scp::u32vec2 shadowTextureResolution = { 2048, 2048 };
-		spl::TextureInternalFormat shadowTextureFormat = spl::TextureInternalFormat::Depth_nu24;
+		spl::TextureInternalFormat shadowTextureFormat = spl::TextureInternalFormat::Depth_nu16;
 
 		bool transparencyEnabled = true;
 		spl::TextureInternalFormat transparencyColorTextureFormat = spl::TextureInternalFormat::RGBA_f32;
