@@ -18,7 +18,6 @@ int main()
 	// camera.setTranslation({ 0.f, 0.f, 3.f });
 	// 
 	// lys::Mesh<> mesh("examples/assets/meshes/suzanne.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
-	// mesh.setShadowFaceCullingMode(spl::FaceCullingMode::Disabled);
 	// 
 	// lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, lightColor.x, lightColor.y, lightColor.z, 10.f);
 	// light.setShadowCascadeSize(4);

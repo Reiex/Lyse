@@ -29,7 +29,6 @@ layout (std140, row_major, binding = 3) uniform ubo_shadow_cameras_layout
 out GeometryOutput
 {
 	vec2 texCoords;
-	vec3 normal;
 	float depth;
 } io_geometryOutput;
 
@@ -40,25 +39,18 @@ void main()
 {
 	// For each shadow camera emit a corresponding triangle in the corresponding layer
 
-	for (uint i = 0; i < ubo_shadowCameras.count; ++i)
+	for (int i = 0; i < ubo_shadowCameras.count; ++i)
 	{
-		const vec4 positions[3] = {
-			ubo_shadowCameras.cameras[i].view * gl_in[0].gl_Position,
-			ubo_shadowCameras.cameras[i].view * gl_in[1].gl_Position,
-			ubo_shadowCameras.cameras[i].view * gl_in[2].gl_Position
-		};
-
-		const vec3 normal = normalize(cross(positions[1].xyz - positions[0].xyz, positions[2].xyz - positions[0].xyz));
-
 		for (uint j = 0; j < 3; ++j)
 		{
-			gl_Layer = int(i);
-				
+			gl_Layer = i;
+			
+			const vec4 position = ubo_shadowCameras.cameras[i].view * gl_in[j].gl_Position;
+
 			io_geometryOutput.texCoords = io_vertexOutput[j].texCoords;
-			io_geometryOutput.normal = normal;
-			io_geometryOutput.depth = 1.0 - (ubo_shadowCameras.cameras[i].far + positions[j].z) / (ubo_shadowCameras.cameras[i].far - ubo_shadowCameras.cameras[i].near);
+			io_geometryOutput.depth = 1.0 - (ubo_shadowCameras.cameras[i].far + position.z) / (ubo_shadowCameras.cameras[i].far - ubo_shadowCameras.cameras[i].near);
 				
-			gl_Position = ubo_shadowCameras.cameras[i].projection * positions[j];
+			gl_Position = ubo_shadowCameras.cameras[i].projection * position;
 
 			EmitVertex();
 		}

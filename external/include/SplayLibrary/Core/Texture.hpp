@@ -302,10 +302,12 @@ namespace spl
 				TextureFormat format;
 				TextureDataType dataType;
 
-				void* image;
 				void* data;
 				uint32_t width;
 				uint32_t height;
+
+				void* image;
+				void (*imageFree)(void*);
 			};
 
 			template<TextureInternalFormat InternalFormat> static void _loadImageFromFile(const std::filesystem::path& path, ImageLoadInfos& infos);

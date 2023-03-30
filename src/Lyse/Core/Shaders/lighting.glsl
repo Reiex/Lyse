@@ -7,7 +7,7 @@
 
 // Function definitions
 
-float computeShadowOcclusion(in const vec3 position, in const uint i)
+float computeShadowOcclusion(in const vec3 position, in const vec3 normal, in const uint i)
 {
 	#ifdef SHADOW
 		// For each shadow texture associated with the i-th light
@@ -16,7 +16,7 @@ float computeShadowOcclusion(in const vec3 position, in const uint i)
 		{
 			// Compute fragment position in shadow-view-space coordinate system (linear depth and projected xyz)
 
-			vec4 shadowPosition = ubo_shadowCameras.cameras[j].view * ubo_camera.invView * vec4(position, 1.0);
+			vec4 shadowPosition = ubo_shadowCameras.cameras[j].view * ubo_camera.invView * vec4(position + (sqrt(-position.z) * 5e-3) * normal, 1.0);
 			const float depth = (-shadowPosition.z - ubo_shadowCameras.cameras[j].near) / (ubo_shadowCameras.cameras[j].far - ubo_shadowCameras.cameras[j].near);
 			shadowPosition = ubo_shadowCameras.cameras[j].projection * shadowPosition;
 			shadowPosition.xyz /= shadowPosition.w;
@@ -129,7 +129,7 @@ vec3 cookTorrance(in const vec3 color, in const vec3 material, in const vec3 nor
 	{
 		// If fragment is totally in shadow, skip lighting with this light, else apply an occlusion factor
 
-		float occlusion = computeShadowOcclusion(position, i);
+		float occlusion = computeShadowOcclusion(position, normal, i);
 
 		if (occlusion == 1.0)
 		{

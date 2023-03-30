@@ -12,6 +12,15 @@
 
 namespace spl
 {
+	namespace _spl
+	{
+		template<djv::CPixel TPixel>
+		void imageFree(void* image)
+		{
+			delete reinterpret_cast<djv::Image<TPixel>*>(image);
+		}
+	}
+
 	template<TextureInternalFormat InternalFormat>
 	void Texture::_loadImageFromFile(const std::filesystem::path& path, ImageLoadInfos& infos)
 	{
@@ -25,9 +34,11 @@ namespace spl
 		infos.format = _spl::textureInternalFormatToTextureFormat(InternalFormat);
 		infos.dataType = _spl::textureInternalFormatToTextureDataType(projectedFormat);
 
-		infos.image = specImage;
 		infos.data = specImage->getData();
 		infos.width = specImage->getWidth();
 		infos.height = specImage->getHeight();
+
+		infos.image = specImage;
+		infos.imageFree = &_spl::imageFree<PixelType>;
 	}
 }

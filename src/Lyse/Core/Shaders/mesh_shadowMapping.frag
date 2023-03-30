@@ -10,7 +10,6 @@
 in GeometryOutput
 {
 	vec2 texCoords;
-	vec3 normal;
 	float depth;
 } io_geometryOutput;
 
@@ -39,5 +38,5 @@ void main()
 		discard;
 	}
 
-	gl_FragDepth = io_geometryOutput.depth + 2e-4 / abs(normalize(io_geometryOutput.normal).z);
+	gl_FragDepth = io_geometryOutput.depth;
 }
