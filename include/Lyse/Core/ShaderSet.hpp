@@ -73,7 +73,7 @@ namespace lys
 		};
 	}
 
-	class ShaderSet
+	class LYS_API ShaderSet
 	{
 		public:
 

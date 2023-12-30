@@ -237,6 +237,19 @@ namespace lys
 	{
 		draw();
 	}
+	
+	namespace _lys
+	{
+		inline uint64_t read(void* handle, uint8_t* data, uint64_t size)
+		{
+			return std::fread(data, 1, size, reinterpret_cast<std::FILE*>(handle));
+		}
+
+		inline bool eof(void* handle)
+		{
+			return std::feof(reinterpret_cast<std::FILE*>(handle));
+		}
+	}
 
 	template<CVertex TVertex>
 	void Mesh<TVertex>::_createFromFile(const std::filesystem::path& path, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices)
@@ -246,8 +259,8 @@ namespace lys
 			return;
 		}
 
-		std::ifstream stream(path, std::ios::in | std::ios::binary);
-		if (!stream)
+		std::FILE* file = std::fopen(path.string().c_str(), "rb");
+		if (!file)
 		{
 			return;
 		}
@@ -255,12 +268,14 @@ namespace lys
 		MeshFormat format;
 		if (_extensionToMeshFormat(path.extension(), format))
 		{
+			dsk::IStream* stream = new dsk::IStream(file, _lys::read, _lys::eof);
 			_createFromStream(stream, format, vertices, indices);
+			delete stream;
 		}
 	}
 
 	template<CVertex TVertex>
-	void Mesh<TVertex>::_createFromStream(std::istream& stream, MeshFormat format, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices)
+	void Mesh<TVertex>::_createFromStream(dsk::IStream* stream, MeshFormat format, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices)
 	{
 		assert(stream);
 
@@ -341,10 +356,9 @@ namespace lys
 	}
 
 	template<CVertex TVertex>
-	void Mesh<TVertex>::_createFromObj(std::istream& stream, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices)
+	void Mesh<TVertex>::_createFromObj(dsk::IStream* stream, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices)
 	{
-		dsk::fmt::ObjIStream objIStream;
-		objIStream.setSource(stream);
+		dsk::fmt::ObjIStream objIStream(stream);
 
 		dsk::fmt::obj::File objFile;
 		objIStream.readFile(objFile);

@@ -11,66 +11,66 @@ int main()
 	context->setClearColor(0.2f, 0.3f, 0.3f, 1.f);
 
 
-	// lys::SceneParameters sceneParams = {};
-	// lys::Scene scene(window.getSize().x, window.getSize().y, sceneParams);
-	// 
-	// lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 10.f);
-	// camera.setTranslation({ 0.f, 0.f, 3.f });
-	// 
-	// lys::Mesh<> mesh("examples/assets/meshes/suzanne.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
-	// 
-	// lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, lightColor.x, lightColor.y, lightColor.z, 10.f);
-	// light.setShadowCascadeSize(4);
-	// // lys::LightPoint light(1.f, 2.f, 1.f, lightColor.x, lightColor.y, lightColor.z, 20.f);
-	// 
-	// scene.setCamera(&camera);
-	// scene.addDrawable(&mesh);
-	// scene.addLight(&light);
-
-
 	lys::SceneParameters sceneParams = {};
 	lys::Scene scene(window.getSize().x, window.getSize().y, sceneParams);
 	
-	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 20.f);
+	lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 10.f);
 	camera.setTranslation({ 0.f, 0.f, 3.f });
 	
-	spl::Texture2D colorMap				("examples/assets/images/color.png");
-	spl::Texture2D moonColorMap			("examples/assets/images/moonColor.png");
-	spl::Texture2D normalMap			("examples/assets/images/normal.png", spl::TextureInternalFormat::RGB_ni8);
-	spl::Texture2D moonNormalMap		("examples/assets/images/moonNormal.png", spl::TextureInternalFormat::RGB_ni8);
-	spl::Texture2D materialMap			("examples/assets/images/material.png");
-	spl::Texture2D background			("examples/assets/images/background.png");
-	spl::Texture2D cloudMap				("examples/assets/images/clouds.png", spl::TextureInternalFormat::RGBA_nu8);
-	
-	lys::Material material(&colorMap, &materialMap);
-	lys::Mesh<> mesh("examples/assets/meshes/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
-	mesh.setMaterial(&material);
-	mesh.setNormalMap(&normalMap);
-	
-	lys::Material cloudMaterial(&cloudMap, 0.1, 0.0, 0.8);
-	lys::Mesh<> cloudMesh("examples/assets/meshes/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
-	cloudMesh.setMaterial(&cloudMaterial);
-	cloudMesh.setScale(1.005);
-	cloudMesh.setGeometryFaceCullingMode(spl::FaceCullingMode::Disabled);
-	cloudMesh.setShadowFaceCullingOrientation(spl::FaceOrientation::FrontAndBack);
-	
-	lys::Material moonMaterial(&moonColorMap, 0.1f, 0.0f, 1.f);
-	lys::Mesh<> moonMesh("examples/assets/meshes/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
-	moonMesh.setMaterial(&moonMaterial);
-	moonMesh.setNormalMap(&moonNormalMap);
-	moonMesh.setScale(0.1);
-	moonMesh.rotate(0.f, 1.f, 0.f, std::numbers::pi);
-	moonMesh.move(2.f, 1.f, 1.f);
+	lys::Mesh<> mesh("examples/assets/meshes/suzanne.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
 	
 	lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, lightColor.x, lightColor.y, lightColor.z, 10.f);
 	light.setShadowCascadeSize(4);
+	// lys::LightPoint light(1.f, 2.f, 1.f, lightColor.x, lightColor.y, lightColor.z, 20.f);
 	
 	scene.setCamera(&camera);
-	scene.setBackgroundEquirectangular(&background);
 	scene.addDrawable(&mesh);
-	scene.addDrawable(&cloudMesh);
-	scene.addDrawable(&moonMesh);
 	scene.addLight(&light);
+
+
+	// lys::SceneParameters sceneParams = {};
+	// lys::Scene scene(window.getSize().x, window.getSize().y, sceneParams);
+	// 
+	// lys::CameraPerspective camera(window.getSize().x, window.getSize().y, 1.f, 0.01f, 20.f);
+	// camera.setTranslation({ 0.f, 0.f, 3.f });
+	// 
+	// spl::Texture2D colorMap				("examples/assets/images/color.png");
+	// spl::Texture2D moonColorMap			("examples/assets/images/moonColor.png");
+	// spl::Texture2D normalMap			("examples/assets/images/normal.png", spl::TextureInternalFormat::RGB_ni8);
+	// spl::Texture2D moonNormalMap		("examples/assets/images/moonNormal.png", spl::TextureInternalFormat::RGB_ni8);
+	// spl::Texture2D materialMap			("examples/assets/images/material.png");
+	// spl::Texture2D background			("examples/assets/images/background.png");
+	// spl::Texture2D cloudMap				("examples/assets/images/clouds.png", spl::TextureInternalFormat::RGBA_nu8);
+	// 
+	// lys::Material material(&colorMap, &materialMap);
+	// lys::Mesh<> mesh("examples/assets/meshes/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
+	// mesh.setMaterial(&material);
+	// mesh.setNormalMap(&normalMap);
+	// 
+	// lys::Material cloudMaterial(&cloudMap, 0.1, 0.0, 0.8);
+	// lys::Mesh<> cloudMesh("examples/assets/meshes/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
+	// cloudMesh.setMaterial(&cloudMaterial);
+	// cloudMesh.setScale(1.005);
+	// cloudMesh.setGeometryFaceCullingMode(spl::FaceCullingMode::Disabled);
+	// cloudMesh.setShadowFaceCullingOrientation(spl::FaceOrientation::FrontAndBack);
+	// 
+	// lys::Material moonMaterial(&moonColorMap, 0.1f, 0.0f, 1.f);
+	// lys::Mesh<> moonMesh("examples/assets/meshes/sphere.obj", spl::BufferStorageFlags::None, spl::BufferStorageFlags::None);
+	// moonMesh.setMaterial(&moonMaterial);
+	// moonMesh.setNormalMap(&moonNormalMap);
+	// moonMesh.setScale(0.1);
+	// moonMesh.rotate(0.f, 1.f, 0.f, std::numbers::pi);
+	// moonMesh.move(2.f, 1.f, 1.f);
+	// 
+	// lys::LightSun light(lightDir.x, lightDir.y, lightDir.z, lightColor.x, lightColor.y, lightColor.z, 10.f);
+	// light.setShadowCascadeSize(4);
+	// 
+	// scene.setCamera(&camera);
+	// scene.setBackgroundEquirectangular(&background);
+	// scene.addDrawable(&mesh);
+	// scene.addDrawable(&cloudMesh);
+	// scene.addDrawable(&moonMesh);
+	// scene.addLight(&light);
 	
 	
 	static constexpr float screenVboData[] = { -1.f,  -1.f, 1.f, -1.f, -1.f, 1.f, 1.f, 1.f };
@@ -119,7 +119,7 @@ int main()
 
 		camera.lookAt({ 0.f, 0.f, 0.f });
 		mesh.rotate(0.f, 1.f, 0.f, 0.001f);
-		cloudMesh.rotate(0.f, 1.f, 0.f, 0.001f);
+		// cloudMesh.rotate(0.f, 1.f, 0.f, 0.001f);
 
 		scene.render();
 

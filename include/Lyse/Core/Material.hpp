@@ -11,7 +11,7 @@
 
 namespace lys
 {
-	class Material
+	class LYS_API Material
 	{
 		public:
 

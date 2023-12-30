@@ -40,7 +40,7 @@ namespace lys
 		static constexpr uint32_t maxLightSlotCount = 1024;
 	};
 
-	class Scene
+	class LYS_API Scene
 	{
 		public:
 	

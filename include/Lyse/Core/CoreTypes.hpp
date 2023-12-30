@@ -12,6 +12,18 @@
 #include <DejaVu/DejaVuTypes.hpp>
 #include <SplayLibrary/SplayLibraryTypes.hpp>
 
+#if defined(_WIN32)
+	#ifdef LYSE_EXPORTS
+		#define LYS_API __declspec(dllexport)
+	#else
+		#define LYS_API __declspec(dllimport)
+	#endif
+#elif defined(__linux__)
+	#define LYS_API
+#else
+	#error "Unrecognized platform"
+#endif
+
 namespace lys
 {
 	template<typename T> concept CVertexAttribute = spl::CGlslScalarType<T> || spl::CGlslVecType<T>;

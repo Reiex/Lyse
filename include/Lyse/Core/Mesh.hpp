@@ -71,11 +71,11 @@ namespace lys
 			Mesh();
 
 			void _createFromFile(const std::filesystem::path& path, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices);
-			void _createFromStream(std::istream& stream, MeshFormat format, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices);
+			void _createFromStream(dsk::IStream* stream, MeshFormat format, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices);
 
-			void _createFromObj(std::istream& stream, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices);
+			void _createFromObj(dsk::IStream* stream, std::vector<TVertex>& vertices, std::vector<uint32_t>& indices);
 
-			static constexpr void (Mesh<TVertex>::* _meshFormatToLoadFunc[])(std::istream&, std::vector<TVertex>&, std::vector<uint32_t>&) = {
+			static constexpr void (Mesh<TVertex>::* _meshFormatToLoadFunc[])(dsk::IStream*, std::vector<TVertex>&, std::vector<uint32_t>&) = {
 				&Mesh<TVertex>::_createFromObj
 			};
 			static bool _extensionToMeshFormat(const std::filesystem::path& extension, MeshFormat& format);

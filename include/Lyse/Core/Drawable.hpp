@@ -19,7 +19,7 @@ namespace lys
 		Group
 	};
 
-	class Drawable : public Transformable
+	class LYS_API Drawable : public Transformable
 	{
 		public:
 
